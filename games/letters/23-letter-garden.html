@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Garden</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --gold: #ffe066;
+  --pink: #E91E63;
+  --green: #4CAF50;
+  --sky: #E3F2FD;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#f0faf0}
+
+/* ── Background ── */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#E3F2FD 0%,#C8E6C9 50%,#A5D6A7 100%)}
+.bg-sun{position:fixed;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#FFF9C4 30%,#FFE082 60%,transparent 70%);z-index:1;pointer-events:none;opacity:0.7}
+.bg-cloud{position:fixed;z-index:1;pointer-events:none;font-size:40px;opacity:0.4;animation:cloudDrift 40s linear infinite}
+.bg-cloud:nth-child(2){top:8%;animation-duration:55s;font-size:30px;animation-delay:-15s}
+.bg-cloud:nth-child(3){top:15%;animation-duration:45s;font-size:35px;animation-delay:-25s}
+@keyframes cloudDrift{0%{transform:translateX(-100px)}100%{transform:translateX(calc(100vw + 100px))}}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#E3F2FD,#C8E6C9)}
+.screen-title h1{font-size:clamp(30px,8vw,50px);color:#2E7D32;margin:10px 0;font-weight:900}
+.screen-title p{font-size:clamp(15px,3.8vw,22px);color:#333;max-width:440px;line-height:1.4;font-weight:600}
+.screen-title .icon-row{display:flex;gap:8px;justify-content:center;align-items:center;margin-bottom:5px}
+.screen-title .icon-row span{font-size:clamp(40px,10vw,70px)}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.15);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#43A047,#2E7D32);animation:glow 2.5s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#43A047,#2E7D32);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.1)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);border-bottom:3px solid rgba(0,0,0,0.06)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:#888;font-weight:900}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900}
+.hud-round .hud-val{color:#2E7D32}
+.hud-score .hud-val{color:#e65100}
+.hud-prompt{font-size:clamp(20px,5vw,30px);font-weight:900;color:#2E7D32}
+
+/* ── Garden Area ── */
+.garden-area{position:fixed;inset:0;z-index:var(--z-game);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 15px 15px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.4s}
+.garden-area.active{opacity:1;visibility:visible;pointer-events:auto}
+
+/* Flower pots row */
+.pots-row{display:flex;gap:clamp(10px,3vw,20px);justify-content:center;align-items:flex-end;flex-wrap:wrap;margin-top:20px}
+
+.pot-wrapper{display:flex;flex-direction:column;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.15s}
+.pot-wrapper:active{transform:scale(0.93)}
+
+.flower-stem{width:6px;height:0;background:#4CAF50;border-radius:3px;transition:height 0.6s ease-out;margin-bottom:-2px}
+.flower-head{width:0;height:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all 0.5s ease-out;font-size:0;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.2);overflow:hidden}
+.flower-head.bloomed{width:clamp(55px,14vw,75px);height:clamp(55px,14vw,75px);font-size:clamp(24px,6vw,36px)}
+
+.pot{width:clamp(80px,20vw,110px);height:clamp(70px,16vw,90px);position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.pot-body{width:100%;height:70%;background:linear-gradient(135deg,#D84315,#BF360C);border-radius:0 0 15px 15px;position:relative;display:flex;align-items:center;justify-content:center}
+.pot-rim{width:110%;height:20px;background:linear-gradient(135deg,#E65100,#D84315);border-radius:8px;position:absolute;top:-6px}
+.pot-letter{font-size:clamp(28px,7vw,42px);font-weight:900;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.3);z-index:2;margin-top:8px}
+.pot-sub{font-size:clamp(16px,4vw,24px);color:rgba(255,255,255,0.8);font-weight:700;z-index:2}
+
+.pot-wrapper.wrong .pot-body{animation:potShake 0.4s ease}
+.pot-wrapper.correct .flower-stem{height:clamp(40px,10vw,60px)}
+@keyframes potShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+/* Garden display at bottom */
+.garden-display{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-char);display:flex;justify-content:center;gap:clamp(4px,1.5vw,12px);padding:8px 10px;background:linear-gradient(180deg,transparent,rgba(139,195,74,0.3));pointer-events:none;align-items:flex-end}
+.garden-flower{display:flex;flex-direction:column;align-items:center;opacity:0.25;transition:opacity 0.5s}
+.garden-flower.grown{opacity:1}
+.garden-flower .gf-head{width:clamp(28px,7vw,40px);height:clamp(28px,7vw,40px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,3.5vw,20px);font-weight:900;color:#fff}
+.garden-flower .gf-stem{width:4px;height:clamp(20px,5vw,35px);background:#4CAF50;border-radius:2px}
+.garden-flower .gf-leaf{font-size:clamp(10px,2.5vw,16px);margin-top:-4px}
+
+/* ── Celebration ── */
+.celeb{position:fixed;inset:0;z-index:var(--z-celeb);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,#E8F5E9,#C8E6C9,#A5D6A7);opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.6s}
+.celeb.active{opacity:1;visibility:visible;pointer-events:auto}
+.celeb h1{font-size:clamp(30px,8vw,50px);color:#2E7D32;font-weight:900;margin:10px 0}
+.celeb .stars{font-size:clamp(40px,10vw,60px);margin:10px 0}
+.celeb .final-garden{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:15px 0}
+.celeb .final-flower{display:flex;flex-direction:column;align-items:center}
+.celeb .final-flower .ff-head{width:clamp(35px,8vw,50px);height:clamp(35px,8vw,50px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,4vw,24px);font-weight:900;color:#fff}
+.celeb .final-flower .ff-stem{width:4px;height:20px;background:#4CAF50;border-radius:2px}
+
+/* ── Confetti ── */
+.confetti-piece{position:fixed;z-index:999;pointer-events:none;border-radius:3px;animation:confFall linear forwards}
+@keyframes confFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+/* ── Sparkle ── */
+.sparkle{position:fixed;z-index:998;pointer-events:none;font-size:24px;animation:sparkPop 0.8s ease-out forwards}
+@keyframes sparkPop{0%{transform:scale(0) rotate(0deg);opacity:1}50%{transform:scale(1.3) rotate(180deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+<div class="bg-sun"></div>
+<div class="bg-cloud" style="top:5%">☁️</div>
+<div class="bg-cloud" style="top:10%">☁️</div>
+<div class="bg-cloud" style="top:3%">☁️</div>
+
+<!-- Title Screen -->
+<div class="screen screen-title active" id="titleScreen">
+  <div class="icon-row">
+    <span>🌷</span><span>🌻</span><span>🌸</span>
+  </div>
+  <h1>Letter Garden</h1>
+  <p>Plant letters and grow a beautiful flower garden!</p>
+  <button class="btn btn-start" id="startBtn">Let's Plant! 🌱</button>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1 / 5</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-prompt" id="hudPrompt">Plant the A!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">FLOWERS</span>
+    <span class="hud-val" id="hudScore">🌸 0</span>
+  </div>
+</div>
+
+<!-- Game Area -->
+<div class="garden-area" id="gameArea">
+  <div class="pots-row" id="potsRow"></div>
+</div>
+
+<!-- Garden Display -->
+<div class="garden-display" id="gardenDisplay"></div>
+
+<!-- Celebration -->
+<div class="celeb" id="celebScreen">
+  <div class="stars">⭐ ⭐ ⭐</div>
+  <h1>Beautiful Garden!</h1>
+  <div class="final-garden" id="finalGarden"></div>
+  <p style="font-size:clamp(16px,4vw,22px);color:#333;font-weight:700;margin-top:10px">You grew <span id="celebCount">0</span> flowers!</p>
+  <button class="btn btn-again" id="againBtn">Plant Again! 🌱</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ── Audio ──
+class GameAudio {
+  constructor() {
+    this.ctx = null;
+    this.musicGain = null;
+    this.sfxGain = null;
+    this.musicOscs = [];
+    this.voiceQueue = [];
+    this.voicePlaying = false;
+  }
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0.08;
+    this.musicGain.connect(this.ctx.destination);
+    this.sfxGain = this.ctx.createGain();
+    this.sfxGain.gain.value = 0.25;
+    this.sfxGain.connect(this.ctx.destination);
+  }
+  startMusic() {
+    this.init();
+    // Gentle garden melody - C major pentatonic, peaceful
+    const notes = [523.25, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33];
+    let i = 0;
+    const playNote = () => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i % notes.length];
+      gain.gain.setValueAtTime(0, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.1);
+      gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.9);
+      osc.connect(gain);
+      gain.connect(this.musicGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 1);
+      i++;
+      this.musicTimer = setTimeout(playNote, 1000);
+    };
+    playNote();
+  }
+  stopMusic() {
+    clearTimeout(this.musicTimer);
+  }
+  playSFX(freq, type = 'sine', dur = 0.3) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start();
+    osc.stop(this.ctx.currentTime + dur);
+  }
+  playCorrect() {
+    this.playSFX(523, 'sine', 0.15);
+    setTimeout(() => this.playSFX(659, 'sine', 0.15), 100);
+    setTimeout(() => this.playSFX(784, 'sine', 0.3), 200);
+  }
+  playWrong() {
+    this.playSFX(200, 'square', 0.25);
+  }
+  playBloom() {
+    // Rising sparkle sound
+    [0, 50, 100, 150].forEach((d, i) => {
+      setTimeout(() => this.playSFX(600 + i * 150, 'sine', 0.2), d);
+    });
+  }
+  playCelebration() {
+    const notes = [523, 659, 784, 1047, 784, 1047];
+    notes.forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.3), i * 150));
+  }
+  duckMusic() {
+    if (this.musicGain) {
+      this.musicGain.gain.linearRampToValueAtTime(0.02, this.ctx.currentTime + 0.2);
+    }
+  }
+  unduckMusic() {
+    if (this.musicGain) {
+      this.musicGain.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 0.3);
+    }
+  }
+  queueVoice(file) {
+    return new Promise((resolve) => {
+      this.voiceQueue.push({ file, resolve });
+      if (!this.voicePlaying) this._playNext();
+    });
+  }
+  _playNext() {
+    if (this.voiceQueue.length === 0) { this.voicePlaying = false; return; }
+    this.voicePlaying = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this.duckMusic();
+    const audio = new Audio(file);
+    audio.volume = 0.9;
+    audio.onended = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    audio.onerror = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    audio.play().catch(() => { this.unduckMusic(); resolve(); this._playNext(); });
+  }
+}
+
+const audio = new GameAudio();
+
+// ── Confetti ──
+function burstConfetti(x, y, count = 25) {
+  const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#FFD93D','#C9B1FF','#FF85A2'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 60 + Math.random() * 120;
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.animate([
+      { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(angle)*dist}px, ${-50 + Math.random()*200}px) rotate(${360+Math.random()*360}deg)`, opacity: 0 }
+    ], { duration: 1500 + Math.random() * 1000, easing: 'ease-out' });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+
+function sparkleAt(x, y) {
+  const emojis = ['✨', '⭐', '🌟', '💫'];
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'sparkle';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = (x - 12 + (Math.random() - 0.5) * 60) + 'px';
+    el.style.top = (y - 12 + (Math.random() - 0.5) * 60) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+}
+
+// ── Game State ──
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const FLOWER_COLORS = ['#E91E63','#FF5722','#FF9800','#FFC107','#8BC34A','#4CAF50','#009688','#2196F3','#673AB7','#9C27B0','#F44336','#00BCD4','#3F51B5','#CDDC39','#795548','#607D8B'];
+
+const ROUNDS = [
+  { letters: 'ABCDE'.split(''), pots: 3 },
+  { letters: 'FGHIJ'.split(''), pots: 3 },
+  { letters: 'KLMNO'.split(''), pots: 4 },
+  { letters: 'PQRST'.split(''), pots: 4 },
+  { letters: 'UVWXYZ'.split(''), pots: 4 },
+];
+
+let currentRound = 0;
+let roundLetters = [];
+let currentLetterIndex = 0;
+let targetLetter = '';
+let score = 0;
+let gardenFlowers = [];
+let canTap = false;
+
+// ── DOM ──
+const $ = id => document.getElementById(id);
+const startBtn = $('startBtn');
+const titleScreen = $('titleScreen');
+const hud = $('hud');
+const gameArea = $('gameArea');
+const potsRow = $('potsRow');
+const hudRound = $('hudRound');
+const hudPrompt = $('hudPrompt');
+const hudScore = $('hudScore');
+const gardenDisplay = $('gardenDisplay');
+const celebScreen = $('celebScreen');
+const finalGarden = $('finalGarden');
+const celebCount = $('celebCount');
+const againBtn = $('againBtn');
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getFlowerColor() {
+  return FLOWER_COLORS[gardenFlowers.length % FLOWER_COLORS.length];
+}
+
+function onTap(el, fn) {
+  let touched = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); touched = true; fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!touched) fn(e); touched = false; });
+}
+
+// ── Build Garden Display ──
+function buildGardenDisplay() {
+  gardenDisplay.innerHTML = '';
+  const totalFlowers = ROUNDS.reduce((sum, r) => sum + r.letters.length, 0);
+  for (let i = 0; i < totalFlowers; i++) {
+    const div = document.createElement('div');
+    div.className = 'garden-flower';
+    div.innerHTML = `
+      <div class="gf-head" style="background:#ccc"></div>
+      <div class="gf-stem"></div>
+      <div class="gf-leaf">🌿</div>
+    `;
+    gardenDisplay.appendChild(div);
+  }
+}
+
+function updateGardenDisplay(letter, color) {
+  const flowers = gardenDisplay.querySelectorAll('.garden-flower');
+  const idx = gardenFlowers.length - 1;
+  if (flowers[idx]) {
+    flowers[idx].classList.add('grown');
+    const head = flowers[idx].querySelector('.gf-head');
+    head.style.background = color;
+    head.textContent = letter;
+  }
+}
+
+// ── Game Flow ──
+async function startGame() {
+  audio.init();
+  audio.startMusic();
+  titleScreen.classList.remove('active');
+  await delay(400);
+  hud.style.display = '';
+  gameArea.classList.add('active');
+  currentRound = 0;
+  score = 0;
+  gardenFlowers = [];
+  buildGardenDisplay();
+  hudScore.textContent = '🌸 0';
+  startRound();
+}
+
+async function startRound() {
+  const round = ROUNDS[currentRound];
+  roundLetters = shuffle(round.letters);
+  currentLetterIndex = 0;
+  hudRound.textContent = `${currentRound + 1} / ${ROUNDS.length}`;
+  presentLetter();
+}
+
+async function presentLetter() {
+  canTap = false;
+  const round = ROUNDS[currentRound];
+  targetLetter = roundLetters[currentLetterIndex];
+  const lower = targetLetter.toLowerCase();
+
+  hudPrompt.textContent = `Plant the ${targetLetter}!`;
+
+  // Pick distractors
+  const allOthers = LETTERS.filter(l => l !== targetLetter);
+  const distractors = shuffle(allOthers).slice(0, round.pots - 1);
+  const choices = shuffle([targetLetter, ...distractors]);
+
+  // Build pots
+  potsRow.innerHTML = '';
+  choices.forEach(letter => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pot-wrapper';
+    wrapper.dataset.letter = letter;
+
+    const flowerHead = document.createElement('div');
+    flowerHead.className = 'flower-head';
+    const stem = document.createElement('div');
+    stem.className = 'flower-stem';
+
+    const pot = document.createElement('div');
+    pot.className = 'pot';
+    const rim = document.createElement('div');
+    rim.className = 'pot-rim';
+    const body = document.createElement('div');
+    body.className = 'pot-body';
+    const potLetter = document.createElement('div');
+    potLetter.className = 'pot-letter';
+    potLetter.textContent = letter;
+    const potSub = document.createElement('div');
+    potSub.className = 'pot-sub';
+    potSub.textContent = letter.toLowerCase();
+
+    body.appendChild(rim);
+    body.appendChild(potLetter);
+    body.appendChild(potSub);
+    pot.appendChild(body);
+
+    wrapper.appendChild(flowerHead);
+    wrapper.appendChild(stem);
+    wrapper.appendChild(pot);
+    potsRow.appendChild(wrapper);
+
+    onTap(wrapper, () => handlePotTap(wrapper, letter, flowerHead, stem));
+  });
+
+  // Say the letter name
+  await delay(300);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${lower}.mp3`);
+  await delay(200);
+  // Say the sound
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${lower}_sound.mp3`);
+  canTap = true;
+
+  // Hint after 5s
+  clearTimeout(window.hintTimer);
+  window.hintTimer = setTimeout(() => {
+    if (canTap) {
+      const correct = potsRow.querySelector(`[data-letter="${targetLetter}"]`);
+      if (correct) correct.style.animation = 'potShake 0.5s ease 3';
+      audio.queueVoice(`${AUDIO_BASE}/letters/${lower}.mp3`);
+    }
+  }, 5000);
+}
+
+async function handlePotTap(wrapper, letter, flowerHead, stem) {
+  if (!canTap) return;
+
+  if (letter === targetLetter) {
+    canTap = false;
+    clearTimeout(window.hintTimer);
+
+    // Correct!
+    audio.playCorrect();
+    const color = getFlowerColor();
+
+    // Grow the flower
+    wrapper.classList.add('correct');
+    stem.style.height = 'clamp(40px,10vw,60px)';
+    await delay(300);
+    flowerHead.style.background = color;
+    flowerHead.classList.add('bloomed');
+    flowerHead.textContent = letter;
+    audio.playBloom();
+
+    const rect = wrapper.getBoundingClientRect();
+    sparkleAt(rect.left + rect.width / 2, rect.top);
+    burstConfetti(rect.left + rect.width / 2, rect.top, 15);
+
+    // Say letter name again
+    await audio.queueVoice(`${AUDIO_BASE}/letters/${letter.toLowerCase()}.mp3`);
+
+    score++;
+    gardenFlowers.push({ letter, color });
+    hudScore.textContent = `🌸 ${score}`;
+    updateGardenDisplay(letter, color);
+
+    await delay(600);
+
+    // Next letter or next round
+    currentLetterIndex++;
+    if (currentLetterIndex >= roundLetters.length) {
+      currentRound++;
+      if (currentRound >= ROUNDS.length) {
+        endGame();
+      } else {
+        await delay(300);
+        startRound();
+      }
+    } else {
+      presentLetter();
+    }
+  } else {
+    // Wrong
+    audio.playWrong();
+    wrapper.classList.add('wrong');
+    setTimeout(() => wrapper.classList.remove('wrong'), 500);
+    // Re-say the target
+    audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  }
+}
+
+async function endGame() {
+  audio.stopMusic();
+  audio.playCelebration();
+  await delay(400);
+
+  gameArea.classList.remove('active');
+  hud.style.display = 'none';
+
+  // Build final garden
+  finalGarden.innerHTML = '';
+  gardenFlowers.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'final-flower';
+    div.innerHTML = `
+      <div class="ff-head" style="background:${f.color}">${f.letter}</div>
+      <div class="ff-stem"></div>
+    `;
+    finalGarden.appendChild(div);
+  });
+  celebCount.textContent = score;
+
+  celebScreen.classList.add('active');
+
+  // Big confetti
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => burstConfetti(Math.random() * window.innerWidth, Math.random() * window.innerHeight * 0.4, 30), i * 400);
+  }
+
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+}
+
+// ── Event Listeners ──
+onTap(startBtn, startGame);
+onTap(againBtn, () => {
+  celebScreen.classList.remove('active');
+  gameArea.classList.add('active');
+  hud.style.display = '';
+  currentRound = 0;
+  score = 0;
+  gardenFlowers = [];
+  hudScore.textContent = '🌸 0';
+  buildGardenDisplay();
+  audio.startMusic();
+  startRound();
+});
+</script>
+</body>
+</html>

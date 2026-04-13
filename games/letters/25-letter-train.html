@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Train</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#E8F5E9}
+
+/* Background - sky and grass */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#81D4FA 0%,#B3E5FC 40%,#E8F5E9 70%,#A5D6A7 100%)}
+.bg-clouds{position:fixed;top:5%;left:0;right:0;height:20%;z-index:1;pointer-events:none}
+.cloud{position:absolute;background:#fff;border-radius:50%;opacity:0.8}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+
+/* Track */
+.track-area{position:fixed;bottom:0;left:0;right:0;height:120px;z-index:var(--z-game);pointer-events:none}
+.track-ground{position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(180deg,#8D6E63,#6D4C41)}
+.track-rail{position:absolute;bottom:55px;left:0;right:0;height:8px;background:#455A64}
+.track-rail::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:4px;background:#37474F}
+.track-ties{position:absolute;bottom:40px;left:0;right:0;height:20px;background:repeating-linear-gradient(90deg,#5D4037 0px,#5D4037 8px,transparent 8px,transparent 30px)}
+.track-gravel{position:absolute;bottom:58px;left:0;right:0;height:8px;background:#9E9E9E;border-radius:2px}
+
+/* Screens */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#81D4FA,#B3E5FC,#E8F5E9)}
+.screen-title h1{font-size:clamp(30px,8vw,50px);color:#1B5E20;margin:10px 0;font-weight:900}
+.screen-title p{font-size:clamp(15px,3.8vw,22px);color:#333;max-width:440px;line-height:1.4;font-weight:600}
+.screen-title .icon-row{font-size:clamp(40px,10vw,70px);margin-bottom:5px}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.15);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#66BB6A,#2E7D32);animation:glow 2.5s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#66BB6A,#2E7D32);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.1)}}
+
+/* HUD */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);border-bottom:3px solid rgba(0,0,0,0.06)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:#888;font-weight:900}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900}
+.hud-round .hud-val{color:#2E7D32}
+.hud-score .hud-val{color:#e65100}
+.hud-prompt{font-size:clamp(22px,5.5vw,34px);font-weight:900;color:#1B5E20}
+
+/* Target letter display */
+.target-area{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:var(--z-game);display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0;transition:opacity 0.4s}
+.target-area.visible{opacity:1}
+.target-letter-big{width:clamp(90px,22vw,130px);height:clamp(90px,22vw,130px);border-radius:20px;background:#fff;border:5px solid #1B5E20;display:flex;align-items:center;justify-content:center;font-size:clamp(50px,14vw,80px);font-weight:900;color:#1B5E20;box-shadow:0 6px 20px rgba(0,0,0,0.15);animation:targetPulse 2s ease-in-out infinite}
+@keyframes targetPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
+/* Choices */
+.choices-area{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-game);display:flex;gap:clamp(20px,6vw,40px);opacity:0;transition:opacity 0.4s}
+.choices-area.visible{opacity:1}
+.choice-btn{width:clamp(80px,20vw,110px);height:clamp(80px,20vw,110px);border-radius:18px;border:4px solid rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:clamp(36px,10vw,56px);font-weight:900;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.15s;box-shadow:0 6px 16px rgba(0,0,0,0.2)}
+.choice-btn:active{transform:scale(0.9)}
+
+/* Train container */
+.train-container{position:fixed;bottom:65px;z-index:var(--z-game);display:flex;align-items:flex-end;transition:transform 0.6s ease-out;pointer-events:none}
+
+/* Engine */
+.engine{position:relative;width:90px;height:70px;flex-shrink:0}
+.engine-body{position:absolute;bottom:16px;left:10px;width:70px;height:45px;background:linear-gradient(180deg,#E53935,#C62828);border-radius:6px 6px 2px 2px;border:3px solid #B71C1C}
+.engine-cabin{position:absolute;bottom:55px;right:15px;width:35px;height:30px;background:linear-gradient(180deg,#E53935,#C62828);border-radius:4px 4px 0 0;border:3px solid #B71C1C;border-bottom:none}
+.engine-cabin-window{position:absolute;top:6px;left:5px;width:22px;height:14px;background:#BBDEFB;border-radius:3px;border:2px solid #B71C1C}
+.engine-smokestack{position:absolute;bottom:55px;left:18px;width:16px;height:22px;background:#424242;border-radius:3px 3px 0 0}
+.engine-smokestack::after{content:'';position:absolute;top:-8px;left:-4px;width:24px;height:10px;background:#616161;border-radius:4px 4px 0 0}
+.engine-front{position:absolute;bottom:16px;left:0;width:18px;height:30px;background:linear-gradient(180deg,#E53935,#C62828);border-radius:8px 0 0 0;border:3px solid #B71C1C;border-right:none}
+.engine-bumper{position:absolute;bottom:12px;left:-6px;width:12px;height:14px;background:#FFD600;border-radius:4px 0 0 4px;border:2px solid #F9A825}
+.engine-wheel{position:absolute;bottom:2px;width:22px;height:22px;background:#333;border-radius:50%;border:3px solid #555}
+.engine-wheel::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:#888;border-radius:50%}
+.engine-wheel-1{left:12px}
+.engine-wheel-2{left:50px}
+
+/* Train car */
+.train-car{position:relative;width:70px;height:50px;flex-shrink:0;margin-left:-4px}
+.car-body{position:absolute;bottom:16px;left:0;width:70px;height:40px;border-radius:6px;border:3px solid rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,6vw,32px);font-weight:900;color:#fff;text-shadow:0 2px 3px rgba(0,0,0,0.3)}
+.car-wheel{position:absolute;bottom:2px;width:18px;height:18px;background:#333;border-radius:50%;border:3px solid #555}
+.car-wheel::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;background:#888;border-radius:50%}
+.car-wheel-1{left:8px}
+.car-wheel-2{right:8px}
+.car-coupler{position:absolute;bottom:22px;left:-8px;width:12px;height:4px;background:#555;border-radius:2px}
+
+/* Smoke puffs */
+.smoke{position:fixed;z-index:var(--z-game);pointer-events:none}
+.smoke-puff{position:absolute;border-radius:50%;background:rgba(200,200,200,0.6);animation:puffRise 2s ease-out forwards}
+@keyframes puffRise{0%{transform:scale(0.3) translateY(0);opacity:0.7}100%{transform:scale(1.5) translateY(-60px) translateX(20px);opacity:0}}
+
+/* Car slide in */
+@keyframes slideInCar{0%{transform:translateX(100vw)}100%{transform:translateX(0)}}
+
+/* Confetti */
+.confetti-piece{position:fixed;z-index:999;pointer-events:none;border-radius:3px}
+
+/* Wrong wobble */
+@keyframes wobble{0%{transform:rotate(0)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}100%{transform:rotate(0)}}
+
+/* Celebration */
+.celeb{position:fixed;inset:0;z-index:var(--z-celeb);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,#81D4FA,#B3E5FC,#E8F5E9);opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.6s}
+.celeb.active{opacity:1;visibility:visible;pointer-events:auto}
+.celeb h1{font-size:clamp(30px,8vw,50px);color:#1B5E20;font-weight:900;margin:10px 0}
+.celeb .stars{font-size:clamp(40px,10vw,60px);margin:10px 0}
+.celeb p{font-size:clamp(16px,4vw,22px);color:#333;font-weight:700}
+
+/* Final train display */
+.final-train-wrap{width:100%;overflow:hidden;margin:15px 0;position:relative;height:100px}
+.final-train{display:flex;align-items:flex-end;position:absolute;bottom:10px;animation:chugAcross 8s linear infinite}
+@keyframes chugAcross{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<!-- Track (always visible) -->
+<div class="track-area">
+  <div class="track-gravel"></div>
+  <div class="track-rail"></div>
+  <div class="track-ties"></div>
+  <div class="track-ground"></div>
+</div>
+
+<!-- Title -->
+<div class="screen screen-title active" id="titleScreen">
+  <div class="icon-row">🚂 🔤 🚃</div>
+  <h1>Letter Train</h1>
+  <p>Build a rainbow train by finding the right letters!</p>
+  <button class="btn btn-start" id="startBtn">All Aboard! 🚂</button>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1 / 5</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-prompt" id="hudPrompt">Find the A!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">CARS</span>
+    <span class="hud-val" id="hudScore">🚃 0</span>
+  </div>
+</div>
+
+<!-- Target letter display -->
+<div class="target-area" id="targetArea">
+  <div class="target-letter-big" id="targetLetterBig">A</div>
+</div>
+
+<!-- Choices -->
+<div class="choices-area" id="choicesArea"></div>
+
+<!-- Train -->
+<div class="train-container" id="trainContainer">
+  <div class="engine">
+    <div class="engine-smokestack"></div>
+    <div class="engine-cabin">
+      <div class="engine-cabin-window"></div>
+    </div>
+    <div class="engine-body"></div>
+    <div class="engine-front"></div>
+    <div class="engine-bumper"></div>
+    <div class="engine-wheel engine-wheel-1"></div>
+    <div class="engine-wheel engine-wheel-2"></div>
+  </div>
+</div>
+
+<!-- Smoke -->
+<div class="smoke" id="smoke"></div>
+
+<!-- Celebration -->
+<div class="celeb" id="celebScreen">
+  <div class="stars">⭐ 🚂 ⭐</div>
+  <h1>Train Complete!</h1>
+  <div class="final-train-wrap" id="finalTrainWrap">
+    <div class="final-train" id="finalTrain"></div>
+  </div>
+  <p>You built a <span id="celebCount">0</span>-car letter train!</p>
+  <button class="btn btn-again" id="againBtn">Build Again! 🚂</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ── Audio ──
+class GameAudio {
+  constructor() { this.ctx = null; this.musicGain = null; this.voiceQueue = []; this.voicePlaying = false; }
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0.07;
+    this.musicGain.connect(this.ctx.destination);
+  }
+  startMusic() {
+    this.init();
+    const notes = [523, 587, 659, 784, 659, 523, 587, 784];
+    let i = 0;
+    const play = () => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i % notes.length];
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.75);
+      osc.connect(g); g.connect(this.musicGain);
+      osc.start(); osc.stop(this.ctx.currentTime + 0.8);
+      i++;
+      this.musicTimer = setTimeout(play, 800);
+    };
+    play();
+  }
+  stopMusic() { clearTimeout(this.musicTimer); }
+  playSFX(freq, type = 'sine', dur = 0.3) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+    osc.connect(g); g.connect(this.ctx.destination);
+    osc.start(); osc.stop(this.ctx.currentTime + dur);
+  }
+  playCorrect() {
+    this.playSFX(523, 'sine', 0.12);
+    setTimeout(() => this.playSFX(659, 'sine', 0.12), 80);
+    setTimeout(() => this.playSFX(784, 'sine', 0.25), 160);
+  }
+  playWrong() { this.playSFX(200, 'square', 0.2); }
+  playChug() {
+    this.playSFX(120, 'square', 0.08);
+    setTimeout(() => this.playSFX(100, 'square', 0.08), 100);
+  }
+  playWhistle() {
+    this.playSFX(880, 'sine', 0.4);
+    setTimeout(() => this.playSFX(660, 'sine', 0.5), 200);
+  }
+  playCelebration() {
+    [523, 659, 784, 1047, 784, 1047].forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.3), i * 150));
+  }
+  duckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.02, this.ctx.currentTime + 0.2); }
+  unduckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.07, this.ctx.currentTime + 0.3); }
+  queueVoice(file) {
+    return new Promise(resolve => {
+      this.voiceQueue.push({ file, resolve });
+      if (!this.voicePlaying) this._playNext();
+    });
+  }
+  _playNext() {
+    if (!this.voiceQueue.length) { this.voicePlaying = false; return; }
+    this.voicePlaying = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this.duckMusic();
+    const a = new Audio(file); a.volume = 0.9;
+    a.onended = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.onerror = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.play().catch(() => { this.unduckMusic(); resolve(); this._playNext(); });
+  }
+}
+
+const audio = new GameAudio();
+
+// ── Effects ──
+function burstConfetti(x, y, count = 20) {
+  const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#FFD93D','#C9B1FF','#FF85A2'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 100;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 80}px) rotate(${360+Math.random()*360}deg)`, opacity: 0 }
+    ], { duration: 1200 + Math.random() * 800, easing: 'ease-out' });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+function puffSmoke() {
+  const container = $('trainContainer');
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const smokeEl = $('smoke');
+  for (let i = 0; i < 3; i++) {
+    const p = document.createElement('div');
+    p.className = 'smoke-puff';
+    const size = 12 + Math.random() * 16;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = (rect.left + 28 + Math.random() * 10) + 'px';
+    p.style.top = (rect.top - 10 - Math.random() * 10) + 'px';
+    smokeEl.appendChild(p);
+    setTimeout(() => p.remove(), 2100);
+  }
+}
+
+// ── Game ──
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const CAR_COLORS = ['#E53935','#FF9800','#FDD835','#43A047','#1E88E5','#8E24AA','#E91E63','#00ACC1','#FF7043','#7CB342','#5E35B1','#F06292','#26A69A','#EF5350','#42A5F5','#AB47BC','#66BB6A','#FFA726','#29B6F6','#EC407A','#9CCC65','#7E57C2','#26C6DA','#FFCA28','#EF5350','#66BB6A'];
+
+const ROUNDS = [
+  { letters: 'ABCDE'.split('') },
+  { letters: 'FGHIJ'.split('') },
+  { letters: 'KLMNO'.split('') },
+  { letters: 'PQRST'.split('') },
+  { letters: 'UVWXYZ'.split('') },
+];
+
+let currentRound = 0;
+let roundLetters = [];
+let currentLetterIndex = 0;
+let targetLetter = '';
+let score = 0;
+let canTap = false;
+let trainCars = [];
+let hintTimer = null;
+let smokeInterval = null;
+
+const $ = id => document.getElementById(id);
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function shuffle(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); t = true; fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!t) fn(e); t = false; });
+}
+
+// ── Train Management ──
+function positionTrain() {
+  const container = $('trainContainer');
+  const engineW = 90;
+  const carW = 70;
+  const totalW = engineW + trainCars.length * (carW - 4);
+  const vw = window.innerWidth;
+  // Keep the engine visible on the right side, scroll left as train grows
+  const rightEdge = vw - 20;
+  const left = rightEdge - totalW;
+  container.style.transform = `translateX(${Math.min(left, 20)}px)`;
+  container.style.left = '0px';
+}
+
+function addTrainCar(letter) {
+  const container = $('trainContainer');
+  const colorIdx = trainCars.length % CAR_COLORS.length;
+  const color = CAR_COLORS[colorIdx];
+
+  const car = document.createElement('div');
+  car.className = 'train-car';
+  car.style.animation = 'slideInCar 0.6s ease-out forwards';
+  car.innerHTML = `
+    <div class="car-coupler"></div>
+    <div class="car-body" style="background:linear-gradient(180deg,${color},${darken(color)})">
+      ${letter}
+    </div>
+    <div class="car-wheel car-wheel-1"></div>
+    <div class="car-wheel car-wheel-2"></div>
+  `;
+
+  container.appendChild(car);
+  trainCars.push({ letter, color, el: car });
+  positionTrain();
+  audio.playChug();
+  puffSmoke();
+}
+
+function darken(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgb(${Math.max(0, r - 40)},${Math.max(0, g - 40)},${Math.max(0, b - 40)})`;
+}
+
+function clearTrain() {
+  const container = $('trainContainer');
+  // Remove all car elements
+  container.querySelectorAll('.train-car').forEach(c => c.remove());
+  trainCars = [];
+  positionTrain();
+}
+
+// ── Choices ──
+function showChoices(target) {
+  const area = $('choicesArea');
+  area.innerHTML = '';
+
+  // Pick 2 distractors
+  const others = LETTERS.filter(l => l !== target);
+  const distractors = shuffle(others).slice(0, 2);
+  const choices = shuffle([target, ...distractors]);
+
+  choices.forEach(letter => {
+    const btn = document.createElement('div');
+    btn.className = 'choice-btn';
+    const isCorrect = letter === target;
+    const color = isCorrect ? '#43A047' : ['#E53935', '#1E88E5', '#FF9800', '#8E24AA', '#00ACC1'][Math.floor(Math.random() * 5)];
+    btn.style.background = `linear-gradient(135deg, ${color}, ${darken(color)})`;
+    btn.textContent = letter;
+
+    onTap(btn, () => {
+      if (!canTap) return;
+      if (isCorrect) {
+        handleCorrect(letter, btn);
+      } else {
+        handleWrong(btn);
+      }
+    });
+
+    area.appendChild(btn);
+  });
+
+  area.classList.add('visible');
+}
+
+function hideChoices() {
+  const area = $('choicesArea');
+  area.classList.remove('visible');
+  setTimeout(() => { area.innerHTML = ''; }, 400);
+}
+
+async function handleCorrect(letter, btn) {
+  canTap = false;
+  clearHint();
+
+  // Effects
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  audio.playCorrect();
+  burstConfetti(cx, cy, 25);
+
+  // Flash the button
+  btn.style.transform = 'scale(1.15)';
+  btn.style.boxShadow = '0 0 30px rgba(255,255,255,0.8)';
+
+  score++;
+  $('hudScore').textContent = '🚃 ' + score;
+
+  await delay(400);
+  hideChoices();
+  $('targetArea').classList.remove('visible');
+
+  // Add train car
+  await delay(200);
+  addTrainCar(letter);
+
+  // Say the letter name + sound
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${letter.toLowerCase()}.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${letter.toLowerCase()}_sound.mp3`);
+  await delay(400);
+
+  nextLetter();
+}
+
+function handleWrong(btn) {
+  audio.playWrong();
+  btn.style.animation = 'wobble 0.5s ease-in-out';
+  btn.style.opacity = '0.5';
+  setTimeout(() => {
+    btn.style.animation = '';
+    btn.style.opacity = '1';
+  }, 500);
+  // Re-say target letter
+  audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+}
+
+// ── Hint system ──
+function startHint() {
+  clearHint();
+  hintTimer = setInterval(() => {
+    if (canTap) {
+      audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+    }
+  }, 4000);
+}
+
+function clearHint() {
+  clearInterval(hintTimer);
+  hintTimer = null;
+}
+
+// ── Smoke animation ──
+function startSmoke() {
+  clearInterval(smokeInterval);
+  smokeInterval = setInterval(puffSmoke, 1500);
+}
+
+function stopSmoke() {
+  clearInterval(smokeInterval);
+  smokeInterval = null;
+}
+
+// ── Game Flow ──
+async function startGame() {
+  audio.init();
+  audio.startMusic();
+  audio.playWhistle();
+  $('titleScreen').classList.remove('active');
+  await delay(400);
+  $('hud').style.display = '';
+  $('trainContainer').style.display = '';
+  currentRound = 0;
+  score = 0;
+  clearTrain();
+  positionTrain();
+  $('hudScore').textContent = '🚃 0';
+  startSmoke();
+  startRound();
+}
+
+async function startRound() {
+  const round = ROUNDS[currentRound];
+  roundLetters = [...round.letters];
+  currentLetterIndex = 0;
+  $('hudRound').textContent = `${currentRound + 1} / ${ROUNDS.length}`;
+  nextLetter();
+}
+
+async function nextLetter() {
+  if (currentLetterIndex >= roundLetters.length) {
+    currentRound++;
+    if (currentRound >= ROUNDS.length) {
+      endGame();
+      return;
+    }
+    await delay(600);
+    startRound();
+    return;
+  }
+
+  targetLetter = roundLetters[currentLetterIndex];
+  currentLetterIndex++;
+
+  // Show target letter
+  $('targetLetterBig').textContent = targetLetter;
+  $('targetArea').classList.add('visible');
+  $('hudPrompt').textContent = `Find the ${targetLetter}!`;
+
+  // Say letter name + sound
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}_sound.mp3`);
+  await delay(300);
+
+  // Show choices
+  showChoices(targetLetter);
+  canTap = true;
+  startHint();
+}
+
+async function endGame() {
+  audio.stopMusic();
+  stopSmoke();
+  clearHint();
+  hideChoices();
+  $('targetArea').classList.remove('visible');
+  audio.playWhistle();
+  audio.playCelebration();
+
+  await delay(600);
+  $('hud').style.display = 'none';
+  $('trainContainer').style.display = 'none';
+
+  // Build final train display
+  const ft = $('finalTrain');
+  ft.innerHTML = '';
+  // Engine
+  const eng = document.createElement('div');
+  eng.className = 'engine';
+  eng.innerHTML = `
+    <div class="engine-smokestack"></div>
+    <div class="engine-cabin"><div class="engine-cabin-window"></div></div>
+    <div class="engine-body"></div>
+    <div class="engine-front"></div>
+    <div class="engine-bumper"></div>
+    <div class="engine-wheel engine-wheel-1"></div>
+    <div class="engine-wheel engine-wheel-2"></div>
+  `;
+  ft.appendChild(eng);
+  // Cars
+  trainCars.forEach(c => {
+    const car = document.createElement('div');
+    car.className = 'train-car';
+    car.innerHTML = `
+      <div class="car-coupler"></div>
+      <div class="car-body" style="background:linear-gradient(180deg,${c.color},${darken(c.color)})">${c.letter}</div>
+      <div class="car-wheel car-wheel-1"></div>
+      <div class="car-wheel car-wheel-2"></div>
+    `;
+    ft.appendChild(car);
+  });
+
+  $('celebCount').textContent = score;
+  $('celebScreen').classList.add('active');
+
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => burstConfetti(Math.random() * window.innerWidth, Math.random() * window.innerHeight * 0.4, 30), i * 400);
+  }
+
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+}
+
+// ── Init ──
+positionTrain();
+
+onTap($('startBtn'), startGame);
+onTap($('againBtn'), () => {
+  $('celebScreen').classList.remove('active');
+  currentRound = 0;
+  score = 0;
+  clearTrain();
+  $('hudScore').textContent = '🚃 0';
+  $('hud').style.display = '';
+  $('trainContainer').style.display = '';
+  positionTrain();
+  audio.startMusic();
+  audio.playWhistle();
+  startSmoke();
+  startRound();
+});
+
+// Handle resize
+window.addEventListener('resize', positionTrain);
+</script>
+</body>
+</html>

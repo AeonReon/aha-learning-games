@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Shadows</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#1a1a3e}
+
+/* Background - dark room */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#0d0d2b 0%,#1a1a3e 40%,#2a1a4e 70%,#1a1a3e 100%)}
+
+/* Stars */
+.star{position:fixed;z-index:1;border-radius:50%;background:#fff;pointer-events:none;animation:twinkle 3s ease-in-out infinite alternate}
+@keyframes twinkle{0%{opacity:0.2;transform:scale(0.8)}100%{opacity:0.8;transform:scale(1.2)}}
+
+/* Screens */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#0d0d2b,#1a1a3e,#2a1a4e)}
+.screen-title h1{font-size:clamp(30px,8vw,50px);color:#FFD93D;margin:10px 0;font-weight:900;text-shadow:0 0 20px rgba(255,217,61,0.5)}
+.screen-title p{font-size:clamp(15px,3.8vw,22px);color:#fff;max-width:440px;line-height:1.4;font-weight:600}
+.screen-title .icon-row{font-size:clamp(40px,10vw,70px);margin-bottom:5px}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#FFD93D,#FF9800);color:#333;animation:glow 2.5s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#FFD93D,#FF9800);color:#333;margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15)}}
+
+/* HUD */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(13,13,43,0.9);backdrop-filter:blur(4px);border-bottom:3px solid rgba(255,217,61,0.2)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:#aaa;font-weight:900}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900}
+.hud-round .hud-val{color:#FFD93D}
+.hud-score .hud-val{color:#4ECDC4}
+.hud-prompt{font-size:clamp(18px,4.5vw,28px);font-weight:900;color:#fff}
+
+/* Shadow letter area */
+.shadow-area{position:fixed;top:50%;left:50%;transform:translate(-50%,-55%);z-index:var(--z-game);display:flex;align-items:center;justify-content:center;width:clamp(160px,40vw,260px);height:clamp(160px,40vw,260px)}
+
+.shadow-letter{font-size:clamp(120px,30vw,200px);font-weight:900;color:rgba(40,40,80,0.7);text-shadow:0 0 30px rgba(0,0,0,0.5);transition:all 0.8s ease;line-height:1;font-family:var(--font)}
+.shadow-letter.revealed{color:#FFD93D;text-shadow:0 0 40px rgba(255,217,61,0.8),0 0 80px rgba(255,217,61,0.4),0 0 120px rgba(255,217,61,0.2);transform:scale(1.1)}
+
+/* Flashlight beam */
+.flashlight{position:fixed;z-index:5;pointer-events:none;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,200,0.15) 0%,rgba(255,255,200,0.05) 40%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-55%);opacity:0;transition:opacity 0.5s}
+.flashlight.on{opacity:1}
+.flashlight.burst{animation:flashBurst 0.8s ease-out forwards}
+@keyframes flashBurst{0%{opacity:1;transform:translate(-50%,-55%) scale(1)}50%{opacity:1;transform:translate(-50%,-55%) scale(2.5)}100%{opacity:0;transform:translate(-50%,-55%) scale(3)}}
+
+/* Choice buttons */
+.choices{position:fixed;bottom:clamp(70px,15vh,120px);left:0;right:0;z-index:var(--z-game);display:flex;justify-content:center;gap:clamp(16px,4vw,30px);padding:0 20px}
+.choice-btn{min-width:var(--tap);min-height:var(--tap);width:clamp(80px,20vw,110px);height:clamp(80px,20vw,110px);border-radius:20px;border:4px solid rgba(255,255,255,0.3);background:rgba(255,255,255,0.1);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:clamp(36px,9vw,54px);font-weight:900;font-family:var(--font);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.15s,background 0.15s,border-color 0.15s}
+.choice-btn:active{transform:scale(0.92)}
+.choice-btn.correct{background:rgba(78,205,196,0.4);border-color:#4ECDC4;animation:correctPulse 0.5s ease}
+.choice-btn.wrong{animation:wobble 0.4s ease}
+@keyframes correctPulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes wobble{0%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}100%{transform:translateX(0)}}
+
+/* Collection row */
+.collection-row{position:fixed;bottom:8px;left:0;right:0;z-index:var(--z-ui);display:flex;gap:5px;justify-content:center;flex-wrap:wrap;padding:0 10px}
+.collection-letter{width:clamp(28px,6vw,38px);height:clamp(28px,6vw,38px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,3vw,18px);font-weight:900;color:#FFD93D;background:rgba(255,217,61,0.15);border:2px solid rgba(255,217,61,0.3);opacity:0.3;transition:all 0.4s}
+.collection-letter.lit{opacity:1;background:rgba(255,217,61,0.25);border-color:#FFD93D;text-shadow:0 0 8px rgba(255,217,61,0.6)}
+
+/* Confetti */
+.confetti-piece{position:fixed;z-index:999;pointer-events:none;border-radius:3px}
+
+/* Celebration */
+.celeb{position:fixed;inset:0;z-index:var(--z-celeb);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,#0d0d2b,#1a1a3e,#2a1a4e);opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.6s}
+.celeb.active{opacity:1;visibility:visible;pointer-events:auto}
+.celeb h1{font-size:clamp(30px,8vw,50px);color:#FFD93D;font-weight:900;margin:10px 0;text-shadow:0 0 20px rgba(255,217,61,0.5)}
+.celeb .stars{font-size:clamp(40px,10vw,60px);margin:10px 0}
+.celeb p{font-size:clamp(16px,4vw,22px);color:#fff;font-weight:700}
+.celeb .final-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:15px 0}
+.celeb .final-letter{width:clamp(32px,7vw,42px);height:clamp(32px,7vw,42px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,3.5vw,20px);font-weight:900;color:#FFD93D;background:rgba(255,217,61,0.2);border:2px solid #FFD93D;text-shadow:0 0 8px rgba(255,217,61,0.6);animation:celebGlow 1.5s ease-in-out infinite alternate}
+@keyframes celebGlow{0%{text-shadow:0 0 8px rgba(255,217,61,0.4)}100%{text-shadow:0 0 20px rgba(255,217,61,0.8),0 0 40px rgba(255,217,61,0.3)}}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<!-- Title -->
+<div class="screen screen-title active" id="titleScreen">
+  <div class="icon-row">&#x1F526; &#x1F524; &#x1F526;</div>
+  <h1>Letter Shadows</h1>
+  <p>Letters are hiding in the dark! Find each letter and light it up!</p>
+  <button class="btn btn-start" id="startBtn">Shine! &#x1F526;</button>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1 / 5</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-prompt" id="hudPrompt">What letter is this?</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">LIT UP</span>
+    <span class="hud-val" id="hudScore">&#x1F526; 0</span>
+  </div>
+</div>
+
+<!-- Shadow display area -->
+<div class="flashlight" id="flashlight"></div>
+<div class="shadow-area" id="shadowArea" style="display:none">
+  <div class="shadow-letter" id="shadowLetter"></div>
+</div>
+
+<!-- Choices -->
+<div class="choices" id="choices" style="display:none"></div>
+
+<!-- Collection row -->
+<div class="collection-row" id="collectionRow" style="display:none"></div>
+
+<!-- Celebration -->
+<div class="celeb" id="celebScreen">
+  <div class="stars">&#x2B50; &#x2B50; &#x2B50;</div>
+  <h1>Room Lit Up!</h1>
+  <div class="final-row" id="finalRow"></div>
+  <p>You lit up <span id="celebCount">0</span> letters!</p>
+  <button class="btn btn-again" id="againBtn">Play Again! &#x1F526;</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function shuffle(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); t = true; fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!t) fn(e); t = false; });
+}
+
+// ── Stars background ──
+function createStars() {
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    const size = 1 + Math.random() * 3;
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.animationDelay = (Math.random() * 3) + 's';
+    s.style.animationDuration = (2 + Math.random() * 3) + 's';
+    document.body.appendChild(s);
+  }
+}
+createStars();
+
+// ── Audio ──
+class GameAudio {
+  constructor() { this.ctx = null; this.musicGain = null; this.voiceQueue = []; this.voicePlaying = false; }
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0.07;
+    this.musicGain.connect(this.ctx.destination);
+  }
+  startMusic() {
+    this.init();
+    const notes = [330, 392, 440, 523, 587, 523, 440, 392];
+    let i = 0;
+    const play = () => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i % notes.length];
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.9);
+      osc.connect(g); g.connect(this.musicGain);
+      osc.start(); osc.stop(this.ctx.currentTime + 1.0);
+      i++;
+      this.musicTimer = setTimeout(play, 1000);
+    };
+    play();
+  }
+  stopMusic() { clearTimeout(this.musicTimer); }
+  playSFX(freq, type = 'sine', dur = 0.3) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+    osc.connect(g); g.connect(this.ctx.destination);
+    osc.start(); osc.stop(this.ctx.currentTime + dur);
+  }
+  playCorrect() {
+    this.playSFX(523, 'sine', 0.12);
+    setTimeout(() => this.playSFX(659, 'sine', 0.12), 80);
+    setTimeout(() => this.playSFX(784, 'sine', 0.25), 160);
+  }
+  playWrong() { this.playSFX(200, 'square', 0.2); }
+  playReveal() {
+    this.playSFX(440, 'sine', 0.15);
+    setTimeout(() => this.playSFX(660, 'sine', 0.15), 100);
+    setTimeout(() => this.playSFX(880, 'sine', 0.3), 200);
+  }
+  playCelebration() {
+    [523, 659, 784, 1047, 784, 1047].forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.3), i * 150));
+  }
+  duckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.02, this.ctx.currentTime + 0.2); }
+  unduckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.07, this.ctx.currentTime + 0.3); }
+  queueVoice(file) {
+    return new Promise(resolve => {
+      this.voiceQueue.push({ file, resolve });
+      if (!this.voicePlaying) this._playNext();
+    });
+  }
+  _playNext() {
+    if (!this.voiceQueue.length) { this.voicePlaying = false; return; }
+    this.voicePlaying = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this.duckMusic();
+    const a = new Audio(file); a.volume = 0.9;
+    a.onended = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.onerror = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.play().catch(() => { this.unduckMusic(); resolve(); this._playNext(); });
+  }
+}
+
+const audio = new GameAudio();
+
+// ── Effects ──
+function burstConfetti(x, y, count = 25) {
+  const colors = ['#FFD93D','#4ECDC4','#FF6B6B','#45B7D1','#FFA07A','#C9B1FF','#FF85A2','#98D8C8'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 120;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 80}px) rotate(${360+Math.random()*360}deg)`, opacity: 0 }
+    ], { duration: 1200 + Math.random() * 800, easing: 'ease-out' });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+// ── Game State ──
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const LETTER_COLORS = ['#FF6B6B','#FF85A2','#FFA07A','#FFD93D','#98D8C8','#4ECDC4','#45B7D1','#C9B1FF','#9C27B0','#E91E63','#FF9800','#8BC34A'];
+
+const ROUNDS = [
+  ['A','B','C','D','E'],
+  ['F','G','H','I','J'],
+  ['K','L','M','N','O'],
+  ['P','Q','R','S','T'],
+  ['U','V','W','X','Y','Z']
+];
+
+let currentRound = 0;
+let roundLetters = [];
+let currentLetterIndex = 0;
+let targetLetter = '';
+let score = 0;
+let canTap = false;
+let allLit = [];
+let hintTimer = null;
+
+// ── Collection row ──
+function buildCollection() {
+  const row = $('collectionRow');
+  row.innerHTML = '';
+  const total = ROUNDS.reduce((s, r) => s + r.length, 0);
+  for (let i = 0; i < total; i++) {
+    const el = document.createElement('div');
+    el.className = 'collection-letter';
+    row.appendChild(el);
+  }
+}
+
+function lightUpCollection(letter) {
+  const slots = $('collectionRow').querySelectorAll('.collection-letter');
+  const idx = allLit.length - 1;
+  if (slots[idx]) {
+    slots[idx].classList.add('lit');
+    slots[idx].textContent = letter;
+  }
+}
+
+// ── Distractor picker ──
+function pickDistractors(target, count) {
+  const others = LETTERS.filter(l => l !== target);
+  return shuffle(others).slice(0, count);
+}
+
+// ── Show shadow + choices ──
+async function showLetter() {
+  const shadowEl = $('shadowLetter');
+  const flash = $('flashlight');
+  const choicesEl = $('choices');
+
+  // Reset
+  shadowEl.classList.remove('revealed');
+  flash.classList.remove('on', 'burst');
+  choicesEl.innerHTML = '';
+  canTap = false;
+
+  targetLetter = roundLetters[currentLetterIndex];
+  shadowEl.textContent = targetLetter;
+  shadowEl.style.color = 'rgba(40,40,80,0.7)';
+  shadowEl.style.textShadow = '0 0 30px rgba(0,0,0,0.5)';
+
+  // Dim flashlight glow
+  flash.classList.add('on');
+
+  $('hudPrompt').textContent = 'What letter is this?';
+
+  // Voice: "What letter is this?" then letter name + sound
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/what_letter_is_this.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}_sound.mp3`);
+  await delay(300);
+
+  // Build choices
+  const distractors = pickDistractors(targetLetter, 2);
+  const options = shuffle([targetLetter, ...distractors]);
+
+  options.forEach(letter => {
+    const btn = document.createElement('div');
+    btn.className = 'choice-btn';
+    btn.textContent = letter;
+    btn.dataset.letter = letter;
+
+    onTap(btn, () => {
+      if (!canTap) return;
+      if (letter === targetLetter) {
+        handleCorrect(btn);
+      } else {
+        handleWrong(btn);
+      }
+    });
+
+    choicesEl.appendChild(btn);
+  });
+
+  canTap = true;
+
+  // Start hint timer
+  startHintTimer();
+}
+
+function startHintTimer() {
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => {
+    if (canTap) {
+      audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+      startHintTimer();
+    }
+  }, 4500);
+}
+
+async function handleCorrect(btn) {
+  canTap = false;
+  clearTimeout(hintTimer);
+
+  btn.classList.add('correct');
+  audio.playReveal();
+
+  // Reveal the shadow letter
+  const shadowEl = $('shadowLetter');
+  const flash = $('flashlight');
+  const color = LETTER_COLORS[allLit.length % LETTER_COLORS.length];
+
+  // Flashlight burst
+  flash.classList.remove('on');
+  flash.classList.add('burst');
+
+  // Transform shadow to glowing letter
+  shadowEl.classList.add('revealed');
+  shadowEl.style.color = color;
+  shadowEl.style.textShadow = `0 0 40px ${color}, 0 0 80px ${color}88, 0 0 120px ${color}44`;
+
+  // Confetti from center
+  const rect = shadowEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  burstConfetti(cx, cy, 30);
+
+  await delay(200);
+  audio.playCorrect();
+
+  score++;
+  allLit.push(targetLetter);
+  $('hudScore').textContent = '\u{1F526} ' + score;
+  lightUpCollection(targetLetter);
+
+  // Say the letter
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(600);
+
+  // Next
+  currentLetterIndex++;
+  if (currentLetterIndex >= roundLetters.length) {
+    currentRound++;
+    if (currentRound >= ROUNDS.length) {
+      endGame();
+      return;
+    }
+    await delay(300);
+    startRound();
+  } else {
+    showLetter();
+  }
+}
+
+async function handleWrong(btn) {
+  btn.classList.add('wrong');
+  audio.playWrong();
+  setTimeout(() => btn.classList.remove('wrong'), 400);
+
+  // Re-say the target letter
+  audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+}
+
+// ── Game Flow ──
+async function startGame() {
+  audio.init();
+  audio.startMusic();
+  $('titleScreen').classList.remove('active');
+  await delay(400);
+
+  currentRound = 0;
+  score = 0;
+  allLit = [];
+  buildCollection();
+
+  $('hud').style.display = '';
+  $('shadowArea').style.display = '';
+  $('choices').style.display = '';
+  $('collectionRow').style.display = '';
+  $('hudScore').textContent = '\u{1F526} 0';
+
+  startRound();
+}
+
+function startRound() {
+  roundLetters = shuffle([...ROUNDS[currentRound]]);
+  currentLetterIndex = 0;
+  $('hudRound').textContent = `${currentRound + 1} / ${ROUNDS.length}`;
+  showLetter();
+}
+
+async function endGame() {
+  audio.stopMusic();
+  clearTimeout(hintTimer);
+
+  $('hud').style.display = 'none';
+  $('shadowArea').style.display = 'none';
+  $('choices').style.display = 'none';
+  $('collectionRow').style.display = 'none';
+  $('flashlight').classList.remove('on', 'burst');
+
+  await delay(400);
+  audio.playCelebration();
+
+  // Build final row
+  const row = $('finalRow');
+  row.innerHTML = '';
+  allLit.forEach((letter, i) => {
+    const el = document.createElement('div');
+    el.className = 'final-letter';
+    el.textContent = letter;
+    el.style.animationDelay = (i * 0.1) + 's';
+    row.appendChild(el);
+  });
+
+  $('celebCount').textContent = score;
+  $('celebScreen').classList.add('active');
+
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => burstConfetti(Math.random() * window.innerWidth, Math.random() * window.innerHeight * 0.5, 30), i * 400);
+  }
+
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+}
+
+// ── Init ──
+onTap($('startBtn'), startGame);
+onTap($('againBtn'), () => {
+  $('celebScreen').classList.remove('active');
+  currentRound = 0;
+  score = 0;
+  allLit = [];
+  buildCollection();
+  $('hud').style.display = '';
+  $('shadowArea').style.display = '';
+  $('choices').style.display = '';
+  $('collectionRow').style.display = '';
+  $('hudScore').textContent = '\u{1F526} 0';
+  audio.startMusic();
+  startRound();
+});
+</script>
+</body>
+</html>

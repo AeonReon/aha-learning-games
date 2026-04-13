@@ -48,6 +48,9 @@
           "subtitle": "Get to know your letters",
           "games": [
             { "file": "games/letters/22-letter-cards.html", "title": "Letter Cards", "icon": "🃏", "desc": "See it, learn it, find it!", "difficulty": 1 },
+            { "file": "games/letters/25-letter-train.html", "title": "Letter Train", "icon": "🚂", "desc": "Build a rainbow train car by car!", "difficulty": 1 },
+            { "file": "games/letters/30-letter-stars.html", "title": "Letter Stars", "icon": "⭐", "desc": "Discover letter constellations!", "difficulty": 1 },
+            { "file": "games/letters/32-letter-maze.html", "title": "Letter Maze", "icon": "🌀", "desc": "Guide the caterpillar to the right letter!", "difficulty": 1 },
             { "file": "games/letters/23-letter-garden.html", "title": "Letter Garden", "icon": "🌷", "desc": "Plant letters and grow flowers!", "difficulty": 1 },
             { "file": "games/letters/19-letter-trace.html", "title": "Magic Spellbook", "icon": "📖", "desc": "Trace letters with your magic wand", "difficulty": 1 },
             { "file": "games/letters/13-letter-pairs.html", "title": "Letter Pairs", "icon": "🦋", "desc": "Match uppercase with lowercase", "difficulty": 2 }
@@ -59,8 +62,13 @@
           "subtitle": "Fun letter games!",
           "games": [
             { "file": "games/letters/24-letter-bubbles.html", "title": "Letter Bubbles", "icon": "🫧", "desc": "Pop the right letter bubble!", "difficulty": 1 },
+            { "file": "games/letters/26-letter-shadows.html", "title": "Letter Shadows", "icon": "🔦", "desc": "Light up letters in the dark!", "difficulty": 1 },
             { "file": "games/letters/11-letter-fairy-forest.html", "title": "Fairy Forest", "icon": "🧚", "desc": "Catch the glowing firefly letters", "difficulty": 1 },
             { "file": "games/letters/12-abc-pirate-treasure.html", "title": "Pirate Treasure", "icon": "🏴‍☠️", "desc": "Find letter treasure on the beach", "difficulty": 2 },
+            { "file": "games/letters/27-letter-rocket.html", "title": "Letter Rocket", "icon": "🚀", "desc": "Fuel the rocket with letters!", "difficulty": 2 },
+            { "file": "games/letters/28-letter-castle.html", "title": "Letter Castle", "icon": "🏰", "desc": "Build a castle brick by brick!", "difficulty": 2 },
+            { "file": "games/letters/29-letter-fishing.html", "title": "Letter Fishing", "icon": "🎣", "desc": "Catch the right letter fish!", "difficulty": 2 },
+            { "file": "games/letters/31-letter-painting.html", "title": "Letter Painting", "icon": "🎨", "desc": "Paint letters with color splats!", "difficulty": 2 },
             { "file": "games/letters/20-letter-potion.html", "title": "Letter Potion", "icon": "🧪", "desc": "Catch letters to brew magic potions", "difficulty": 2 }
           ]
         }

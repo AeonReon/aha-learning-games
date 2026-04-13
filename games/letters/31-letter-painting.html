@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Painting</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#FFF8F0}
+
+/* Background - art studio */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#FFF8F0 0%,#FFF3E0 40%,#FFE0B2 100%)}
+.bg-splat{position:fixed;border-radius:50%;opacity:0.12;z-index:1;pointer-events:none}
+
+/* Screens */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#FFF8F0,#FFE0B2,#FFCC80)}
+.screen-title h1{font-size:clamp(30px,8vw,50px);color:#E65100;margin:10px 0;font-weight:900}
+.screen-title p{font-size:clamp(15px,3.8vw,22px);color:#333;max-width:440px;line-height:1.4;font-weight:600}
+.screen-title .icon-row{font-size:clamp(40px,10vw,70px);margin-bottom:5px}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.15);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#FF7043,#E65100);animation:glow 2.5s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#FF7043,#E65100);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.1)}}
+
+/* HUD */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);border-bottom:3px solid rgba(0,0,0,0.06)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:#888;font-weight:900}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900}
+.hud-round .hud-val{color:#E65100}
+.hud-score .hud-val{color:#6A1B9A}
+.hud-prompt{font-size:clamp(20px,5vw,32px);font-weight:900;color:#E65100}
+
+/* Canvas area for the letter */
+.canvas-area{position:fixed;top:55px;left:50%;transform:translateX(-50%);width:clamp(200px,50vw,300px);height:clamp(200px,50vw,300px);z-index:var(--z-game);display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.7);border:4px solid #BCAAA4;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+.canvas-letter{font-size:clamp(140px,35vw,220px);font-weight:900;font-family:var(--font);color:transparent;-webkit-text-stroke:4px #333;text-stroke:4px #333;position:relative;line-height:1;transition:color 0.4s}
+
+/* Letter fill sections */
+.letter-fill{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:inherit;font-weight:inherit;font-family:inherit;line-height:inherit;overflow:hidden;pointer-events:none}
+.letter-fill-section{position:absolute;left:0;right:0;opacity:0;transition:opacity 0.5s}
+.letter-fill-section.filled{opacity:1}
+.letter-fill-section span{font-size:inherit;font-weight:inherit;font-family:inherit;line-height:inherit;display:block}
+
+/* Paint splats */
+.splat{position:fixed;z-index:var(--z-game);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.15s}
+.splat:active{transform:scale(0.88)}
+.splat-blob{position:absolute;inset:0;border-radius:55% 45% 60% 40% / 50% 55% 45% 50%}
+.splat-letter{position:relative;z-index:2;font-size:clamp(28px,7vw,40px);font-weight:900;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.3)}
+
+/* Splatter effect on wrong tap */
+.splatter-dot{position:fixed;z-index:998;border-radius:50%;pointer-events:none;animation:splatFade 0.7s ease-out forwards}
+@keyframes splatFade{0%{transform:scale(1);opacity:0.9}100%{transform:scale(0.3);opacity:0}}
+
+/* Paint fly animation */
+.paint-fly{position:fixed;z-index:999;border-radius:50%;pointer-events:none}
+
+/* Sparkle */
+.sparkle{position:fixed;z-index:999;pointer-events:none;font-size:24px;animation:sparklePop 0.8s ease-out forwards}
+@keyframes sparklePop{0%{transform:scale(0) rotate(0deg);opacity:1}50%{transform:scale(1.3) rotate(180deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+
+/* Confetti */
+.confetti-piece{position:fixed;z-index:999;pointer-events:none;border-radius:3px}
+
+/* Gallery wall */
+.gallery{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;gap:4px;flex-wrap:wrap;justify-content:center;padding:6px 10px;background:rgba(121,85,72,0.15);border-top:3px solid rgba(121,85,72,0.2);min-height:44px;align-items:center}
+.gallery-letter{width:clamp(28px,6vw,38px);height:clamp(28px,6vw,38px);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:clamp(16px,3.5vw,22px);font-weight:900;color:#fff;animation:galleryPop 0.5s ease-out;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+@keyframes galleryPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0deg)}}
+
+/* Celebration */
+.celeb{position:fixed;inset:0;z-index:var(--z-celeb);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,#FFF8F0,#FFE0B2,#FFCC80);opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.6s}
+.celeb.active{opacity:1;visibility:visible;pointer-events:auto}
+.celeb h1{font-size:clamp(28px,7vw,46px);color:#E65100;font-weight:900;margin:10px 0}
+.celeb .stars{font-size:clamp(40px,10vw,60px);margin:10px 0}
+.celeb p{font-size:clamp(16px,4vw,22px);color:#333;font-weight:700}
+.celeb-gallery{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:15px 0;max-width:90vw}
+.celeb-gallery .gallery-letter{width:clamp(34px,7vw,44px);height:clamp(34px,7vw,44px);font-size:clamp(18px,4vw,26px)}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<!-- Title -->
+<div class="screen screen-title active" id="titleScreen">
+  <div class="icon-row">🎨 🖌️ 🎨</div>
+  <h1>Letter Painting</h1>
+  <p>Tap the right paint splats to paint each letter!</p>
+  <button class="btn btn-start" id="startBtn">Paint! 🎨</button>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1 / 5</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-prompt" id="hudPrompt">Paint the A!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">PAINTED</span>
+    <span class="hud-val" id="hudScore">🎨 0</span>
+  </div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-area" id="canvasArea" style="display:none">
+  <div style="position:relative;display:inline-block">
+    <span class="canvas-letter" id="canvasLetter">A</span>
+  </div>
+</div>
+
+<!-- Gallery -->
+<div class="gallery" id="gallery" style="display:none"></div>
+
+<!-- Celebration -->
+<div class="celeb" id="celebScreen">
+  <div class="stars">⭐ 🎨 ⭐</div>
+  <h1>Art Gallery Complete!</h1>
+  <div class="celeb-gallery" id="celebGallery"></div>
+  <p>You painted <span id="celebCount">0</span> beautiful letters!</p>
+  <button class="btn btn-again" id="againBtn">Paint Again! 🎨</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ── Audio ──
+class GameAudio {
+  constructor() { this.ctx = null; this.musicGain = null; this.voiceQueue = []; this.voicePlaying = false; }
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0.07;
+    this.musicGain.connect(this.ctx.destination);
+  }
+  startMusic() {
+    this.init();
+    const notes = [523, 587, 659, 698, 784, 698, 659, 587];
+    let i = 0;
+    const play = () => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i % notes.length];
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.85);
+      osc.connect(g); g.connect(this.musicGain);
+      osc.start(); osc.stop(this.ctx.currentTime + 0.9);
+      i++;
+      this.musicTimer = setTimeout(play, 900);
+    };
+    play();
+  }
+  stopMusic() { clearTimeout(this.musicTimer); }
+  playSFX(freq, type = 'sine', dur = 0.3) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+    osc.connect(g); g.connect(this.ctx.destination);
+    osc.start(); osc.stop(this.ctx.currentTime + dur);
+  }
+  playSplat() {
+    this.playSFX(150, 'square', 0.1);
+    setTimeout(() => this.playSFX(100, 'sawtooth', 0.08), 40);
+  }
+  playCorrect() {
+    this.playSFX(523, 'sine', 0.12);
+    setTimeout(() => this.playSFX(659, 'sine', 0.12), 80);
+    setTimeout(() => this.playSFX(784, 'sine', 0.25), 160);
+  }
+  playWrong() { this.playSFX(200, 'square', 0.15); }
+  playSparkle() {
+    this.playSFX(1047, 'sine', 0.15);
+    setTimeout(() => this.playSFX(1319, 'sine', 0.15), 80);
+    setTimeout(() => this.playSFX(1568, 'sine', 0.3), 160);
+  }
+  playCelebration() {
+    [523, 659, 784, 1047, 784, 1047].forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.3), i * 150));
+  }
+  duckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.02, this.ctx.currentTime + 0.2); }
+  unduckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.07, this.ctx.currentTime + 0.3); }
+  queueVoice(file) {
+    return new Promise(resolve => {
+      this.voiceQueue.push({ file, resolve });
+      if (!this.voicePlaying) this._playNext();
+    });
+  }
+  _playNext() {
+    if (!this.voiceQueue.length) { this.voicePlaying = false; return; }
+    this.voicePlaying = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this.duckMusic();
+    const a = new Audio(file); a.volume = 0.9;
+    a.onended = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.onerror = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.play().catch(() => { this.unduckMusic(); resolve(); this._playNext(); });
+  }
+}
+
+const audio = new GameAudio();
+
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function shuffle(a) { const b = [...a]; for (let i = b.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); t = true; fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!t) fn(e); t = false; });
+}
+
+// ── Effects ──
+function burstConfetti(x, y, count = 20) {
+  const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#FFD93D','#C9B1FF','#FF85A2'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 100;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 80}px) rotate(${360+Math.random()*360}deg)`, opacity: 0 }
+    ], { duration: 1200 + Math.random() * 800, easing: 'ease-out' });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+function splatEffect(x, y, color) {
+  for (let i = 0; i < 8; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'splatter-dot';
+    const size = 8 + Math.random() * 16;
+    dot.style.width = size + 'px';
+    dot.style.height = size + 'px';
+    dot.style.background = color;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 20 + Math.random() * 40;
+    dot.style.left = (x + Math.cos(angle) * dist) + 'px';
+    dot.style.top = (y + Math.sin(angle) * dist) + 'px';
+    document.body.appendChild(dot);
+    setTimeout(() => dot.remove(), 800);
+  }
+}
+
+function sparkleEffect(el) {
+  const rect = el.getBoundingClientRect();
+  const sparkles = ['✨','⭐','💫','🌟'];
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
+    s.style.left = (rect.left + Math.random() * rect.width) + 'px';
+    s.style.top = (rect.top + Math.random() * rect.height) + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+// ── Paint fly animation ──
+function animatePaintFly(fromX, fromY, color, onDone) {
+  const canvasRect = $('canvasArea').getBoundingClientRect();
+  const toX = canvasRect.left + canvasRect.width / 2;
+  const toY = canvasRect.top + canvasRect.height / 2;
+  const dot = document.createElement('div');
+  dot.className = 'paint-fly';
+  dot.style.width = '30px';
+  dot.style.height = '30px';
+  dot.style.background = color;
+  dot.style.left = fromX + 'px';
+  dot.style.top = fromY + 'px';
+  document.body.appendChild(dot);
+  dot.animate([
+    { left: fromX + 'px', top: fromY + 'px', transform: 'scale(1)', opacity: 1 },
+    { left: toX + 'px', top: toY + 'px', transform: 'scale(0.5)', opacity: 0.8 }
+  ], { duration: 400, easing: 'ease-in', fill: 'forwards' });
+  setTimeout(() => { dot.remove(); if (onDone) onDone(); }, 400);
+}
+
+// ── Game State ──
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const PAINT_COLORS = ['#E91E63','#9C27B0','#2196F3','#4CAF50','#FF9800','#00BCD4','#FF5722','#8BC34A','#F44336','#3F51B5','#CDDC39','#009688'];
+
+const ROUNDS = [
+  { letters: 'ABCDE'.split('') },
+  { letters: 'FGHIJ'.split('') },
+  { letters: 'KLMNO'.split('') },
+  { letters: 'PQRST'.split('') },
+  { letters: 'UVWXYZ'.split('') },
+];
+
+let currentRound = 0;
+let roundLetters = [];
+let currentLetterIndex = 0;
+let targetLetter = '';
+let score = 0;
+let canTap = false;
+let fillCount = 0; // 0-3 how many sections filled
+let allPainted = []; // letters completed
+let hintTimer = null;
+let splatEls = [];
+
+// Colors for letter fill sections
+let sectionColors = [];
+
+// ── Create Background Splats ──
+function createBgSplats() {
+  const colors = ['#E91E63','#9C27B0','#2196F3','#4CAF50','#FF9800','#FF5722'];
+  for (let i = 0; i < 12; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-splat';
+    const size = 40 + Math.random() * 80;
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.background = colors[Math.floor(Math.random() * colors.length)];
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.top = (Math.random() * 100) + '%';
+    s.style.borderRadius = `${40+Math.random()*20}% ${50+Math.random()*20}% ${40+Math.random()*20}% ${50+Math.random()*20}%`;
+    document.body.appendChild(s);
+  }
+}
+createBgSplats();
+
+// ── Paint Splat Creation ──
+function clearSplats() {
+  splatEls.forEach(el => el.remove());
+  splatEls = [];
+}
+
+function createSplats() {
+  clearSplats();
+  const others = LETTERS.filter(l => l !== targetLetter);
+  const distractors = shuffle(others).slice(0, 4);
+  // 2 correct + 4 distractors = 6 splats
+  const splatLetters = shuffle([targetLetter, targetLetter, ...distractors]);
+
+  // Position splats avoiding canvas area and gallery
+  const canvasRect = $('canvasArea').getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const splatSize = 85;
+  const padding = 15;
+
+  // Available zones: left of canvas, right of canvas, below canvas (above gallery)
+  const positions = [];
+  const galleryTop = vh - 50;
+  const hudBottom = 55;
+
+  // Generate candidate positions
+  const attempts = 200;
+  for (let a = 0; a < attempts && positions.length < splatLetters.length; a++) {
+    const x = padding + Math.random() * (vw - splatSize - padding * 2);
+    const y = hudBottom + padding + Math.random() * (galleryTop - splatSize - hudBottom - padding * 2);
+
+    // Check not overlapping canvas
+    const cx = x + splatSize / 2;
+    const cy = y + splatSize / 2;
+    const inCanvas = cx > canvasRect.left - 20 && cx < canvasRect.right + 20 &&
+                     cy > canvasRect.top - 20 && cy < canvasRect.bottom + 20;
+    if (inCanvas) continue;
+
+    // Check not overlapping existing splats
+    let overlap = false;
+    for (const p of positions) {
+      const dx = (x + splatSize/2) - (p.x + splatSize/2);
+      const dy = (y + splatSize/2) - (p.y + splatSize/2);
+      if (Math.sqrt(dx*dx + dy*dy) < splatSize + 10) { overlap = true; break; }
+    }
+    if (overlap) continue;
+
+    positions.push({ x, y });
+  }
+
+  // Fallback: if not enough positions, use a grid
+  while (positions.length < splatLetters.length) {
+    const col = positions.length % 3;
+    const row = Math.floor(positions.length / 3);
+    positions.push({
+      x: 20 + col * (splatSize + 20),
+      y: hudBottom + 20 + row * (splatSize + 20)
+    });
+  }
+
+  splatLetters.forEach((letter, i) => {
+    const color = PAINT_COLORS[Math.floor(Math.random() * PAINT_COLORS.length)];
+    const pos = positions[i];
+
+    const el = document.createElement('div');
+    el.className = 'splat';
+    el.style.width = splatSize + 'px';
+    el.style.height = splatSize + 'px';
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    el.dataset.letter = letter;
+    el.dataset.color = color;
+
+    // Random blob shape
+    const r1 = 40 + Math.random() * 20;
+    const r2 = 45 + Math.random() * 20;
+    const r3 = 40 + Math.random() * 20;
+    const r4 = 45 + Math.random() * 20;
+
+    el.innerHTML = `
+      <div class="splat-blob" style="background:${color};border-radius:${r1}% ${r2}% ${r3}% ${r4}% / ${r4}% ${r1}% ${r2}% ${r3}%;box-shadow:0 4px 12px ${color}66"></div>
+      <span class="splat-letter">${letter}</span>
+    `;
+
+    onTap(el, () => handleSplatTap(el, letter, color));
+    document.body.appendChild(el);
+    splatEls.push(el);
+
+    // Pop-in animation
+    el.style.transform = 'scale(0)';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s';
+      el.style.transform = 'scale(1)';
+      el.style.opacity = '1';
+    }, i * 80);
+  });
+}
+
+// ── Handle Splat Tap ──
+function handleSplatTap(el, letter, color) {
+  if (!canTap) return;
+
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  if (letter === targetLetter) {
+    // Correct!
+    canTap = false;
+    audio.playSplat();
+
+    // Remove the splat with pop
+    el.style.transition = 'transform 0.2s, opacity 0.2s';
+    el.style.transform = 'scale(1.3)';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 250);
+    splatEls = splatEls.filter(s => s !== el);
+
+    // Animate paint flying to the letter
+    animatePaintFly(cx, cy, color, () => {
+      fillCount++;
+      fillLetterSection(fillCount, color);
+      audio.playCorrect();
+      burstConfetti(cx, cy, 12);
+
+      if (fillCount >= 3) {
+        // Letter fully painted!
+        score++;
+        $('hudScore').textContent = '🎨 ' + score;
+
+        setTimeout(() => {
+          sparkleEffect($('canvasArea'));
+          audio.playSparkle();
+          // Add to gallery
+          addToGallery(targetLetter, sectionColors);
+          allPainted.push({ letter: targetLetter, colors: [...sectionColors] });
+
+          clearSplats();
+          setTimeout(() => {
+            nextLetter();
+          }, 600);
+        }, 300);
+      } else {
+        // Need more taps - re-enable
+        canTap = true;
+      }
+    });
+  } else {
+    // Wrong - harmless splatter
+    audio.playWrong();
+    splatEffect(cx, cy, color);
+
+    // Pop the wrong splat (remove it, it's fun not punishing)
+    el.style.transition = 'transform 0.3s, opacity 0.3s';
+    el.style.transform = 'scale(0.5)';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 350);
+    splatEls = splatEls.filter(s => s !== el);
+
+    // Re-say letter
+    audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  }
+}
+
+// ── Fill Letter Section ──
+function fillLetterSection(section, color) {
+  sectionColors[section - 1] = color;
+  const letterEl = $('canvasLetter');
+
+  // Use clip-path to show color filling from bottom to top
+  // section 1 = bottom third, 2 = middle third, 3 = top third
+  if (section === 1) {
+    letterEl.style.background = `linear-gradient(to top, ${color} 33%, transparent 33%)`;
+    letterEl.style.webkitBackgroundClip = 'text';
+    letterEl.style.backgroundClip = 'text';
+  } else if (section === 2) {
+    const c1 = sectionColors[0];
+    letterEl.style.background = `linear-gradient(to top, ${c1} 33%, ${color} 33%, ${color} 66%, transparent 66%)`;
+    letterEl.style.webkitBackgroundClip = 'text';
+    letterEl.style.backgroundClip = 'text';
+  } else if (section === 3) {
+    const c1 = sectionColors[0];
+    const c2 = sectionColors[1];
+    letterEl.style.background = `linear-gradient(to top, ${c1} 33%, ${c2} 33%, ${c2} 66%, ${color} 66%)`;
+    letterEl.style.webkitBackgroundClip = 'text';
+    letterEl.style.backgroundClip = 'text';
+    letterEl.style.webkitTextStroke = '2px transparent';
+    letterEl.style.textStroke = '2px transparent';
+  }
+}
+
+// ── Gallery ──
+function addToGallery(letter, colors) {
+  const gallery = $('gallery');
+  const el = document.createElement('div');
+  el.className = 'gallery-letter';
+  el.textContent = letter;
+  const bg = colors.length >= 3
+    ? `linear-gradient(to top, ${colors[0]} 33%, ${colors[1]} 33%, ${colors[1]} 66%, ${colors[2]} 66%)`
+    : PAINT_COLORS[Math.floor(Math.random() * PAINT_COLORS.length)];
+  el.style.background = bg;
+  gallery.appendChild(el);
+}
+
+// ── Game Flow ──
+async function startGame() {
+  audio.init();
+  audio.startMusic();
+  $('titleScreen').classList.remove('active');
+  await delay(400);
+  $('hud').style.display = '';
+  $('canvasArea').style.display = '';
+  $('gallery').style.display = '';
+  $('gallery').innerHTML = '';
+  currentRound = 0;
+  score = 0;
+  allPainted = [];
+  $('hudScore').textContent = '🎨 0';
+  startRound();
+}
+
+async function startRound() {
+  const round = ROUNDS[currentRound];
+  roundLetters = shuffle(round.letters);
+  currentLetterIndex = 0;
+  $('hudRound').textContent = `${currentRound + 1} / ${ROUNDS.length}`;
+  nextLetter();
+}
+
+async function nextLetter() {
+  clearHint();
+  clearSplats();
+
+  if (currentLetterIndex >= roundLetters.length) {
+    currentRound++;
+    if (currentRound >= ROUNDS.length) {
+      endGame();
+      return;
+    }
+    await delay(500);
+    startRound();
+    return;
+  }
+
+  targetLetter = roundLetters[currentLetterIndex];
+  currentLetterIndex++;
+  fillCount = 0;
+  sectionColors = [];
+
+  // Reset letter appearance
+  const letterEl = $('canvasLetter');
+  letterEl.textContent = targetLetter;
+  letterEl.style.background = '';
+  letterEl.style.webkitBackgroundClip = '';
+  letterEl.style.backgroundClip = '';
+  letterEl.style.webkitTextStroke = '4px #333';
+  letterEl.style.textStroke = '4px #333';
+  letterEl.style.color = 'transparent';
+
+  $('hudPrompt').textContent = `Paint the ${targetLetter}!`;
+
+  // Canvas pop-in
+  $('canvasArea').style.transform = 'translateX(-50%) scale(0.8)';
+  $('canvasArea').style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+  setTimeout(() => { $('canvasArea').style.transform = 'translateX(-50%) scale(1)'; }, 50);
+
+  // Say letter
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}_sound.mp3`);
+  await delay(400);
+
+  // Spawn paint splats
+  createSplats();
+  canTap = true;
+
+  // Hint timer - repeat target letter every 4 seconds
+  startHint();
+}
+
+function startHint() {
+  clearHint();
+  hintTimer = setInterval(() => {
+    if (canTap) {
+      audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+    }
+  }, 4000);
+}
+
+function clearHint() {
+  clearInterval(hintTimer);
+  hintTimer = null;
+}
+
+async function endGame() {
+  audio.stopMusic();
+  clearHint();
+  clearSplats();
+  audio.playCelebration();
+
+  await delay(400);
+  $('hud').style.display = 'none';
+  $('canvasArea').style.display = 'none';
+  $('gallery').style.display = 'none';
+
+  // Build celebration gallery
+  const cg = $('celebGallery');
+  cg.innerHTML = '';
+  allPainted.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'gallery-letter';
+    el.textContent = item.letter;
+    const bg = item.colors.length >= 3
+      ? `linear-gradient(to top, ${item.colors[0]} 33%, ${item.colors[1]} 33%, ${item.colors[1]} 66%, ${item.colors[2]} 66%)`
+      : PAINT_COLORS[i % PAINT_COLORS.length];
+    el.style.background = bg;
+    el.style.animationDelay = (i * 80) + 'ms';
+    cg.appendChild(el);
+  });
+
+  $('celebCount').textContent = score;
+  $('celebScreen').classList.add('active');
+
+  for (let i = 0; i < 4; i++) {
+    setTimeout(() => burstConfetti(Math.random() * window.innerWidth, Math.random() * window.innerHeight * 0.4, 30), i * 400);
+  }
+
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+}
+
+// ── Init ──
+onTap($('startBtn'), startGame);
+onTap($('againBtn'), () => {
+  $('celebScreen').classList.remove('active');
+  currentRound = 0;
+  score = 0;
+  allPainted = [];
+  $('gallery').innerHTML = '';
+  $('hudScore').textContent = '🎨 0';
+  $('hud').style.display = '';
+  $('canvasArea').style.display = '';
+  $('gallery').style.display = '';
+  audio.startMusic();
+  startRound();
+});
+</script>
+</body>
+</html>

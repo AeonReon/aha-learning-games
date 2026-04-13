@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Maze</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#87CEEB}
+
+/* Background — garden scene */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#87CEEB 0%,#B0E0FF 40%,#87CEEB 60%,#7BC67E 75%,#4CAF50 85%,#388E3C 100%)}
+.cloud{position:fixed;z-index:1;color:#fff;font-size:40px;opacity:0.7;pointer-events:none;animation:cloudDrift linear infinite}
+@keyframes cloudDrift{0%{transform:translateX(-120px)}100%{transform:translateX(calc(100vw + 120px))}}
+
+/* Decorative flowers */
+.deco-flower{position:fixed;z-index:2;pointer-events:none;font-size:24px;animation:flowerSway 3s ease-in-out infinite alternate}
+@keyframes flowerSway{0%{transform:rotate(-5deg)}100%{transform:rotate(5deg)}}
+
+/* Screens */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#87CEEB,#B0E0FF,#87CEEB)}
+.screen-title h1{font-size:clamp(30px,8vw,50px);color:#2E7D32;margin:10px 0;font-weight:900}
+.screen-title p{font-size:clamp(15px,3.8vw,22px);color:#333;max-width:440px;line-height:1.4;font-weight:600}
+.screen-title .icon-row{font-size:clamp(40px,10vw,70px);margin-bottom:5px}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.15);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#66BB6A,#2E7D32);animation:glow 2.5s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#66BB6A,#2E7D32);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15)}}
+
+/* HUD */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);border-bottom:3px solid rgba(0,0,0,0.06)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:#888;font-weight:900}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900}
+.hud-round .hud-val{color:#2E7D32}
+.hud-score .hud-val{color:#e65100}
+.hud-prompt{font-size:clamp(20px,5vw,32px);font-weight:900;color:#2E7D32}
+
+/* Game Area */
+.game-area{position:fixed;inset:0;z-index:var(--z-game);display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* Path */
+.path-container{position:relative;width:100%;display:flex;flex-direction:column;align-items:center;margin-top:60px}
+.path-segment{width:clamp(60px,16vw,90px);height:40px;background:linear-gradient(90deg,#C8A96E,#D4B87A,#C8A96E);border-radius:4px;position:relative}
+.path-segment::before,.path-segment::after{content:'';position:absolute;top:0;bottom:0;width:4px;background:rgba(0,0,0,0.1)}
+.path-segment::before{left:4px}
+.path-segment::after{right:4px}
+
+/* Fork area */
+.fork-area{display:flex;justify-content:center;align-items:center;gap:clamp(16px,4vw,28px);padding:10px 0;width:100%}
+
+/* Garden signs */
+.sign{display:flex;flex-direction:column;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.15s}
+.sign:active{transform:scale(0.93)}
+.sign-post{width:10px;height:clamp(30px,7vw,45px);background:linear-gradient(90deg,#8D6E63,#6D4C41);border-radius:2px}
+.sign-plaque{width:clamp(80px,22vw,110px);height:clamp(80px,20vw,100px);background:linear-gradient(180deg,#FFF8E1,#FFECB3);border:4px solid #8D6E63;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:clamp(36px,9vw,56px);font-weight:900;color:#333;box-shadow:0 4px 12px rgba(0,0,0,0.2),inset 0 2px 0 rgba(255,255,255,0.5)}
+.sign-plaque.correct-flash{animation:signFlash 0.4s ease-out;background:linear-gradient(180deg,#C8E6C9,#A5D6A7);border-color:#4CAF50}
+@keyframes signFlash{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+/* Caterpillar */
+.caterpillar-container{position:relative;display:flex;align-items:center;justify-content:center;padding:10px 0;min-height:60px}
+.caterpillar{display:flex;align-items:center;gap:0;transition:all 0.3s}
+.caterpillar-segment{width:clamp(28px,6.5vw,38px);height:clamp(28px,6.5vw,38px);border-radius:50%;position:relative;transition:transform 0.3s;flex-shrink:0}
+.caterpillar-segment.head{z-index:5}
+.caterpillar-segment.head .eye{position:absolute;width:7px;height:9px;background:#fff;border-radius:50%;top:20%;border:2px solid #333}
+.caterpillar-segment.head .eye-left{left:18%}
+.caterpillar-segment.head .eye-right{right:18%}
+.caterpillar-segment.head .eye::after{content:'';position:absolute;width:4px;height:4px;background:#333;border-radius:50%;bottom:1px;left:50%;transform:translateX(-50%)}
+.caterpillar-segment.head .mouth{position:absolute;bottom:18%;left:50%;transform:translateX(-50%);width:12px;height:6px;border-bottom:3px solid #333;border-radius:0 0 50% 50%}
+.caterpillar-segment.head .antenna{position:absolute;top:-10px;width:3px;height:12px;background:#333;border-radius:2px}
+.caterpillar-segment.head .antenna::after{content:'';position:absolute;top:-5px;left:-2px;width:7px;height:7px;background:#333;border-radius:50%}
+.caterpillar-segment.head .antenna-left{left:25%;transform:rotate(-20deg)}
+.caterpillar-segment.head .antenna-right{right:25%;transform:rotate(20deg)}
+
+/* Caterpillar wiggle */
+@keyframes wiggle{0%{transform:translateY(0)}25%{transform:translateY(-4px)}50%{transform:translateY(0)}75%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+.caterpillar.wiggling .caterpillar-segment{animation:wiggle 0.5s ease-in-out}
+.caterpillar.wiggling .caterpillar-segment:nth-child(2){animation-delay:0.05s}
+.caterpillar.wiggling .caterpillar-segment:nth-child(3){animation-delay:0.1s}
+.caterpillar.wiggling .caterpillar-segment:nth-child(4){animation-delay:0.15s}
+.caterpillar.wiggling .caterpillar-segment:nth-child(5){animation-delay:0.2s}
+.caterpillar.wiggling .caterpillar-segment:nth-child(n+6){animation-delay:0.25s}
+
+/* Crawl animation */
+@keyframes crawlForward{0%{transform:translateY(0)}100%{transform:translateY(-20px)}}
+.caterpillar.crawling{animation:crawlForward 0.4s ease-out forwards}
+
+/* New segment pop in */
+@keyframes segmentPop{0%{transform:scale(0);opacity:0}50%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}
+.caterpillar-segment.new-segment{animation:segmentPop 0.4s ease-out}
+
+/* Wobble for wrong sign */
+@keyframes wobble{0%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}100%{transform:translateX(0)}}
+.wobble{animation:wobble 0.5s ease-in-out}
+
+/* Cocoon animation */
+.cocoon{position:relative;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.6s}
+.cocoon.visible{opacity:1}
+.cocoon-body{width:60px;height:80px;background:linear-gradient(180deg,#8D6E63,#6D4C41);border-radius:50% 50% 40% 40%;position:relative;animation:cocoonSway 2s ease-in-out infinite alternate}
+.cocoon-body::before{content:'';position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:4px;height:20px;background:#5D4037}
+@keyframes cocoonSway{0%{transform:rotate(-3deg)}100%{transform:rotate(3deg)}}
+
+/* Butterfly */
+.butterfly{position:relative;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.6s;animation:butterflyFloat 2s ease-in-out infinite}
+.butterfly.visible{opacity:1}
+@keyframes butterflyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+.butterfly-body{width:10px;height:50px;background:#333;border-radius:5px;position:relative;z-index:2}
+.butterfly-body::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:4px;height:10px;background:#333;border-radius:2px}
+.butterfly-wing{position:absolute;top:0;width:50px;height:40px;border-radius:50%;animation:wingFlap 0.4s ease-in-out infinite alternate}
+.butterfly-wing.left{right:50%;background:linear-gradient(135deg,#FF6B6B,#FF85A2,#FFD93D);transform-origin:right center}
+.butterfly-wing.right{left:50%;background:linear-gradient(-135deg,#4ECDC4,#45B7D1,#C9B1FF);transform-origin:left center}
+.butterfly-wing.bottom{top:25px;width:35px;height:30px}
+.butterfly-wing.bottom.left{background:linear-gradient(135deg,#FFD93D,#FF6B6B)}
+.butterfly-wing.bottom.right{background:linear-gradient(-135deg,#98D8C8,#4ECDC4)}
+@keyframes wingFlap{0%{transform:scaleX(1) rotateY(0)}100%{transform:scaleX(0.6) rotateY(30deg)}}
+.butterfly-antenna{position:absolute;top:-18px;width:2px;height:18px;background:#333;z-index:3}
+.butterfly-antenna::after{content:'';position:absolute;top:-4px;left:-2px;width:6px;height:6px;background:#333;border-radius:50%}
+.butterfly-antenna.left-ant{left:2px;transform:rotate(-20deg)}
+.butterfly-antenna.right-ant{right:2px;transform:rotate(20deg)}
+
+/* Confetti */
+.confetti-piece{position:fixed;z-index:999;pointer-events:none;border-radius:3px}
+
+/* Firework */
+.firework{position:fixed;z-index:999;pointer-events:none;border-radius:50%;width:6px;height:6px}
+
+/* Celebration */
+.celeb{position:fixed;inset:0;z-index:var(--z-celeb);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,#87CEEB,#B0E0FF,#E8F5E9);opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.6s}
+.celeb.active{opacity:1;visibility:visible;pointer-events:auto}
+.celeb h1{font-size:clamp(30px,8vw,50px);color:#2E7D32;font-weight:900;margin:10px 0}
+.celeb .stars{font-size:clamp(40px,10vw,60px);margin:10px 0}
+.celeb p{font-size:clamp(16px,4vw,22px);color:#333;font-weight:700}
+
+/* Decorative elements along path */
+.path-deco{position:absolute;pointer-events:none;font-size:clamp(16px,4vw,24px)}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<!-- Title -->
+<div class="screen screen-title active" id="titleScreen">
+  <div class="icon-row">🌀 🐛 🦋</div>
+  <h1>Letter Maze</h1>
+  <p>Guide the caterpillar through the garden! Tap the right letter signs to help it grow!</p>
+  <button class="btn btn-start" id="startBtn">Let's Go! 🐛</button>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1 / 5</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-prompt" id="hudPrompt">Find the A!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STEPS</span>
+    <span class="hud-val" id="hudScore">🐛 0</span>
+  </div>
+</div>
+
+<!-- Game Area -->
+<div class="game-area" id="gameArea" style="display:none">
+  <!-- Caterpillar -->
+  <div class="caterpillar-container" id="caterpillarContainer">
+    <div class="caterpillar" id="caterpillar"></div>
+  </div>
+  <!-- Path segment -->
+  <div class="path-container" id="pathContainer">
+    <div class="path-segment"></div>
+  </div>
+  <!-- Fork with signs -->
+  <div class="fork-area" id="forkArea"></div>
+</div>
+
+<!-- Cocoon + Butterfly (for end animation) -->
+<div class="cocoon" id="cocoon" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay)">
+  <div class="cocoon-body"></div>
+</div>
+<div class="butterfly" id="butterfly" style="position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay)">
+  <div class="butterfly-antenna left-ant"></div>
+  <div class="butterfly-antenna right-ant"></div>
+  <div class="butterfly-wing left"></div>
+  <div class="butterfly-wing right"></div>
+  <div class="butterfly-wing bottom left"></div>
+  <div class="butterfly-wing bottom right"></div>
+  <div class="butterfly-body"></div>
+</div>
+
+<!-- Celebration -->
+<div class="celeb" id="celebScreen">
+  <div class="stars">⭐ 🦋 ⭐</div>
+  <h1>Beautiful Butterfly!</h1>
+  <p>Your caterpillar learned <span id="celebCount">0</span> letters and became a butterfly!</p>
+  <button class="btn btn-again" id="againBtn">Play Again! 🐛</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function shuffle(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); t = true; fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!t) fn(e); t = false; });
+}
+
+// ── Audio ──
+class GameAudio {
+  constructor() { this.ctx = null; this.musicGain = null; this.voiceQueue = []; this.voicePlaying = false; }
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0.07;
+    this.musicGain.connect(this.ctx.destination);
+  }
+  startMusic() {
+    this.init();
+    const notes = [523, 587, 659, 784, 659, 523, 587, 784];
+    let i = 0;
+    const play = () => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i % notes.length];
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.85);
+      osc.connect(g); g.connect(this.musicGain);
+      osc.start(); osc.stop(this.ctx.currentTime + 0.9);
+      i++;
+      this.musicTimer = setTimeout(play, 900);
+    };
+    play();
+  }
+  stopMusic() { clearTimeout(this.musicTimer); }
+  playSFX(freq, type = 'sine', dur = 0.3) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+    osc.connect(g); g.connect(this.ctx.destination);
+    osc.start(); osc.stop(this.ctx.currentTime + dur);
+  }
+  playCorrect() {
+    this.playSFX(523, 'sine', 0.12);
+    setTimeout(() => this.playSFX(659, 'sine', 0.12), 80);
+    setTimeout(() => this.playSFX(784, 'sine', 0.25), 160);
+  }
+  playWrong() { this.playSFX(200, 'square', 0.2); }
+  playGrow() {
+    this.playSFX(400, 'sine', 0.08);
+    setTimeout(() => this.playSFX(500, 'sine', 0.08), 50);
+    setTimeout(() => this.playSFX(600, 'sine', 0.15), 100);
+  }
+  playCelebration() {
+    [523, 659, 784, 1047, 784, 1047].forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.3), i * 150));
+  }
+  playTransform() {
+    [392, 440, 523, 587, 659, 784, 880, 1047].forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.4), i * 200));
+  }
+  duckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.02, this.ctx.currentTime + 0.2); }
+  unduckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.07, this.ctx.currentTime + 0.3); }
+  queueVoice(file) {
+    return new Promise(resolve => {
+      this.voiceQueue.push({ file, resolve });
+      if (!this.voicePlaying) this._playNext();
+    });
+  }
+  _playNext() {
+    if (!this.voiceQueue.length) { this.voicePlaying = false; return; }
+    this.voicePlaying = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this.duckMusic();
+    const a = new Audio(file); a.volume = 0.9;
+    a.onended = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.onerror = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.play().catch(() => { this.unduckMusic(); resolve(); this._playNext(); });
+  }
+}
+
+const audio = new GameAudio();
+
+// ── Effects ──
+function burstConfetti(x, y, count = 20) {
+  const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#FFD93D','#C9B1FF','#FF85A2'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 100;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 80}px) rotate(${360 + Math.random()*360}deg)`, opacity: 0 }
+    ], { duration: 1200 + Math.random() * 800, easing: 'ease-out' });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+function launchFireworks() {
+  const colors = ['#FF6B6B','#FFD93D','#4ECDC4','#FF85A2','#C9B1FF','#45B7D1'];
+  for (let w = 0; w < 8; w++) {
+    setTimeout(() => {
+      const cx = 50 + Math.random() * (window.innerWidth - 100);
+      const cy = 50 + Math.random() * (window.innerHeight * 0.5);
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div');
+        p.className = 'firework';
+        p.style.left = cx + 'px'; p.style.top = cy + 'px';
+        p.style.background = color;
+        p.style.boxShadow = `0 0 6px ${color}`;
+        const angle = (Math.PI * 2 / 20) * i;
+        const dist = 60 + Math.random() * 80;
+        p.animate([
+          { transform: 'translate(0,0) scale(1)', opacity: 1 },
+          { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px) scale(0)`, opacity: 0 }
+        ], { duration: 800 + Math.random() * 400, easing: 'ease-out' });
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1500);
+      }
+    }, w * 400);
+  }
+}
+
+// ── Clouds + Flowers ──
+function spawnClouds() {
+  for (let i = 0; i < 4; i++) {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.textContent = '\u2601\uFE0F';
+    c.style.top = (5 + Math.random() * 25) + '%';
+    c.style.fontSize = (30 + Math.random() * 30) + 'px';
+    c.style.animationDuration = (20 + Math.random() * 30) + 's';
+    c.style.animationDelay = (-Math.random() * 30) + 's';
+    document.body.appendChild(c);
+  }
+}
+
+function spawnFlowers() {
+  const flowers = ['🌸','🌼','🌺','🌻','🌷','🍄','🍀','🌿'];
+  for (let i = 0; i < 12; i++) {
+    const f = document.createElement('div');
+    f.className = 'deco-flower';
+    f.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+    f.style.left = (Math.random() * 15 + (i % 2 === 0 ? 0 : 82)) + '%';
+    f.style.top = (55 + Math.random() * 40) + '%';
+    f.style.animationDelay = (-Math.random() * 3) + 's';
+    f.style.fontSize = (18 + Math.random() * 14) + 'px';
+    document.body.appendChild(f);
+  }
+}
+
+spawnClouds();
+spawnFlowers();
+
+// ── Caterpillar Colors ──
+const SEGMENT_COLORS = ['#FF6B6B','#FF9800','#FFD93D','#66BB6A','#42A5F5','#AB47BC'];
+const HEAD_COLOR = '#4CAF50';
+
+// ── Game State ──
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const ROUNDS = [];
+
+let currentRound = 0;
+let currentLetterIndex = 0;
+let targetLetter = '';
+let score = 0;
+let canTap = false;
+let hintTimer = null;
+let segmentCount = 0; // how many body segments (not counting head)
+
+function generateRounds() {
+  ROUNDS.length = 0;
+  const shuffled = shuffle(LETTERS);
+  // 5 rounds: first 4 have 5 letters, last has 6 = 26 total
+  for (let r = 0; r < 5; r++) {
+    const start = r * 5;
+    const count = r < 4 ? 5 : 6;
+    ROUNDS.push({ letters: shuffled.slice(start, start + count) });
+  }
+}
+
+// ── Build Caterpillar ──
+function buildCaterpillar() {
+  const container = $('caterpillar');
+  container.innerHTML = '';
+  // Head
+  const head = document.createElement('div');
+  head.className = 'caterpillar-segment head';
+  head.style.background = HEAD_COLOR;
+  head.style.zIndex = '5';
+  head.innerHTML = `
+    <div class="antenna antenna-left left-ant"></div>
+    <div class="antenna antenna-right right-ant"></div>
+    <div class="eye eye-left"></div>
+    <div class="eye eye-right"></div>
+    <div class="mouth"></div>
+  `;
+  container.appendChild(head);
+  segmentCount = 0;
+}
+
+function addSegment() {
+  const container = $('caterpillar');
+  const seg = document.createElement('div');
+  seg.className = 'caterpillar-segment new-segment';
+  const color = SEGMENT_COLORS[segmentCount % SEGMENT_COLORS.length];
+  seg.style.background = color;
+  seg.style.marginLeft = '-6px';
+  seg.style.zIndex = String(4 - segmentCount);
+  container.appendChild(seg);
+  segmentCount++;
+
+  // Remove animation class after it plays
+  setTimeout(() => seg.classList.remove('new-segment'), 400);
+}
+
+function wiggleCaterpillar() {
+  const cat = $('caterpillar');
+  cat.classList.add('wiggling');
+  setTimeout(() => cat.classList.remove('wiggling'), 600);
+}
+
+function crawlCaterpillar() {
+  return new Promise(resolve => {
+    const cat = $('caterpillar');
+    cat.classList.add('crawling');
+    setTimeout(() => {
+      cat.classList.remove('crawling');
+      cat.style.transform = '';
+      resolve();
+    }, 400);
+  });
+}
+
+// ── Signs ──
+function showSigns(target, round) {
+  const container = $('forkArea');
+  container.innerHTML = '';
+
+  // 1 correct + 2 distractors
+  const others = LETTERS.filter(l => l !== target);
+  const distractors = shuffle(others).slice(0, 2);
+  const options = shuffle([target, ...distractors]);
+
+  options.forEach(letter => {
+    const sign = document.createElement('div');
+    sign.className = 'sign';
+    sign.dataset.letter = letter;
+
+    const plaque = document.createElement('div');
+    plaque.className = 'sign-plaque';
+    plaque.textContent = letter;
+
+    const post = document.createElement('div');
+    post.className = 'sign-post';
+
+    sign.appendChild(plaque);
+    sign.appendChild(post);
+
+    onTap(sign, () => {
+      if (!canTap) return;
+      if (letter === targetLetter) {
+        handleCorrect(sign, plaque);
+      } else {
+        handleWrong(sign, plaque);
+      }
+    });
+
+    container.appendChild(sign);
+  });
+}
+
+// ── Correct / Wrong ──
+async function handleCorrect(sign, plaque) {
+  canTap = false;
+  clearHintTimer();
+
+  const rect = plaque.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  // Visual feedback
+  plaque.classList.add('correct-flash');
+  audio.playCorrect();
+  burstConfetti(cx, cy, 20);
+
+  await delay(300);
+
+  // Caterpillar wiggles
+  wiggleCaterpillar();
+  audio.playGrow();
+
+  await delay(300);
+
+  // Grow a new segment
+  addSegment();
+  score++;
+  $('hudScore').textContent = '\uD83D\uDC1B ' + score;
+
+  // Crawl forward
+  await crawlCaterpillar();
+
+  // Hide signs
+  $('forkArea').innerHTML = '';
+
+  // Say letter name + sound
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}_sound.mp3`);
+  await delay(300);
+
+  nextLetter();
+}
+
+function handleWrong(sign, plaque) {
+  audio.playWrong();
+  sign.classList.add('wobble');
+  setTimeout(() => sign.classList.remove('wobble'), 500);
+
+  // Re-say target
+  audio.queueVoice(`${AUDIO_BASE}/phrases/try_again.mp3`).then(() => {
+    delay(300).then(() => sayTarget());
+  });
+}
+
+// ── Hint System ──
+function startHintTimer() {
+  clearHintTimer();
+  hintTimer = setInterval(() => {
+    sayTarget();
+    // Wiggle correct sign
+    const container = $('forkArea');
+    if (container) {
+      const signs = container.querySelectorAll('.sign');
+      signs.forEach(s => {
+        if (s.dataset.letter === targetLetter) {
+          s.classList.add('wobble');
+          setTimeout(() => s.classList.remove('wobble'), 500);
+        }
+      });
+    }
+  }, 4000);
+}
+
+function clearHintTimer() {
+  if (hintTimer) { clearInterval(hintTimer); hintTimer = null; }
+}
+
+async function sayTarget() {
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+}
+
+// ── Round Flow ──
+async function startRound() {
+  currentLetterIndex = 0;
+  $('hudRound').textContent = `${currentRound + 1} / 5`;
+  await delay(400);
+  nextLetter();
+}
+
+async function nextLetter() {
+  const round = ROUNDS[currentRound];
+  if (currentLetterIndex >= round.letters.length) {
+    // Round complete
+    currentRound++;
+    if (currentRound >= 5) {
+      endGame();
+      return;
+    }
+    await delay(500);
+    await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+    await delay(400);
+    startRound();
+    return;
+  }
+
+  targetLetter = round.letters[currentLetterIndex];
+  currentLetterIndex++;
+
+  $('hudPrompt').textContent = `Find the ${targetLetter}!`;
+
+  // Show new signs
+  showSigns(targetLetter, currentRound);
+
+  // Say "Find the letter!" then the letter name
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/find_the_letter.mp3`);
+  await delay(100);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(100);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}_sound.mp3`);
+
+  canTap = true;
+  startHintTimer();
+}
+
+// ── End Game — Cocoon + Butterfly ──
+async function endGame() {
+  canTap = false;
+  clearHintTimer();
+  audio.stopMusic();
+
+  // Hide game area
+  $('gameArea').style.display = 'none';
+  $('hud').style.display = 'none';
+
+  // Cocoon animation
+  const cocoon = $('cocoon');
+  cocoon.classList.add('visible');
+  audio.playTransform();
+  await delay(2500);
+
+  // Hide cocoon, show butterfly
+  cocoon.classList.remove('visible');
+  await delay(300);
+
+  const butterfly = $('butterfly');
+  butterfly.classList.add('visible');
+  audio.playCelebration();
+  launchFireworks();
+
+  await delay(2000);
+
+  // Hide butterfly, show celebration
+  butterfly.classList.remove('visible');
+  await delay(300);
+
+  $('celebCount').textContent = score;
+  $('celebScreen').classList.add('active');
+
+  launchFireworks();
+  burstConfetti(window.innerWidth / 2, window.innerHeight / 3, 40);
+  await delay(600);
+  burstConfetti(window.innerWidth * 0.3, window.innerHeight / 2, 30);
+  await delay(400);
+  burstConfetti(window.innerWidth * 0.7, window.innerHeight / 2, 30);
+  audio.playCelebration();
+
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+}
+
+// ── Start ──
+function startGame() {
+  audio.init();
+  generateRounds();
+  currentRound = 0;
+  score = 0;
+
+  $('hudScore').textContent = '\uD83D\uDC1B 0';
+  $('titleScreen').classList.remove('active');
+  $('celebScreen').classList.remove('active');
+  $('cocoon').classList.remove('visible');
+  $('butterfly').classList.remove('visible');
+  $('hud').style.display = 'flex';
+  $('gameArea').style.display = 'flex';
+  $('forkArea').innerHTML = '';
+
+  buildCaterpillar();
+  audio.startMusic();
+  startRound();
+}
+
+onTap($('startBtn'), startGame);
+onTap($('againBtn'), startGame);
+</script>
+</body>
+</html>

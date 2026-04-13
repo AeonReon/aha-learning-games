@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dragon Egg Match</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --orange: #ff6f00; --red: #d32f2f; --amber: #ffab00; --cave: #2c1810;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,#1a0a00 0%,#2c1810 30%,#4a2a18 60%,#5c3520 100%)}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen)}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+
+/* ── Title Screen ── */
+.screen-title{background:linear-gradient(180deg,#1a0a00,#3a1e10 50%,#5c3520)}
+.screen-title .icon{font-size:clamp(90px,22vw,150px);animation:bounce 2s ease-in-out infinite;filter:drop-shadow(0 8px 25px rgba(255,120,0,0.4))}
+.screen-title h1{font-size:clamp(24px,6vw,42px);color:var(--amber);text-shadow:3px 3px 0 #3a1e10;margin:8px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:#e8c8a8;max-width:420px;padding:0 20px;line-height:1.4}
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-fire{background:linear-gradient(135deg,#ff6f00,#ffab00);animation:glow 2s ease-in-out infinite}
+.btn-again{background:linear-gradient(135deg,#ff6f00,#ffab00)}
+
+/* ── Cave BG ── */
+.cave{position:fixed;inset:0;pointer-events:none;z-index:var(--z-bg);overflow:hidden}
+.ember{position:absolute;border-radius:50%;animation:emberFloat ease-in-out infinite}
+@keyframes emberFloat{0%,100%{opacity:0.2;transform:translateY(0) scale(0.8)}50%{opacity:0.9;transform:translateY(-20px) scale(1.2)}}
+
+/* ── Lava floor ── */
+.lava{position:fixed;bottom:0;left:0;right:0;height:60px;z-index:1;background:linear-gradient(180deg,rgba(255,100,0,0.15),rgba(255,60,0,0.3));overflow:hidden}
+.lava-glow{position:absolute;bottom:0;left:-200px;height:4px;width:calc(100% + 400px);background:repeating-linear-gradient(90deg,transparent 0 30px,rgba(255,160,0,0.4) 30px 60px);animation:lavaflow 4s linear infinite}
+@keyframes lavaflow{to{transform:translateX(-200px)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:8px;left:0;right:0;text-align:center;z-index:var(--z-ui)}
+.hud h1{font-size:clamp(16px,3.5vw,26px);color:#fff;text-shadow:2px 2px 0 #3a1e10}
+.hud .sub{font-size:clamp(11px,2.5vw,16px);color:#e8c8a8}
+.hud-score{position:fixed;top:10px;right:12px;z-index:var(--z-ui);font-size:clamp(14px,3vw,22px);color:var(--amber);font-weight:bold;text-shadow:2px 2px 0 #3a1e10}
+.hud-level{position:fixed;top:10px;left:12px;z-index:var(--z-ui);font-size:clamp(14px,3vw,22px);color:#e8c8a8;font-weight:bold;text-shadow:2px 2px 0 #3a1e10}
+
+/* ── Dragon character ── */
+.dragon-wrap{position:fixed;bottom:55px;left:50%;transform:translateX(-50%);z-index:var(--z-ui);text-align:center}
+.dragon{font-size:clamp(55px,11vw,80px);display:inline-block;filter:drop-shadow(0 4px 15px rgba(255,120,0,0.4));line-height:1}
+.dragon.idle{animation:bounce 3s ease-in-out infinite}
+.dragon.dance{animation:dance 0.9s ease-in-out infinite}
+.dragon.chomp{animation:chomp 0.5s ease-in-out}
+.dragon.shake{animation:shake 0.4s ease-in-out}
+.dbubble{position:absolute;top:-45px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);color:#5c3520;padding:8px 16px;border-radius:20px;font-size:clamp(12px,2.8vw,17px);font-weight:bold;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:var(--z-ui);max-width:85vw;overflow:hidden;text-overflow:ellipsis}
+.dbubble.show{opacity:1}
+.dbubble::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid rgba(255,255,255,0.95)}
+
+/* ── Game Layout ── */
+.game-area{position:fixed;top:50px;left:0;right:0;bottom:140px;z-index:var(--z-game);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,2vh,16px);padding:8px}
+
+/* ── Number Prompt ── */
+.prompt{font-size:clamp(22px,5vw,36px);color:var(--amber);text-shadow:2px 2px 0 #3a1e10;font-weight:bold;margin-bottom:4px}
+.prompt-number{font-size:clamp(50px,12vw,80px);font-weight:900;color:#fff;text-shadow:3px 3px 0 var(--orange),0 0 30px rgba(255,160,0,0.5);animation:numappear 0.5s ease-out;margin-bottom:8px}
+@keyframes numappear{0%{transform:scale(0) rotate(-15deg);opacity:0}60%{transform:scale(1.15) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+
+/* ── Egg Grid ── */
+.egg-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(8px,2vw,16px);max-width:600px}
+
+.egg{position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.15s}
+.egg:active{transform:scale(0.92)}
+.egg-body{width:clamp(70px,18vw,100px);height:clamp(84px,22vw,120px);border-radius:45% 45% 50% 50%;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:all 0.3s;position:relative;overflow:hidden}
+.egg-body::before{content:'';position:absolute;top:10%;left:15%;width:25%;height:20%;background:rgba(255,255,255,0.3);border-radius:50%;transform:rotate(-30deg)}
+.egg-number{font-size:clamp(28px,7vw,44px);font-weight:900;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,0.2);pointer-events:none}
+
+.egg.correct .egg-body{box-shadow:0 0 25px rgba(255,200,0,0.6)}
+.egg.wrong .egg-body{animation:eggshake 0.4s ease-in-out}
+
+/* ── Hatching sequence ── */
+.egg.wobbling .egg-body{animation:eggwobble 0.3s ease-in-out infinite}
+.egg.cracking .egg-body{animation:eggcrack 0.25s ease-in-out infinite}
+
+/* Crack lines — appear during hatching */
+.egg-crack{position:absolute;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.egg-crack-1{top:20%;left:45%;width:3px;height:30%;background:linear-gradient(180deg,rgba(0,0,0,0.5),transparent);transform:rotate(15deg);border-radius:2px}
+.egg-crack-2{top:15%;right:30%;width:2px;height:25%;background:linear-gradient(180deg,rgba(0,0,0,0.4),transparent);transform:rotate(-20deg);border-radius:2px}
+.egg-crack-3{top:35%;left:25%;width:2px;height:20%;background:linear-gradient(180deg,transparent,rgba(0,0,0,0.4),transparent);transform:rotate(30deg);border-radius:2px}
+.egg.cracking .egg-crack{opacity:1}
+
+/* Shell halves split apart */
+.egg-shell-top,.egg-shell-bottom{position:absolute;width:100%;height:50%;opacity:0;pointer-events:none;border-radius:45% 45% 0 0}
+.egg-shell-top{top:0;transform-origin:center bottom}
+.egg-shell-bottom{bottom:0;border-radius:0 0 50% 50%;transform-origin:center top}
+.egg.splitting .egg-body{opacity:0;transition:opacity 0.1s}
+.egg.splitting .egg-shell-top{opacity:1;animation:shelltop 0.6s ease-out forwards}
+.egg.splitting .egg-shell-bottom{opacity:1;animation:shellbottom 0.6s ease-out forwards}
+
+/* Dragon emerges */
+.egg .hatch-dragon{position:absolute;font-size:clamp(45px,11vw,70px);opacity:0;transform:scale(0) translateY(20px);pointer-events:none}
+.egg.hatched .hatch-dragon{animation:dragonEmerge 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards}
+
+/* Sparkle ring around hatched dragon */
+.egg .sparkle-ring{position:absolute;width:120%;height:120%;border-radius:50%;border:3px solid transparent;opacity:0;pointer-events:none}
+.egg.hatched .sparkle-ring{animation:sparkleRing 0.8s ease-out forwards}
+
+@keyframes eggshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(8px) rotate(3deg)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes eggwobble{0%,100%{transform:rotate(0) translateX(0)}25%{transform:rotate(-4deg) translateX(-3px)}50%{transform:rotate(3deg) translateX(2px)}75%{transform:rotate(-2deg) translateX(-2px)}}
+@keyframes eggcrack{0%,100%{transform:rotate(0) scale(1)}20%{transform:rotate(-6deg) scale(1.02)}40%{transform:rotate(5deg) scale(0.98)}60%{transform:rotate(-4deg) scale(1.03)}80%{transform:rotate(3deg) scale(0.99)}}
+@keyframes shelltop{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(-40px) rotate(-25deg);opacity:0}}
+@keyframes shellbottom{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(30px) rotate(15deg);opacity:0}}
+@keyframes dragonEmerge{0%{opacity:0;transform:scale(0) translateY(20px)}40%{opacity:1;transform:scale(1.3) translateY(-10px)}70%{transform:scale(0.9) translateY(0)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes sparkleRing{0%{opacity:0;transform:scale(0.5);border-color:rgba(255,200,0,0.8)}50%{opacity:1;border-color:rgba(255,200,0,0.6)}100%{opacity:0;transform:scale(1.8);border-color:rgba(255,200,0,0)}}
+
+/* Egg colors */
+.egg-c0 .egg-body{background:linear-gradient(135deg,#FF6B6B,#ee5a5a);border:3px solid #ff9a9a}
+.egg-c1 .egg-body{background:linear-gradient(135deg,#FFB347,#ee9a30);border:3px solid #ffcc80}
+.egg-c2 .egg-body{background:linear-gradient(135deg,#87CEEB,#6ab7d8);border:3px solid #b3e0f2}
+.egg-c3 .egg-body{background:linear-gradient(135deg,#98D8A0,#78c488);border:3px solid #b8e8c0}
+.egg-c4 .egg-body{background:linear-gradient(135deg,#DDA0DD,#c88ac8);border:3px solid #e8c0e8}
+.egg-c5 .egg-body{background:linear-gradient(135deg,#F0E68C,#ddd470);border:3px solid #f5f0b0}
+
+/* ── Level Banner ── */
+.level-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);font-size:clamp(28px,7vw,50px);color:var(--amber);text-shadow:3px 3px 0 #3a1e10;font-weight:bold;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.level-banner.show{opacity:1}
+
+/* ── Progress Bar ── */
+.prog-bar{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:center;align-items:center;gap:clamp(2px,0.8vw,7px);padding:8px 8px 10px;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
+.prog-dot{width:clamp(26px,5.5vw,38px);height:clamp(26px,5.5vw,38px);border-radius:50%;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:clamp(9px,2vw,13px);font-weight:900;color:rgba(255,255,255,0.3);font-family:var(--font);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.prog-dot.done{background:linear-gradient(135deg,#ff6f00,#ffab00);border-color:#fff;color:#fff;transform:scale(1.1)}
+
+/* ── Celebration ── */
+.screen-celeb{background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);z-index:var(--z-celeb)}
+.screen-celeb .icon{font-size:clamp(70px,18vw,120px);animation:dance 1s ease-in-out infinite}
+.screen-celeb h2{font-size:clamp(24px,6vw,44px);color:var(--amber);text-shadow:3px 3px 0 rgba(0,0,0,0.4);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+
+/* ── Confetti & Stars ── */
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+
+/* ── Hint ── */
+.hint-wiggle{animation:wiggle 0.5s ease-in-out 3!important}
+.hint-glow{box-shadow:0 0 25px rgba(255,200,100,0.8),0 0 50px rgba(255,200,100,0.4)!important}
+
+/* ── Keyframes ── */
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes chomp{0%{transform:scale(1) rotate(0)}20%{transform:scale(1.35) rotate(-6deg)}40%{transform:scale(1.4) rotate(6deg)}60%{transform:scale(1.3) rotate(-3deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px) rotate(-3deg)}40%{transform:translateX(10px) rotate(3deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg) scale(1.05)}75%{transform:rotate(6deg) scale(1.05)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Cave background with floating embers -->
+<div class="cave" id="cave"></div>
+<div class="lava"><div class="lava-glow"></div></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <h1>🐉 Dragon Egg Match 🥚</h1>
+  <div class="sub" id="hudSub">Listen and tap the matching number!</div>
+</div>
+<div class="hud-level" id="hudLevel" style="display:none">Round 1</div>
+<div class="hud-score" id="hudScore" style="display:none">🔥 0</div>
+
+<!-- Game Area -->
+<div class="game-area" id="gameArea">
+  <div class="prompt" id="promptText">Tap the egg with...</div>
+  <div class="prompt-number" id="promptNum">5</div>
+  <div class="egg-grid" id="eggGrid"></div>
+</div>
+
+<!-- Dragon -->
+<div class="dragon-wrap" id="dragonWrap" style="display:none">
+  <div class="dbubble" id="bubble"></div>
+  <div class="dragon idle" id="dragon">🐉</div>
+</div>
+
+<!-- Progress Bar -->
+<div id="progBar" style="display:none"></div>
+
+<!-- Level Banner -->
+<div class="level-banner" id="levelBanner"></div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon">🐉</div>
+  <h1>Dragon Egg Match</h1>
+  <p>The dragon eggs are ready to hatch!<br>Listen to the number and tap the matching egg!</p>
+  <button class="btn btn-fire" id="btnStart" style="margin-top:20px">Let's Play! 🔥</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="icon">🐉</div>
+  <h2 id="celebTitle">🎉 AMAZING! 🎉</h2>
+  <p id="celebMsg">All the dragons hatched!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain" style="margin-top:16px">Play Again! 🔥</button>
+</div>
+
+<script>
+// ═══════════════════════════════
+// AUDIO
+// ═══════════════════════════════
+const AUDIO_BASE = '../../audio';
+
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.10; this.sfxVol = 0.35; this.musicDucked = 0.03;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+
+  startMusic(key = 'G') {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Deeper, warmer cave music
+    const notes = { C:[261.63,329.63,392,440], G:[196,246.94,293.66,392], D:[146.83,196,220,293.66] }[key] || [196,246.94,293.66,392];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.2);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.4);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1000 + Math.random() * 1800);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.5) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'correct') { p(523.25,t,0.18,0.5); p(659.25,t+0.15,0.25,0.6); }
+    else if (type === 'wrong') { p(350,t,0.12,0.2); p(300,t+0.1,0.12,0.15); p(280,t+0.18,0.18,0.1); }
+    else if (type === 'celeb') { p(523.25,t,0.15,0.4); p(659.25,t+0.13,0.15,0.45); p(783.99,t+0.26,0.18,0.5); p(659.25,t+0.42,0.15,0.45); p(1046.5,t+0.55,0.35,0.55); }
+    else if (type === 'hatch') { p(400,t,0.1,0.3); p(500,t+0.08,0.1,0.35); p(650,t+0.16,0.15,0.4); p(800,t+0.28,0.2,0.45); }
+    else if (type === 'hint') { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+
+  speak(file) {
+    return new Promise(resolve => { this.voiceQueue.push({ file, resolve }); this._next(); });
+  }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 100);
+  }
+  _playFile(path) {
+    return new Promise((resolve, reject) => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+  }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if (t) return; t = true; fn(e); setTimeout(() => t = false, 300); }, { passive: false });
+  el.addEventListener('click', e => { if (t) return; fn(e); });
+}
+
+const CHEERS = ['amazing','wonderful','brilliant','fantastic','you_got_it','super','awesome','well_done','great_job','incredible','perfect'];
+const RETRY_PHRASES = ['try_again','not_quite','almost','so_close','oops'];
+const BABY_DRAGONS = ['🐲','🦎','🐊','🦖'];
+const EGG_COLORS = ['egg-c0','egg-c1','egg-c2','egg-c3','egg-c4','egg-c5'];
+
+function confetti(count = 40, extra = []) {
+  const all = ['🎉','🎊','⭐','🌟','✨','💫','🔥','🧡','❤️','🥚',...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100)+'vw'; el.style.top = '-30px';
+    el.style.fontSize = (16+Math.random()*14)+'px';
+    el.style.animationDelay = (Math.random()*1.8)+'s';
+    el.style.animationDuration = (2.2+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6000);
+  }
+}
+function starBurst(el) {
+  const r = el.getBoundingClientRect(), cx = r.left+r.width/2, cy = r.top+r.height/2;
+  const c = ['⭐','🌟','✨','🔥','🎉'];
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst'; s.textContent = pick(c);
+    s.style.left = (cx+(Math.random()-0.5)*120)+'px';
+    s.style.top = (cy+(Math.random()-0.5)*120)+'px';
+    s.style.animationDelay = (Math.random()*0.2)+'s';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+// Build cave embers
+function buildCave() {
+  const cave = $('cave');
+  for (let i = 0; i < 30; i++) {
+    const e = document.createElement('div');
+    e.className = 'ember';
+    const size = 2 + Math.random() * 4;
+    e.style.width = size + 'px'; e.style.height = size + 'px';
+    e.style.left = Math.random()*100+'%';
+    e.style.top = Math.random()*100+'%';
+    e.style.background = pick(['#ff6f00','#ffab00','#ff8f00','#ff4444']);
+    e.style.animationDuration = (3+Math.random()*5)+'s';
+    e.style.animationDelay = Math.random()*4+'s';
+    cave.appendChild(e);
+  }
+}
+
+// Dramatic hatch sequence
+async function hatchEgg(egg) {
+  // Phase 1: Gentle wobble (1s)
+  egg.classList.add('wobbling');
+  audio.tone('hint');
+  await delay(1000);
+
+  // Phase 2: Intense cracking with cracks appearing (1.2s)
+  egg.classList.remove('wobbling');
+  egg.classList.add('cracking');
+  await delay(400);
+  // Show crack lines one by one
+  const cracks = egg.querySelectorAll('.egg-crack');
+  for (const crack of cracks) {
+    crack.style.opacity = '1';
+    await delay(250);
+  }
+  await delay(300);
+
+  // Phase 3: Shell splits apart, dragon bursts out
+  egg.classList.remove('cracking');
+  egg.classList.add('splitting');
+  audio.tone('hatch');
+  await delay(200);
+  egg.classList.add('hatched');
+  await delay(400);
+
+  return;
+}
+
+// ═══════════════════════════════
+// GAME STATE
+// ═══════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 1, score = 0;
+let currentTarget = -1, roundNumbers = [], roundIdx = 0;
+let hintTimer = null, hintVoiceTimer = null;
+
+// Rounds — building 0-20
+const ROUNDS = [
+  { numbers: [1,2,3,4,5],        options: 3, label: 'Round 1 ����' },
+  { numbers: [6,7,8,9,10],       options: 3, label: 'Round 2 🥚' },
+  { numbers: [0,11,12,13,14,15], options: 4, label: 'Round 3 🔥' },
+  { numbers: [16,17,18,19,20],   options: 4, label: 'Round 4 🐉' },
+];
+
+function currentRoundCfg() { return ROUNDS[round - 1]; }
+
+// ═══════════════════════════════
+// SCREENS & UI
+// ═══════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+function showBubble(text, dur = 2200) {
+  const b = $('bubble'); b.textContent = text; b.classList.add('show');
+  clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+function dragonAnim(cls, dur = 600) {
+  const d = $('dragon'); d.className = 'dragon ' + cls;
+  setTimeout(() => { if (gameActive) d.className = 'dragon idle'; }, dur);
+}
+
+// ═══════════════════════════════
+// PROGRESS BAR
+// ═══════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  currentRoundCfg().numbers.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + n; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+function markProg(n) { const d = $('prog'+n); if (d) d.classList.add('done'); }
+
+// ═══════════════════════════════
+// HINTS
+// ═══════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    const eggs = [...document.querySelectorAll('.egg:not(.hatched)')];
+    const correct = eggs.find(e => parseInt(e.dataset.num) === currentTarget);
+    if (correct) {
+      correct.classList.add('hint-wiggle','hint-glow');
+      setTimeout(() => correct.classList.remove('hint-wiggle','hint-glow'), 1800);
+      audio.tone('hint');
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    audio.speakPhrase('tap_the_number');
+  }, 7000);
+}
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ═══════════════════════════════
+// BUILD EGGS FOR ONE QUESTION
+// ═══════════════════════════════
+function buildEggs() {
+  const grid = $('eggGrid');
+  grid.innerHTML = '';
+
+  const rnd = currentRoundCfg();
+  const target = roundNumbers[roundIdx];
+  currentTarget = target;
+
+  // Show the number prompt
+  $('promptNum').textContent = target;
+  $('promptNum').style.animation = 'none';
+  void $('promptNum').offsetWidth;
+  $('promptNum').style.animation = '';
+
+  // Pick distractor options from the round's numbers
+  let options = [target];
+  let pool = rnd.numbers.filter(n => n !== target);
+  shuffle(pool);
+  const numOptions = rnd.options;
+  while (options.length < numOptions && pool.length > 0) {
+    options.push(pool.pop());
+  }
+  // If not enough from this round, add nearby numbers
+  while (options.length < numOptions) {
+    let extra = target + pick([-2,-1,1,2]);
+    if (extra < 0) extra = 0;
+    if (extra > 20) extra = 20;
+    if (!options.includes(extra)) options.push(extra);
+  }
+  shuffle(options);
+
+  // Get the egg color for shell halves
+  const getEggBg = (i) => {
+    const colors = [
+      ['#FF6B6B','#ee5a5a'], ['#FFB347','#ee9a30'], ['#87CEEB','#6ab7d8'],
+      ['#98D8A0','#78c488'], ['#DDA0DD','#c88ac8'], ['#F0E68C','#ddd470']
+    ];
+    const c = colors[i % colors.length];
+    return `linear-gradient(135deg,${c[0]},${c[1]})`;
+  };
+
+  options.forEach((num, i) => {
+    const egg = document.createElement('div');
+    egg.className = 'egg ' + EGG_COLORS[i % EGG_COLORS.length];
+    egg.dataset.num = num;
+
+    const body = document.createElement('div');
+    body.className = 'egg-body';
+
+    // Show the NUMBER on the egg
+    const numEl = document.createElement('div');
+    numEl.className = 'egg-number';
+    numEl.textContent = num;
+    body.appendChild(numEl);
+
+    // Crack lines (hidden until cracking phase)
+    body.innerHTML += '<div class="egg-crack egg-crack-1"></div><div class="egg-crack egg-crack-2"></div><div class="egg-crack egg-crack-3"></div>';
+
+    // Shell halves for split animation
+    const shellTop = document.createElement('div');
+    shellTop.className = 'egg-shell-top';
+    shellTop.style.background = getEggBg(i);
+    const shellBottom = document.createElement('div');
+    shellBottom.className = 'egg-shell-bottom';
+    shellBottom.style.background = getEggBg(i);
+
+    // Baby dragon (hidden until hatched)
+    const hatchDragon = document.createElement('div');
+    hatchDragon.className = 'hatch-dragon';
+    hatchDragon.textContent = pick(BABY_DRAGONS);
+
+    // Sparkle ring
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle-ring';
+
+    egg.appendChild(body);
+    egg.appendChild(shellTop);
+    egg.appendChild(shellBottom);
+    egg.appendChild(hatchDragon);
+    egg.appendChild(sparkle);
+
+    onTap(egg, () => handleEggTap(egg, num));
+    grid.appendChild(egg);
+  });
+
+  // Speak the number
+  audio.speakNumber(target);
+  resetHints();
+}
+
+// ═══════════════════════════════
+// TAP HANDLER
+// ═══════════════════════════════
+async function handleEggTap(egg, num) {
+  if (!gameActive) return;
+  if (egg.classList.contains('hatched')) return;
+  stopHints();
+
+  if (num === currentTarget) {
+    // CORRECT — dramatic hatch sequence!
+    gameActive = false; // Prevent double taps during animation
+    egg.classList.add('correct');
+
+    // Disable other eggs during hatch
+    document.querySelectorAll('.egg').forEach(e => e.style.pointerEvents = 'none');
+
+    // Run the full dramatic hatch
+    await hatchEgg(egg);
+    starBurst(egg);
+
+    score++;
+    $('hudScore').textContent = `🔥 ${score}`;
+    markProg(num);
+
+    dragonAnim('chomp');
+    showBubble(`${num}! 🐉 Hatched!`, 2000);
+    await audio.speakPhrase(pick(CHEERS));
+
+    roundIdx++;
+    if (roundIdx >= roundNumbers.length) {
+      // Round complete
+      await delay(400);
+      advanceRound();
+    } else {
+      // Next number in this round
+      gameActive = true;
+      await delay(600);
+      buildEggs();
+    }
+  } else {
+    // WRONG
+    egg.classList.add('wrong');
+    audio.tone('wrong');
+    dragonAnim('shake', 400);
+    showBubble('Not that egg!', 1500);
+    await audio.speakPhrase(pick(RETRY_PHRASES));
+    await delay(400);
+    egg.classList.remove('wrong');
+    resetHints();
+  }
+}
+
+// ═══════════════════════════════
+// ADVANCE ROUND
+// ═══════════════════════════════
+async function advanceRound() {
+  stopHints();
+  gameActive = false;
+
+  if (round >= ROUNDS.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  // Round celebration
+  audio.tone('celeb');
+  confetti(30, ['🐉','🥚']);
+  dragonAnim('dance', 2500);
+  showBubble('All eggs hatched! 🎉', 2500);
+
+  const banner = $('levelBanner');
+  banner.textContent = `Round ${round} Complete! 🎉`;
+  banner.classList.add('show');
+  await audio.speakPhrase('well_done');
+  await delay(1800);
+  banner.classList.remove('show');
+
+  // Next round
+  round++;
+  $('hudLevel').textContent = `Round ${round}`;
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  roundIdx = 0;
+
+  banner.textContent = ROUNDS[round - 1].label;
+  banner.classList.add('show');
+  await audio.speakPhrase('ready');
+  await delay(1200);
+  banner.classList.remove('show');
+
+  buildProg();
+  buildEggs();
+  $('dragon').className = 'dragon idle';
+  gameActive = true;
+}
+
+// ═══════════════════════════════
+// FINAL CELEBRATION
+// ═══════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopHints();
+  $('gameArea').style.display = 'none';
+
+  audio.tone('celeb');
+  $('dragon').className = 'dragon dance';
+
+  await delay(400);
+  confetti(60, ['🐉','🥚','🔥']);
+
+  $('celebStars').textContent = '⭐'.repeat(Math.min(score, 10));
+  $('celebTitle').textContent = '🎉 AMAZING! 🎉';
+  $('celebMsg').textContent = 'You hatched ALL the dragon eggs from 0 to 20!';
+  showScreen('scrCeleb');
+
+  await delay(500);
+  await audio.speakPhrase('well_done_complete');
+  await delay(300);
+  await audio.speakPhrase('superstar');
+  setTimeout(() => confetti(35, ['🐉']), 2000);
+}
+
+// ═══════════════════════════════
+// START GAME
+// ═══════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  $('hud').style.display = '';
+  $('hudLevel').style.display = '';
+  $('hudScore').style.display = '';
+  $('dragonWrap').style.display = '';
+  $('gameArea').style.display = '';
+
+  round = 1; score = 0; roundIdx = 0;
+  $('hudScore').textContent = '🔥 0';
+  $('hudLevel').textContent = 'Round 1';
+  $('dragon').className = 'dragon idle';
+  $('promptText').textContent = 'Which egg has...';
+
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  buildProg();
+  gameActive = true;
+
+  audio.startMusic('G');
+
+  showBubble('Match numbers to eggs! 🥚', 2800);
+  await audio.speakPhrase('lets_play');
+  await delay(800);
+
+  buildEggs();
+}
+
+// ═══════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.stopMusic();
+  audio.clearQueue();
+  showScreen(null);
+  startGame();
+});
+
+buildCave();
+</script>
+</body>
+</html>

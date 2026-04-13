@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Number Rush</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-stars: 5; --z-falling: 10; --z-char: 15; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --gold: #ffe066; --purple: #9c27b0; --dpurple: #4a148c; --cyan: #00e5ff; --pink: #ff4081;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#0a0a2e}
+
+/* ── Night Sky ── */
+.sky{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#0a0a2e 0%,#1a1a4e 30%,#2d1b69 60%,#4a1a7a 80%,#1a0a3e 100%)}
+.sky-twinkle{position:fixed;z-index:1;pointer-events:none;border-radius:50%;background:#fff}
+
+/* ── Constellation display ── */
+.constellation{position:fixed;top:8%;left:50%;transform:translateX(-50%);z-index:var(--z-stars);pointer-events:none;opacity:0.9}
+.const-star{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold),0 0 16px rgba(255,224,102,0.5);opacity:0;transition:opacity 0.6s,transform 0.6s}
+.const-star.lit{opacity:1;transform:scale(1.3)}
+.const-line{position:absolute;background:rgba(255,224,102,0.3);height:2px;transform-origin:0 50%;opacity:0;transition:opacity 0.6s}
+.const-line.lit{opacity:1}
+.const-label{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:6px;font-size:clamp(10px,2vw,14px);color:rgba(255,224,102,0.6);white-space:nowrap;font-weight:bold;opacity:0;transition:opacity 0.5s}
+.const-label.show{opacity:1}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#0a0a2e,#2d1b69,#0a0a2e)}
+.screen-title h1{font-size:clamp(30px,8vw,52px);color:var(--gold);text-shadow:3px 3px 0 var(--dpurple),0 0 20px rgba(255,224,102,0.3);margin:10px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:#ce93d8;max-width:440px;line-height:1.4}
+.screen-title .icon-row{display:flex;gap:10px;justify-content:center;align-items:center;margin-bottom:5px}
+.screen-title .icon-row span{font-size:clamp(40px,10vw,70px)}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,var(--purple),#e040fb);animation:glow 2s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,var(--purple),#e040fb);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:rgba(255,255,255,0.4);font-weight:bold}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900;text-shadow:2px 2px 0 rgba(0,0,0,0.5)}
+.hud-round .hud-val{color:#ce93d8}
+.hud-score .hud-val{color:var(--gold)}
+
+/* ── Target prompt ── */
+.target-prompt{position:fixed;top:55px;left:50%;transform:translateX(-50%);z-index:var(--z-ui);pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s}
+.target-prompt.show{opacity:1}
+.target-label{font-size:clamp(12px,2.5vw,16px);color:rgba(255,255,255,0.5);font-weight:bold}
+.target-num{font-size:clamp(36px,9vw,56px);font-weight:900;color:var(--gold);text-shadow:0 0 15px rgba(255,224,102,0.5),3px 3px 0 var(--dpurple);line-height:1.1;animation:targetPulse 1.5s ease-in-out infinite}
+@keyframes targetPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.05);filter:brightness(1.2)}}
+
+/* ── Falling stars ── */
+.falling-star{position:fixed;z-index:var(--z-falling);cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+.falling-star:active{transform:scale(0.9)!important}
+.star-body{width:clamp(65px,15vw,90px);height:clamp(65px,15vw,90px);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 20px rgba(255,255,255,0.2);transition:transform 0.15s}
+.star-body::before{content:'';position:absolute;top:12%;left:18%;width:25%;height:18%;background:rgba(255,255,255,0.3);border-radius:50%;transform:rotate(-25deg)}
+.star-num{font-size:clamp(22px,5vw,34px);font-weight:900;color:#fff;text-shadow:1px 1px 3px rgba(0,0,0,0.5);font-family:var(--font)}
+.star-trail{position:absolute;top:0;left:50%;transform:translateX(-50%);width:4px;height:0;background:linear-gradient(180deg,rgba(255,255,255,0.4),transparent);border-radius:2px;pointer-events:none;transition:height 0.3s}
+.falling-star.moving .star-trail{height:30px}
+.falling-star.caught{pointer-events:none;animation:starCatch 0.5s ease-out forwards}
+.falling-star.missed{pointer-events:none;animation:starMiss 0.3s ease-in forwards}
+.falling-star.wrong{pointer-events:none}
+.falling-star.wrong .star-body{animation:starShake 0.4s ease-in-out}
+@keyframes starCatch{0%{transform:scale(1);opacity:1;filter:brightness(1)}30%{transform:scale(1.5);filter:brightness(2)}100%{transform:scale(0);opacity:0}}
+@keyframes starMiss{0%{opacity:0.5}100%{opacity:0;transform:translateY(30px)}}
+@keyframes starShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+/* ── Streak indicator ── */
+.streak{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:var(--z-ui);pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s}
+.streak.show{opacity:1}
+.streak-text{font-size:clamp(16px,4vw,24px);font-weight:900;color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,0.5)}
+.streak-fire{font-size:clamp(20px,5vw,32px);animation:fireWiggle 0.3s ease-in-out infinite}
+@keyframes fireWiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+
+/* ── Character ── */
+.wizard{position:fixed;bottom:8px;left:12px;z-index:var(--z-char);pointer-events:none}
+.wizard-emoji{font-size:clamp(40px,9vw,58px);filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5))}
+.wizard.cheer .wizard-emoji{animation:bounce 0.5s ease-in-out}
+.wiz-bubble{position:absolute;top:-38px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);color:var(--dpurple);padding:5px 12px;border-radius:16px;font-size:clamp(11px,2.5vw,16px);font-weight:bold;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.3);opacity:0;transition:opacity 0.25s;pointer-events:none}
+.wiz-bubble.show{opacity:1}
+.wiz-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid rgba(255,255,255,0.9)}
+
+/* ── Progress ── */
+.prog-bar{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:center;align-items:center;gap:clamp(3px,1vw,7px);padding:6px 8px 8px;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);pointer-events:none}
+.prog-dot{width:clamp(22px,4.5vw,32px);height:clamp(22px,4.5vw,32px);border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:clamp(9px,1.8vw,12px);font-weight:900;color:rgba(255,255,255,0.3);font-family:var(--font);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.prog-dot.done{background:linear-gradient(135deg,var(--purple),#e040fb);border-color:#fff;color:#fff;transform:scale(1.1)}
+
+/* ── Round Banner ── */
+.round-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);text-align:center;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.round-banner.show{opacity:1}
+.round-banner h2{font-size:clamp(26px,6.5vw,44px);color:var(--gold);text-shadow:3px 3px 0 var(--dpurple);font-weight:900}
+.round-banner p{font-size:clamp(14px,3vw,20px);color:rgba(255,255,255,0.7);margin-top:4px}
+
+/* ── Celebration ── */
+.screen-celeb{background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:var(--z-celeb)}
+.screen-celeb h2{font-size:clamp(26px,6.5vw,46px);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,0.5);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+.celeb-icon-row{display:flex;gap:12px;justify-content:center;margin-bottom:8px}
+.celeb-icon-row span{font-size:clamp(50px,12vw,80px);animation:dance 1s ease-in-out infinite}
+
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Sky -->
+<div class="sky"></div>
+
+<!-- Constellation (builds up as you catch stars) -->
+<div class="constellation" id="constellation"></div>
+
+<!-- Falling stars container -->
+<div id="starfield"></div>
+
+<!-- Character -->
+<div class="wizard" id="wizard" style="display:none">
+  <div class="wiz-bubble" id="wizbubble"></div>
+  <div class="wizard-emoji">🧙</div>
+</div>
+
+<!-- Streak indicator -->
+<div class="streak" id="streak">
+  <span class="streak-fire">🔥</span>
+  <div class="streak-text" id="streakText"></div>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round"><div class="hud-label">ROUND</div><div class="hud-val" id="hudRound">1</div></div>
+  <div class="hud-center hud-score"><div class="hud-label">SCORE</div><div class="hud-val" id="hudScore">0</div></div>
+  <div class="hud-right"><div class="hud-label">CAUGHT</div><div class="hud-val" id="hudCaught" style="color:#ce93d8">0</div></div>
+</div>
+
+<!-- Target prompt -->
+<div class="target-prompt" id="targetPrompt">
+  <div class="target-label">CATCH</div>
+  <div class="target-num" id="targetNum"></div>
+</div>
+
+<!-- Progress -->
+<div class="prog-bar" id="progbar" style="display:none"></div>
+
+<!-- Round Banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="bannerTitle"></h2>
+  <p id="bannerSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="screenTitle">
+  <div class="icon-row"><span>⭐</span><span>🌟</span><span>💫</span></div>
+  <h1>Number Rush!</h1>
+  <p>Catch the falling stars!<br>Tap the right number before it falls away!</p>
+  <button class="btn btn-start" id="btnStart">Let's Go! ⭐</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="screenCeleb">
+  <div class="celeb-icon-row"><span>🌟</span><span>⭐</span><span>🌟</span></div>
+  <h2>Amazing!</h2>
+  <div class="celeb-stars" id="celebStars">⭐⭐⭐</div>
+  <p id="celebMsg">You caught all the stars!</p>
+  <p id="celebScore" style="color:var(--gold);font-weight:bold"></p>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🌟</button>
+</div>
+
+<script src="../../game-engine.js"></script>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   GAME 18 — NUMBER RUSH
+   Fast reflex: numbers fall as stars, catch the target!
+   Creative hook: constellation builds up from caught stars
+   ═══════════════════════════════════════════ */
+
+// ── Audio ──
+class GameAudio {
+  constructor() {
+    this.actx = null;
+    this.musicGain = null;
+    this.sfxGain = null;
+    this.musicVol = 0.18;
+    this.playing = {};
+  }
+  init() {
+    if (this.actx) return;
+    this.actx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.actx.createGain();
+    this.musicGain.gain.value = this.musicVol;
+    this.musicGain.connect(this.actx.destination);
+    this.sfxGain = this.actx.createGain();
+    this.sfxGain.gain.value = 0.35;
+    this.sfxGain.connect(this.actx.destination);
+  }
+  tone(freq, dur, type='sine', gain=0.2) {
+    if (!this.actx) return;
+    const o = this.actx.createOscillator();
+    const g = this.actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain, this.actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.actx.currentTime + dur);
+    o.connect(g); g.connect(this.sfxGain);
+    o.start(); o.stop(this.actx.currentTime + dur);
+  }
+  correct() {
+    this.tone(523, 0.12); setTimeout(() => this.tone(659, 0.12), 80); setTimeout(() => this.tone(784, 0.15), 160);
+  }
+  wrong() {
+    this.tone(200, 0.25, 'sawtooth', 0.1);
+  }
+  catchStar() {
+    this.tone(880, 0.08); setTimeout(() => this.tone(1100, 0.1), 60);
+  }
+  streak(n) {
+    const base = 600 + n * 50;
+    this.tone(base, 0.1); setTimeout(() => this.tone(base + 200, 0.12), 70);
+  }
+  roundWin() {
+    [523,659,784,1047].forEach((f,i) => setTimeout(() => this.tone(f, 0.2), i*120));
+  }
+  celebration() {
+    const notes = [523,659,784,1047,784,1047,1319];
+    notes.forEach((f,i) => setTimeout(() => this.tone(f, 0.25, 'sine', 0.15), i*140));
+  }
+  duck() {
+    if (this.musicGain) this.musicGain.gain.setTargetAtTime(0.04, this.actx.currentTime, 0.1);
+  }
+  unduck() {
+    if (this.musicGain) this.musicGain.gain.setTargetAtTime(this.musicVol, this.actx.currentTime, 0.3);
+  }
+  startMusic() {
+    if (!this.actx || this.playing.music) return;
+    this.playing.music = true;
+    const pentatonic = [261.6, 293.7, 329.6, 392.0, 440.0];
+    const playNote = () => {
+      if (!this.playing.music) return;
+      const f = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+      const o = this.actx.createOscillator();
+      const g = this.actx.createGain();
+      o.type = 'triangle'; o.frequency.value = f * (Math.random() > 0.5 ? 1 : 0.5);
+      g.gain.setValueAtTime(0.08, this.actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, this.actx.currentTime + 1.5);
+      o.connect(g); g.connect(this.musicGain);
+      o.start(); o.stop(this.actx.currentTime + 1.5);
+      setTimeout(playNote, 800 + Math.random() * 1200);
+    };
+    playNote();
+  }
+  stopMusic() { this.playing.music = false; }
+}
+
+const audio = new GameAudio();
+
+// ── Voice ──
+function speak(file) {
+  return new Promise(resolve => {
+    audio.duck();
+    const a = new Audio(file);
+    a.volume = 0.9;
+    a.onended = () => { audio.unduck(); resolve(); };
+    a.onerror = () => { audio.unduck(); resolve(); };
+    a.play().catch(() => { audio.unduck(); resolve(); });
+  });
+}
+function speakNumber(n) { return speak(`audio/numbers/${n}.mp3`); }
+function speakPhrase(p) { return speak(`audio/phrases/${p}.mp3`); }
+
+// ── Helpers ──
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function randomPick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { t = true; e.preventDefault(); fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!t) fn(e); t = false; });
+}
+
+// ── Star colors ──
+const STAR_COLORS = [
+  'radial-gradient(circle at 35% 30%, #ff9999, #e53935)',
+  'radial-gradient(circle at 35% 30%, #99ccff, #1e88e5)',
+  'radial-gradient(circle at 35% 30%, #ffcc80, #fb8c00)',
+  'radial-gradient(circle at 35% 30%, #a5d6a7, #43a047)',
+  'radial-gradient(circle at 35% 30%, #ce93d8, #8e24aa)',
+  'radial-gradient(circle at 35% 30%, #80deea, #00acc1)',
+  'radial-gradient(circle at 35% 30%, #fff59d, #fdd835)',
+  'radial-gradient(circle at 35% 30%, #f48fb1, #e91e63)',
+];
+
+// ── Constellation patterns ──
+const CONSTELLATIONS = [
+  { name: 'The Crown', stars: [[50,10],[20,30],[35,50],[65,50],[80,30]], lines: [[0,1],[1,2],[2,3],[3,4],[4,0]] },
+  { name: 'The Kite', stars: [[50,5],[25,35],[50,55],[75,35],[50,80]], lines: [[0,1],[0,3],[1,2],[3,2],[2,4]] },
+  { name: 'The Arrow', stars: [[50,5],[30,25],[70,25],[50,45],[50,70],[50,90]], lines: [[0,1],[0,2],[1,3],[2,3],[3,4],[4,5]] },
+  { name: 'The Star', stars: [[50,5],[62,35],[95,35],[70,55],[78,85],[50,68],[22,85],[30,55],[5,35],[38,35]], lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,0]] },
+];
+
+// ── Rounds ──
+const ROUNDS = [
+  { label: 'Round 1', sub: 'Numbers 1-5 • Easy', range: [1,5], count: 5, distractors: 2, speed: 4500, spawnInterval: 2200 },
+  { label: 'Round 2', sub: 'Numbers 1-10 • Faster!', range: [1,10], count: 6, distractors: 3, speed: 3800, spawnInterval: 1800 },
+  { label: 'Round 3', sub: 'Numbers 1-15 • Quick!', range: [1,15], count: 7, distractors: 3, speed: 3200, spawnInterval: 1500 },
+  { label: 'Round 4', sub: 'Numbers 1-20 • Rush!', range: [1,20], count: 8, distractors: 4, speed: 2800, spawnInterval: 1300 },
+];
+
+// ── DOM ──
+const $ = id => document.getElementById(id);
+const starfield = $('starfield');
+const wizard = $('wizard');
+const wizbubble = $('wizbubble');
+const targetPrompt = $('targetPrompt');
+const targetNum = $('targetNum');
+const streakEl = $('streak');
+const streakText = $('streakText');
+const hudScore = $('hudScore');
+const hudRound = $('hudRound');
+const hudCaught = $('hudCaught');
+
+// ── State ──
+let round = 0;
+let score = 0;
+let caught = 0;
+let currentTarget = null;
+let streakCount = 0;
+let activeStars = [];
+let spawnTimer = null;
+let gameActive = false;
+let roundCaught = 0;
+let roundNeeded = 0;
+let constIndex = 0;
+let constLit = 0;
+
+// ── Twinkle background stars ──
+function createTwinkles() {
+  const sky = document.querySelector('.sky');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'sky-twinkle';
+    const size = 1 + Math.random() * 2;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*70}%;opacity:${0.2+Math.random()*0.6};animation:twinkle ${2+Math.random()*3}s ease-in-out infinite ${Math.random()*3}s`;
+    sky.appendChild(s);
+  }
+  const style = document.createElement('style');
+  style.textContent = '@keyframes twinkle{0%,100%{opacity:0.2}50%{opacity:0.8}}';
+  document.head.appendChild(style);
+}
+
+// ── Constellation setup ──
+function setupConstellation(roundIdx) {
+  const container = $('constellation');
+  container.innerHTML = '';
+  const pattern = CONSTELLATIONS[roundIdx % CONSTELLATIONS.length];
+  constLit = 0;
+  const w = Math.min(window.innerWidth * 0.35, 150);
+  const h = w;
+  container.style.width = w + 'px';
+  container.style.height = h + 'px';
+
+  // Draw lines first
+  pattern.lines.forEach((line, i) => {
+    const [a, b] = line;
+    const x1 = pattern.stars[a][0] / 100 * w;
+    const y1 = pattern.stars[a][1] / 100 * h;
+    const x2 = pattern.stars[b][0] / 100 * w;
+    const y2 = pattern.stars[b][1] / 100 * h;
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const el = document.createElement('div');
+    el.className = 'const-line';
+    el.dataset.lineIdx = i;
+    el.style.cssText = `left:${x1}px;top:${y1}px;width:${len}px;transform:rotate(${angle}deg)`;
+    container.appendChild(el);
+  });
+
+  // Draw stars
+  pattern.stars.forEach((pos, i) => {
+    const el = document.createElement('div');
+    el.className = 'const-star';
+    el.dataset.starIdx = i;
+    el.style.left = (pos[0] / 100 * w - 4) + 'px';
+    el.style.top = (pos[1] / 100 * h - 4) + 'px';
+    container.appendChild(el);
+  });
+
+  // Label
+  const label = document.createElement('div');
+  label.className = 'const-label';
+  label.id = 'constLabel';
+  label.textContent = pattern.name;
+  container.appendChild(label);
+}
+
+function lightConstellationStar() {
+  const pattern = CONSTELLATIONS[round % CONSTELLATIONS.length];
+  if (constLit >= pattern.stars.length) return;
+
+  const star = document.querySelector(`.const-star[data-star-idx="${constLit}"]`);
+  if (star) star.classList.add('lit');
+
+  // Light connected lines
+  pattern.lines.forEach((line, i) => {
+    const [a, b] = line;
+    if ((a <= constLit && b <= constLit)) {
+      const lineEl = document.querySelector(`.const-line[data-line-idx="${i}"]`);
+      if (lineEl) lineEl.classList.add('lit');
+    }
+  });
+
+  constLit++;
+
+  // Show label when complete
+  if (constLit >= pattern.stars.length) {
+    const label = $('constLabel');
+    if (label) label.classList.add('show');
+  }
+}
+
+// ── Spawn a falling star ──
+function spawnStar(num, isTarget) {
+  const el = document.createElement('div');
+  el.className = 'falling-star';
+  const starSize = Math.max(65, Math.min(90, window.innerWidth * 0.15));
+  const maxX = window.innerWidth - starSize - 10;
+  const startX = 10 + Math.random() * maxX;
+  el.style.left = startX + 'px';
+  el.style.top = '-100px';
+
+  const color = randomPick(STAR_COLORS);
+  el.innerHTML = `<div class="star-trail"></div><div class="star-body" style="background:${color}"><span class="star-num">${num}</span></div>`;
+
+  starfield.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('moving'));
+
+  const r = ROUNDS[round];
+  const fallDuration = r.speed;
+  const startTime = Date.now();
+  const endY = window.innerHeight + 20;
+  const startY = -100;
+
+  const starObj = { el, num, isTarget, alive: true };
+  activeStars.push(starObj);
+
+  // Tap handler
+  onTap(el, () => {
+    if (!starObj.alive || !gameActive) return;
+    starObj.alive = false;
+
+    if (num === currentTarget) {
+      // Correct!
+      el.classList.add('caught');
+      audio.catchStar();
+      score += 10 + streakCount * 5;
+      caught++;
+      roundCaught++;
+      streakCount++;
+      hudScore.textContent = score;
+      hudCaught.textContent = caught;
+      updateStreak();
+      lightConstellationStar();
+
+      // Sparkle effect
+      createSparkle(el.getBoundingClientRect());
+
+      // Show encouragement
+      if (streakCount >= 3) {
+        showWizBubble(randomPick(['🔥 Wow!', '⚡ Fast!', '🌟 Go!', '💫 Yes!']));
+        audio.streak(streakCount);
+      } else {
+        showWizBubble(randomPick(['✨', '⭐', '👏', '💫']));
+      }
+
+      setTimeout(() => el.remove(), 600);
+
+      // Check if round target met
+      if (roundCaught >= roundNeeded) {
+        endRound(true);
+      } else {
+        // New target after brief delay
+        setTimeout(() => { if (gameActive) pickNewTarget(); }, 600);
+      }
+    } else {
+      // Wrong star
+      el.classList.add('wrong');
+      audio.wrong();
+      streakCount = 0;
+      updateStreak();
+      showWizBubble(randomPick(['❌', 'Nope!', '🤔']));
+      // Say the correct number again
+      setTimeout(() => {
+        if (gameActive) {
+          speakPhrase('tap_the_number').then(() => speakNumber(currentTarget));
+        }
+      }, 400);
+      setTimeout(() => { el.classList.remove('wrong'); starObj.alive = true; }, 500);
+    }
+  });
+
+  // Animate falling
+  function fall() {
+    if (!starObj.alive && el.classList.contains('caught')) return;
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / fallDuration, 1);
+    const y = startY + (endY - startY) * progress;
+    el.style.top = y + 'px';
+
+    // Gentle horizontal drift
+    const drift = Math.sin(elapsed * 0.002) * 15;
+    el.style.left = (startX + drift) + 'px';
+
+    if (progress >= 1) {
+      // Star reached bottom
+      if (starObj.alive) {
+        starObj.alive = false;
+        el.classList.add('missed');
+        if (isTarget) {
+          streakCount = 0;
+          updateStreak();
+        }
+        setTimeout(() => el.remove(), 400);
+      }
+    } else if (starObj.alive) {
+      requestAnimationFrame(fall);
+    }
+  }
+  requestAnimationFrame(fall);
+}
+
+function createSparkle(rect) {
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = randomPick(['✨', '⭐', '💫', '🌟']);
+    s.style.left = (cx + (Math.random() - 0.5) * 60) + 'px';
+    s.style.top = (cy + (Math.random() - 0.5) * 60) + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 800);
+  }
+}
+
+// ── Pick new target ──
+function pickNewTarget() {
+  if (!gameActive) return;
+  const r = ROUNDS[round];
+  const range = [];
+  for (let i = r.range[0]; i <= r.range[1]; i++) range.push(i);
+  shuffle(range);
+  currentTarget = range[0];
+  targetNum.textContent = currentTarget;
+  targetPrompt.classList.add('show');
+
+  // Say it
+  speakNumber(currentTarget);
+}
+
+// ── Spawn loop ──
+function startSpawning() {
+  if (!gameActive) return;
+  const r = ROUNDS[round];
+
+  function spawnWave() {
+    if (!gameActive) return;
+
+    // Always spawn the target
+    spawnStar(currentTarget, true);
+
+    // Spawn distractors
+    const distractorCount = r.distractors;
+    const range = [];
+    for (let i = r.range[0]; i <= r.range[1]; i++) {
+      if (i !== currentTarget) range.push(i);
+    }
+    shuffle(range);
+    for (let i = 0; i < Math.min(distractorCount, range.length); i++) {
+      setTimeout(() => {
+        if (gameActive) spawnStar(range[i], false);
+      }, 200 + Math.random() * 400);
+    }
+
+    spawnTimer = setTimeout(spawnWave, r.spawnInterval);
+  }
+
+  spawnWave();
+}
+
+function stopSpawning() {
+  gameActive = false;
+  if (spawnTimer) { clearTimeout(spawnTimer); spawnTimer = null; }
+  // Remove all active stars
+  activeStars.forEach(s => { s.alive = false; if (s.el.parentNode) s.el.remove(); });
+  activeStars = [];
+}
+
+// ── Streak display ──
+function updateStreak() {
+  if (streakCount >= 2) {
+    streakEl.classList.add('show');
+    streakText.textContent = `${streakCount}x Streak!`;
+  } else {
+    streakEl.classList.remove('show');
+  }
+}
+
+// ── Wizard bubble ──
+function showWizBubble(text) {
+  wizbubble.textContent = text;
+  wizbubble.classList.add('show');
+  wizard.classList.add('cheer');
+  setTimeout(() => { wizbubble.classList.remove('show'); wizard.classList.remove('cheer'); }, 1200);
+}
+
+// ── Progress bar ──
+function buildProgress() {
+  const bar = $('progbar');
+  bar.innerHTML = '';
+  ROUNDS.forEach((r, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'prog-dot' + (i < round ? ' done' : '');
+    dot.textContent = i + 1;
+    bar.appendChild(dot);
+  });
+}
+
+function markRoundDone() {
+  const dots = $('progbar').querySelectorAll('.prog-dot');
+  if (dots[round]) dots[round].classList.add('done');
+}
+
+// ── Round flow ──
+async function showBanner(title, sub) {
+  const banner = $('roundBanner');
+  $('bannerTitle').textContent = title;
+  $('bannerSub').textContent = sub;
+  banner.classList.add('show');
+  await delay(1800);
+  banner.classList.remove('show');
+  await delay(300);
+}
+
+async function startRound() {
+  const r = ROUNDS[round];
+  roundCaught = 0;
+  roundNeeded = r.count;
+  streakCount = 0;
+  updateStreak();
+  hudRound.textContent = round + 1;
+  buildProgress();
+  setupConstellation(round);
+
+  await showBanner(r.label, r.sub);
+
+  gameActive = true;
+  pickNewTarget();
+  await delay(800);
+  startSpawning();
+}
+
+async function endRound(success) {
+  stopSpawning();
+  targetPrompt.classList.remove('show');
+  markRoundDone();
+  audio.roundWin();
+
+  if (success) {
+    showWizBubble('🎉 Amazing!');
+    await speakPhrase(randomPick(['amazing', 'fantastic', 'brilliant', 'superstar']));
+  }
+
+  await delay(500);
+
+  if (round < ROUNDS.length - 1) {
+    round++;
+    startRound();
+  } else {
+    showCelebration();
+  }
+}
+
+// ── Celebration ──
+function showCelebration() {
+  $('screenCeleb').classList.add('active');
+  $('celebScore').textContent = `Score: ${score}`;
+  audio.celebration();
+
+  // Confetti burst
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.textContent = randomPick(['⭐', '🌟', '✨', '💫', '🎉', '🎊']);
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }, i * 80);
+  }
+
+  speakPhrase('you_did_it');
+}
+
+// ── Start ──
+function initGame() {
+  audio.init();
+  audio.startMusic();
+  $('screenTitle').classList.remove('active');
+  $('hud').style.display = '';
+  $('progbar').style.display = '';
+  wizard.style.display = '';
+  round = 0;
+  score = 0;
+  caught = 0;
+  hudScore.textContent = '0';
+  hudCaught.textContent = '0';
+
+  speakPhrase('lets_go').then(() => startRound());
+}
+
+function resetGame() {
+  $('screenCeleb').classList.remove('active');
+  stopSpawning();
+  round = 0;
+  score = 0;
+  caught = 0;
+  hudScore.textContent = '0';
+  hudCaught.textContent = '0';
+  startRound();
+}
+
+// ── Init ──
+createTwinkles();
+onTap($('btnStart'), initGame);
+onTap($('btnAgain'), resetGame);
+
+</script>
+</body>
+</html>

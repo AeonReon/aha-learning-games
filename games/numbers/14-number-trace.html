@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Number Trace</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-canvas: 10; --z-spark: 15; --z-ui: 20; --z-char: 18; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --gold: #ffe066;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#fef9ef}
+
+/* ── Background ── */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#e8f5e9 0%,#fff8e1 40%,#fef9ef 70%,#fff3e0 100%)}
+.paint-splat{position:fixed;z-index:1;pointer-events:none;border-radius:50%;opacity:0.08}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#e8f5e9,#fff8e1,#fff3e0)}
+.screen-title h1{font-size:clamp(28px,7vw,48px);color:#e65100;text-shadow:2px 2px 0 rgba(0,0,0,0.1);margin:10px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:#5d4037;max-width:440px;line-height:1.4}
+.screen-title .icon-row{display:flex;gap:10px;justify-content:center;align-items:center;margin-bottom:5px}
+.screen-title .icon-row span{font-size:clamp(40px,10vw,70px)}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.2);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#ff7043,#ff9800);animation:glow 2s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#ff7043,#ff9800);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(255,255,255,0.8);backdrop-filter:blur(4px);border-bottom:2px solid rgba(0,0,0,0.05)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:rgba(0,0,0,0.35);font-weight:bold}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900;text-shadow:1px 1px 0 rgba(0,0,0,0.1)}
+.hud-round .hud-val{color:#ff7043}
+.hud-score .hud-val{color:#ff9800}
+.prompt-label{font-size:clamp(10px,2.2vw,14px);color:rgba(0,0,0,0.35);font-weight:bold}
+.prompt-val{font-size:clamp(18px,4vw,28px);font-weight:900;color:#e65100;line-height:1.1}
+
+/* ── Drawing Area ── */
+.draw-area{position:fixed;z-index:var(--z-canvas);left:5%;right:5%;top:55px;bottom:70px;border-radius:20px;background:rgba(255,255,255,0.6);border:3px dashed rgba(0,0,0,0.08);overflow:hidden}
+.draw-area canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+#guideCanvas{z-index:1}
+#drawCanvas{z-index:2}
+
+/* ── Choice mode: two numbers side by side ── */
+.choice-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;display:flex;pointer-events:none}
+.choice-side{flex:1;display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;transition:background 0.3s,opacity 0.3s;border-radius:20px;margin:10px}
+.choice-side:active{background:rgba(255,200,0,0.1)}
+.choice-side.wrong-pick{animation:wrongFlash 0.5s ease-in-out}
+.choice-side.correct-pick{background:rgba(100,255,100,0.1)}
+.choice-side.dimmed{opacity:0.2;pointer-events:none}
+@keyframes wrongFlash{0%,100%{background:transparent}50%{background:rgba(255,0,0,0.08)}}
+
+/* ── Sparkle particles ── */
+.sparkle{position:fixed;z-index:var(--z-spark);pointer-events:none;font-size:16px;animation:sparkFade 0.6s ease-out forwards}
+@keyframes sparkFade{0%{transform:scale(1) translateY(0);opacity:1}100%{transform:scale(0) translateY(-20px);opacity:0}}
+
+/* ── Start indicator ── */
+.start-dot{position:absolute;z-index:6;width:40px;height:40px;border-radius:50%;background:rgba(76,175,80,0.6);border:3px solid #4caf50;display:flex;align-items:center;justify-content:center;font-size:18px;animation:pulse 1.5s ease-in-out infinite;pointer-events:none;transform:translate(-50%,-50%)}
+@keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.8}50%{transform:translate(-50%,-50%) scale(1.3);opacity:1}}
+
+/* ── Character (caterpillar/butterfly) ── */
+.char-area{position:fixed;bottom:52px;left:0;right:0;z-index:var(--z-char);display:flex;justify-content:center;align-items:center;pointer-events:none;height:50px}
+.caterpillar{display:flex;align-items:center;gap:2px}
+.cat-head{font-size:clamp(24px,5vw,34px);transition:transform 0.3s}
+.cat-segment{width:clamp(18px,3.5vw,26px);height:clamp(18px,3.5vw,26px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(8px,1.6vw,11px);font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.3);opacity:0.15;transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1);border:2px solid transparent}
+.cat-segment.filled{opacity:1;transform:scale(1.1);border-color:rgba(255,255,255,0.5)}
+.butterfly-reveal{font-size:clamp(40px,8vw,60px);animation:butterflyIn 1s ease-out;display:none}
+@keyframes butterflyIn{0%{transform:scale(0) rotate(-180deg);opacity:0}60%{transform:scale(1.3) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+
+/* ── Progress dots (bottom) ── */
+.prog-bar{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:center;align-items:center;gap:clamp(2px,0.8vw,5px);padding:4px 6px 6px;background:rgba(255,255,255,0.8);backdrop-filter:blur(4px);pointer-events:none;flex-wrap:wrap}
+.prog-dot{width:clamp(20px,3.5vw,28px);height:clamp(20px,3.5vw,28px);border-radius:50%;background:rgba(0,0,0,0.06);border:2px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;font-size:clamp(8px,1.5vw,11px);font-weight:900;color:rgba(0,0,0,0.2);font-family:var(--font);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.prog-dot.done{border-color:#fff;color:#fff;transform:scale(1.1);box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+
+/* ── Round Banner ── */
+.round-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);text-align:center;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.round-banner.show{opacity:1}
+.round-banner h2{font-size:clamp(24px,6vw,40px);color:#e65100;text-shadow:2px 2px 0 rgba(0,0,0,0.1);font-weight:900}
+.round-banner p{font-size:clamp(13px,2.8vw,18px);color:rgba(0,0,0,0.5);margin-top:4px}
+
+/* ── Celebration ── */
+.screen-celeb{background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:var(--z-celeb)}
+.screen-celeb h2{font-size:clamp(26px,6.5vw,46px);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,0.5);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+.celeb-icon-row{display:flex;gap:12px;justify-content:center;margin-bottom:8px}
+.celeb-icon-row span{font-size:clamp(50px,12vw,80px);animation:dance 1s ease-in-out infinite}
+
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round"><span class="hud-label">ROUND</span><span class="hud-val" id="hudRound">1/4</span></div>
+  <div class="hud-center">
+    <div class="prompt-label">TRACE</div>
+    <div class="prompt-val" id="promptVal">5</div>
+  </div>
+  <div class="hud-right hud-score"><span class="hud-label">STARS</span><span class="hud-val" id="hudScore">0</span></div>
+</div>
+
+<!-- Drawing Area -->
+<div class="draw-area" id="drawArea">
+  <canvas id="guideCanvas"></canvas>
+  <canvas id="drawCanvas"></canvas>
+</div>
+
+<!-- Caterpillar -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="caterpillar" id="caterpillar"></div>
+  <div class="butterfly-reveal" id="butterfly">🦋</div>
+</div>
+
+<!-- Progress -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner"><h2 id="roundTitle"></h2><p id="roundSub"></p></div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🎨</span>
+    <span style="font-size:clamp(50px,13vw,80px)">🖌️</span>
+    <span>🎨</span>
+  </div>
+  <h1>Number Trace</h1>
+  <p>Use your magic paintbrush to trace the numbers! Paint each number and watch the caterpillar grow! 🎨🐛</p>
+  <button class="btn btn-start" id="btnStart">Let's Paint! 🖌️</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🐛</span>
+    <span>➡️</span>
+    <span>🦋</span>
+  </div>
+  <h2 id="celebTitle">🦋 Beautiful! 🦋</h2>
+  <p id="celebMsg">Your caterpillar became a butterfly!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🎨</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ═══════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.05; this.sfxVol = 0.3; this.musicDucked = 0.02;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    const notes = [261.63, 329.63, 392, 440, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f * (Math.random() > 0.5 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.5);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1200 + Math.random() * 1600);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'paint') { p(600,t,0.04,0.1); }
+    else if (type === 'correct') { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type === 'wrong') { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type === 'celeb') { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type === 'roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(600,t+0.12);
+      g.gain.setValueAtTime(0.12,t); g.gain.linearRampToValueAtTime(0,t+0.18);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.22);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type === 'segment') {
+      p(440 + Math.random()*200, t, 0.1, 0.2);
+      p(660 + Math.random()*200, t+0.08, 0.12, 0.15);
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({ file, resolve }); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true; const { file, resolve } = this.voiceQueue.shift(); this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) { return new Promise((resolve) => { const a = new window.Audio(path); a.onended = resolve; a.onerror = () => resolve(); a.play().catch(() => resolve()); }); }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+
+const CHEERS = ['amazing','wonderful','brilliant','fantastic','you_got_it','super','awesome','great_job','incredible'];
+const COLORS = [
+  '#FF6B6B','#FF9F43','#FECA57','#48DBFB','#0ABDE3',
+  '#6C5CE7','#FD79A8','#00B894','#E17055','#A29BFE',
+  '#55E6C1','#FF5E57','#FFC048','#54A0FF','#5F27CD',
+  '#F368E0','#01A3A4','#EE5A24','#C44569','#3DC1D3'
+];
+
+function confetti(count = 40, extra = []) {
+  const all = ['🎨','🖌️','⭐','✨','💫','🌟','🌈','🎉',...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className='confetti'; el.textContent=pick(all);
+    el.style.left=(Math.random()*100)+'vw'; el.style.top='-30px';
+    el.style.fontSize=(16+Math.random()*14)+'px';
+    el.style.animationDelay=(Math.random()*1.8)+'s';
+    el.style.animationDuration=(2.5+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),6000);
+  }
+}
+function starBurst(x, y) {
+  for(let i=0;i<8;i++){
+    const s=document.createElement('div');
+    s.className='starburst'; s.textContent=pick(['✨','💫','⭐','🎨','🌟']);
+    s.style.left=(x+(Math.random()-0.5)*100)+'px';
+    s.style.top=(y+(Math.random()-0.5)*100)+'px';
+    s.style.animationDelay=(Math.random()*0.15)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),900);
+  }
+}
+function spawnSparkle(x, y, color) {
+  const s = document.createElement('div');
+  s.className = 'sparkle';
+  s.textContent = pick(['✨','💫','⭐','·']);
+  s.style.left = x + 'px';
+  s.style.top = y + 'px';
+  s.style.color = color;
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 600);
+}
+
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+
+// ═══════════════════════════════════════
+// SCENERY
+// ═══════════════════════════════════════
+function buildScenery() {
+  for (let i = 0; i < 8; i++) {
+    const sp = document.createElement('div');
+    sp.className = 'paint-splat';
+    const size = 60 + Math.random() * 120;
+    sp.style.width = size + 'px';
+    sp.style.height = size + 'px';
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.top = (Math.random() * 100) + '%';
+    sp.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+    document.body.appendChild(sp);
+  }
+}
+
+// ═══════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════
+const guideCanvas = $('guideCanvas');
+const drawCanvas = $('drawCanvas');
+const guideCtx = guideCanvas.getContext('2d');
+const drawCtx = drawCanvas.getContext('2d');
+let canvasW = 0, canvasH = 0, dpr = 1;
+
+// Hidden mask canvas for coverage detection
+const maskCanvas = document.createElement('canvas');
+const maskCtx = maskCanvas.getContext('2d');
+
+// Grid for coverage
+const GRID_COLS = 20;
+const GRID_ROWS = 28;
+let grid = [];
+let gridCellW = 0, gridCellH = 0;
+let totalNumberCells = 0;
+let tracedNumberCells = 0;
+
+function resizeCanvases() {
+  const area = $('drawArea');
+  const rect = area.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  canvasW = rect.width;
+  canvasH = rect.height;
+
+  [guideCanvas, drawCanvas, maskCanvas].forEach(c => {
+    c.width = canvasW * dpr;
+    c.height = canvasH * dpr;
+    c.style.width = canvasW + 'px';
+    c.style.height = canvasH + 'px';
+  });
+  guideCtx.scale(dpr, dpr);
+  drawCtx.scale(dpr, dpr);
+  maskCtx.scale(dpr, dpr);
+
+  gridCellW = canvasW / GRID_COLS;
+  gridCellH = canvasH / GRID_ROWS;
+}
+
+function renderGuide(numStr, color, xOffset, areaWidth) {
+  const rgb = hexToRgb(color);
+  const cx = xOffset + areaWidth / 2;
+  const cy = canvasH / 2;
+
+  // Calculate font size to fit
+  let fontSize = Math.min(canvasH * 0.65, areaWidth * 0.85);
+  if (numStr.length > 1) fontSize = Math.min(canvasH * 0.6, areaWidth * 0.75);
+
+  const font = `bold ${fontSize}px 'Arial Rounded MT Bold', Arial, sans-serif`;
+
+  // Faint fill
+  guideCtx.font = font;
+  guideCtx.textAlign = 'center';
+  guideCtx.textBaseline = 'middle';
+  guideCtx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.08)`;
+  guideCtx.fillText(numStr, cx, cy);
+
+  // Dashed outline
+  guideCtx.setLineDash([12, 8]);
+  guideCtx.lineWidth = 3;
+  guideCtx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`;
+  guideCtx.strokeText(numStr, cx, cy);
+
+  // Thin solid outline
+  guideCtx.setLineDash([]);
+  guideCtx.lineWidth = 1.5;
+  guideCtx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`;
+  guideCtx.strokeText(numStr, cx, cy);
+
+  // Render to mask canvas (solid fill for detection)
+  maskCtx.font = font;
+  maskCtx.textAlign = 'center';
+  maskCtx.textBaseline = 'middle';
+  maskCtx.fillStyle = '#000';
+  maskCtx.fillText(numStr, cx, cy);
+}
+
+function buildGrid() {
+  grid = [];
+  totalNumberCells = 0;
+  tracedNumberCells = 0;
+
+  const imgData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      let hasPixel = false;
+      const sx = Math.floor(c * gridCellW * dpr);
+      const sy = Math.floor(r * gridCellH * dpr);
+      const ex = Math.floor((c + 1) * gridCellW * dpr);
+      const ey = Math.floor((r + 1) * gridCellH * dpr);
+
+      // Sample pixels in this cell
+      for (let y = sy; y < ey && !hasPixel; y += 3) {
+        for (let x = sx; x < ex && !hasPixel; x += 3) {
+          const idx = (y * maskCanvas.width + x) * 4;
+          if (imgData.data[idx + 3] > 100) hasPixel = true;
+        }
+      }
+
+      const cell = { row: r, col: c, hasNumber: hasPixel, traced: false };
+      grid.push(cell);
+      if (hasPixel) totalNumberCells++;
+    }
+  }
+}
+
+function markCellsNear(x, y) {
+  const col = Math.floor(x / gridCellW);
+  const row = Math.floor(y / gridCellH);
+  let newlyTraced = 0;
+
+  // Only mark the exact cell the finger is on (no 3x3 spread)
+  if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
+    const cell = grid[row * GRID_COLS + col];
+    if (cell.hasNumber && !cell.traced) {
+      cell.traced = true;
+      tracedNumberCells++;
+      newlyTraced++;
+    }
+  }
+  return newlyTraced;
+}
+
+function getCoverage() {
+  if (totalNumberCells === 0) return 0;
+  return tracedNumberCells / totalNumberCells;
+}
+
+// ═══════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let roundNumbers = [], roundIdx = 0;
+let currentNumber = -1;
+let currentColor = '#FF6B6B';
+let isDrawing = false;
+let lastX = 0, lastY = 0;
+let completed = false;
+let repeatTimer = null;
+let midwaySpoken = false;
+let choiceMode = false; // true in later rounds
+let choiceCorrect = -1; // the correct number in choice mode
+let choiceResolved = false;
+
+const ROUNDS = [
+  { label: 'Round 1 — First Strokes 🖌️', sub: 'Trace 1 to 5', numbers: [1,2,3,4,5], choice: false },
+  { label: 'Round 2 — Getting Better! 🎨', sub: 'Trace 6 to 10', numbers: [6,7,8,9,10], choice: false },
+  { label: 'Round 3 — Pick & Trace! 🤔', sub: 'Numbers 1 to 10', numbers: [1,2,3,4,5,6,7,8,9,10], choice: true },
+  { label: 'Round 4 — Big Numbers! ✨', sub: 'Trace 11 to 20', numbers: [11,12,13,14,15,16,17,18,19,20], choice: false },
+];
+
+function roundCfg() { return ROUNDS[round]; }
+
+// ═══════════════════════════════════════
+// UI
+// ═══════════════════════════════════════
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); if(id) $(id).classList.add('active'); }
+
+function buildProg() {
+  const bar = $('progBar'); bar.innerHTML = ''; bar.style.display = '';
+  roundCfg().numbers.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + n; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+function markProg(n, color) {
+  const d = $('prog' + n);
+  if (d) { d.classList.add('done'); d.style.background = color; }
+}
+
+function buildCaterpillar() {
+  const cat = $('caterpillar');
+  cat.innerHTML = '';
+  cat.style.display = '';
+  $('butterfly').style.display = 'none';
+
+  // Head
+  const head = document.createElement('span');
+  head.className = 'cat-head';
+  head.textContent = '🐛';
+  head.id = 'catHead';
+  cat.appendChild(head);
+
+  // Segments for each number in round
+  roundCfg().numbers.forEach((n, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'cat-segment';
+    seg.id = 'catSeg' + n;
+    seg.textContent = n;
+    seg.style.background = COLORS[(n - 1) % COLORS.length];
+    cat.appendChild(seg);
+  });
+}
+
+function fillCatSegment(n) {
+  const seg = $('catSeg' + n);
+  if (seg) seg.classList.add('filled');
+  // Wiggle the head
+  const head = $('catHead');
+  if (head) { head.style.transform = 'scale(1.2)'; setTimeout(() => head.style.transform = '', 300); }
+}
+
+// ═══════════════════════════════════════
+// NUMBER PRESENTATION
+// ═══════════════════════════════════════
+function clearDrawing() {
+  guideCtx.clearRect(0, 0, canvasW, canvasH);
+  drawCtx.clearRect(0, 0, canvasW, canvasH);
+  maskCtx.clearRect(0, 0, canvasW, canvasH);
+  // Remove any choice overlay
+  const old = $('drawArea').querySelector('.choice-overlay');
+  if (old) old.remove();
+  // Remove start dots
+  $('drawArea').querySelectorAll('.start-dot').forEach(d => d.remove());
+}
+
+async function presentNumber() {
+  clearDrawing();
+  resizeCanvases();
+  completed = false;
+  midwaySpoken = false;
+  isDrawing = false;
+  choiceResolved = false;
+  clearTimeout(repeatTimer);
+
+  const cfg = roundCfg();
+
+  if (cfg.choice) {
+    // CHOICE MODE: show two numbers, child must pick correct one
+    await presentChoice();
+  } else {
+    // TRACE MODE: show one number to trace
+    currentNumber = roundNumbers[roundIdx];
+    currentColor = COLORS[(currentNumber - 1) % COLORS.length];
+    $('promptVal').textContent = currentNumber;
+
+    renderGuide(String(currentNumber), currentColor, 0, canvasW);
+    buildGrid();
+
+    // Add start dot at top-center of number area
+    addStartDot(canvasW / 2, canvasH * 0.2);
+
+    // Voice: say the number
+    audio.speakPhrase('lets_try');
+    await audio.speakNumber(currentNumber);
+
+    // Set up repeating voice
+    startRepeatTimer();
+  }
+}
+
+async function presentChoice() {
+  const cfg = roundCfg();
+  currentNumber = roundNumbers[roundIdx];
+  currentColor = COLORS[(currentNumber - 1) % COLORS.length];
+
+  // Pick a distractor
+  let distractor;
+  do { distractor = pick(cfg.numbers); } while (distractor === currentNumber);
+
+  // Randomly place correct on left or right
+  const correctOnLeft = Math.random() > 0.5;
+  const leftNum = correctOnLeft ? currentNumber : distractor;
+  const rightNum = correctOnLeft ? distractor : currentNumber;
+  const leftColor = COLORS[(leftNum - 1) % COLORS.length];
+  const rightColor = COLORS[(rightNum - 1) % COLORS.length];
+
+  choiceCorrect = currentNumber;
+
+  // Render both numbers as guides (side by side)
+  const halfW = canvasW / 2;
+  renderGuide(String(leftNum), leftColor, 0, halfW);
+  renderGuide(String(rightNum), rightColor, halfW, halfW);
+
+  // Build mask for the CORRECT number only
+  maskCtx.clearRect(0, 0, canvasW * dpr, canvasH * dpr);
+  const fontSize = Math.min(canvasH * 0.6, halfW * 0.75);
+  const font = `bold ${fontSize}px 'Arial Rounded MT Bold', Arial, sans-serif`;
+  maskCtx.font = font;
+  maskCtx.textAlign = 'center';
+  maskCtx.textBaseline = 'middle';
+  maskCtx.fillStyle = '#000';
+  const correctCx = correctOnLeft ? halfW / 2 : halfW + halfW / 2;
+  maskCtx.fillText(String(currentNumber), correctCx, canvasH / 2);
+  buildGrid();
+
+  // Add choice overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'choice-overlay';
+  overlay.innerHTML = `
+    <div class="choice-side" id="choiceLeft" data-num="${leftNum}"></div>
+    <div class="choice-side" id="choiceRight" data-num="${rightNum}"></div>
+  `;
+  $('drawArea').appendChild(overlay);
+
+  $('promptVal').textContent = '?';
+
+  // Voice: "Which number is [X]? Trace [X]!"
+  await audio.speakPhrase('which_number');
+  await audio.speakNumber(currentNumber);
+
+  // Wait for child to tap correct side
+  const leftEl = $('choiceLeft');
+  const rightEl = $('choiceRight');
+
+  const handleChoice = (tappedNum, tappedEl, otherEl) => {
+    if (choiceResolved) return;
+    if (tappedNum === currentNumber) {
+      // Correct! Remove overlay, let them trace
+      choiceResolved = true;
+      tappedEl.classList.add('correct-pick');
+      otherEl.classList.add('dimmed');
+      audio.tone('correct');
+      audio.speakPhrase('thats_right');
+      setTimeout(() => {
+        overlay.remove();
+        $('promptVal').textContent = currentNumber;
+        addStartDot(correctCx, canvasH * 0.2);
+        audio.speakNumber(currentNumber);
+        startRepeatTimer();
+      }, 600);
+    } else {
+      // Wrong
+      tappedEl.classList.add('wrong-pick');
+      audio.tone('wrong');
+      audio.speakPhrase('try_again');
+      setTimeout(() => tappedEl.classList.remove('wrong-pick'), 500);
+    }
+  };
+
+  onTap(leftEl, () => handleChoice(leftNum, leftEl, rightEl));
+  onTap(rightEl, () => handleChoice(rightNum, rightEl, leftEl));
+}
+
+function addStartDot(x, y) {
+  const dot = document.createElement('div');
+  dot.className = 'start-dot';
+  dot.textContent = '👆';
+  dot.style.left = x + 'px';
+  dot.style.top = y + 'px';
+  dot.id = 'startDot';
+  $('drawArea').appendChild(dot);
+}
+
+function startRepeatTimer() {
+  clearTimeout(repeatTimer);
+  // Repeat the number every 4 seconds while tracing
+  repeatTimer = setInterval(() => {
+    if (gameActive && !completed) {
+      audio.speakNumber(currentNumber);
+    }
+  }, 4000);
+}
+
+// ═══════════════════════════════════════
+// DRAWING HANDLERS
+// ═══════════════════════════════════════
+function getPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return {
+    x: touch.clientX - rect.left,
+    y: touch.clientY - rect.top
+  };
+}
+
+function startDraw(e) {
+  if (!gameActive || completed) return;
+  if (choiceMode && !choiceResolved) return;
+  e.preventDefault();
+
+  const pos = getPos(e);
+  isDrawing = true;
+  lastX = pos.x;
+  lastY = pos.y;
+
+  // Remove start dot
+  const dot = $('startDot');
+  if (dot) dot.remove();
+
+  // Start drawing
+  drawCtx.lineWidth = 30;
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+  drawCtx.strokeStyle = currentColor;
+  drawCtx.shadowColor = currentColor;
+  drawCtx.shadowBlur = 10;
+  drawCtx.beginPath();
+  drawCtx.moveTo(pos.x, pos.y);
+
+  markCellsNear(pos.x, pos.y);
+  spawnSparkle(pos.x + drawCanvas.getBoundingClientRect().left, pos.y + drawCanvas.getBoundingClientRect().top, currentColor);
+}
+
+let sparkleCounter = 0;
+function moveDraw(e) {
+  if (!isDrawing || !gameActive || completed) return;
+  e.preventDefault();
+
+  const pos = getPos(e);
+
+  drawCtx.lineWidth = 30;
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+  drawCtx.strokeStyle = currentColor;
+  drawCtx.shadowColor = currentColor;
+  drawCtx.shadowBlur = 10;
+  drawCtx.beginPath();
+  drawCtx.moveTo(lastX, lastY);
+  drawCtx.lineTo(pos.x, pos.y);
+  drawCtx.stroke();
+
+  const newCells = markCellsNear(pos.x, pos.y);
+
+  // Sparkles
+  sparkleCounter++;
+  if (sparkleCounter % 3 === 0) {
+    const rect = drawCanvas.getBoundingClientRect();
+    spawnSparkle(pos.x + rect.left + (Math.random()-0.5)*20, pos.y + rect.top + (Math.random()-0.5)*20, currentColor);
+  }
+
+  // Check midway voice
+  const cov = getCoverage();
+  if (cov > 0.25 && !midwaySpoken) {
+    midwaySpoken = true;
+    audio.speakNumber(currentNumber);
+    audio.tone('paint');
+  }
+
+  // Check completion
+  if (cov >= 0.62) {
+    completeNumber();
+  }
+
+  lastX = pos.x;
+  lastY = pos.y;
+}
+
+function endDraw(e) {
+  if (!isDrawing) return;
+  isDrawing = false;
+}
+
+drawCanvas.addEventListener('touchstart', startDraw, {passive: false});
+drawCanvas.addEventListener('touchmove', moveDraw, {passive: false});
+drawCanvas.addEventListener('touchend', endDraw);
+drawCanvas.addEventListener('mousedown', startDraw);
+drawCanvas.addEventListener('mousemove', moveDraw);
+drawCanvas.addEventListener('mouseup', endDraw);
+drawCanvas.addEventListener('mouseleave', endDraw);
+
+// ═══════════════════════════════════════
+// COMPLETION
+// ═══════════════════════════════════════
+async function completeNumber() {
+  if (completed) return;
+  completed = true;
+  isDrawing = false;
+  clearTimeout(repeatTimer);
+
+  // Fill the number fully with color
+  const fontSize = currentNumber > 9
+    ? Math.min(canvasH * 0.6, canvasW * 0.75)
+    : Math.min(canvasH * 0.65, canvasW * 0.85);
+  const font = `bold ${fontSize}px 'Arial Rounded MT Bold', Arial, sans-serif`;
+
+  // Determine center x based on choice mode
+  let cx = canvasW / 2;
+  if (choiceMode) {
+    // The correct number's position
+    cx = maskCtx.canvas.width; // We'll just center it for the fill
+    cx = canvasW / 2; // simplify — fill centered
+  }
+
+  drawCtx.save();
+  drawCtx.shadowBlur = 0;
+  drawCtx.font = font;
+  drawCtx.textAlign = 'center';
+  drawCtx.textBaseline = 'middle';
+  drawCtx.fillStyle = currentColor;
+  drawCtx.fillText(String(currentNumber), canvasW / 2, canvasH / 2);
+  drawCtx.restore();
+
+  // Star burst
+  const rect = drawCanvas.getBoundingClientRect();
+  starBurst(rect.left + canvasW / 2, rect.top + canvasH / 2);
+
+  audio.tone('correct');
+  score++;
+  $('hudScore').textContent = score;
+  markProg(currentNumber, currentColor);
+  fillCatSegment(currentNumber);
+
+  // Voice: cheer + number name (repeat!)
+  const cheer = pick(CHEERS);
+  await audio.speakPhrase(cheer);
+  await audio.speakNumber(currentNumber);
+  await delay(300);
+  await audio.speakNumber(currentNumber);
+
+  await delay(500);
+
+  // Next number
+  roundIdx++;
+  if (roundIdx >= roundNumbers.length) {
+    await finishRound();
+  } else {
+    presentNumber();
+  }
+}
+
+// ═══════════════════════════════════════
+// ROUND / GAME FLOW
+// ═══════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearTimeout(repeatTimer);
+  audio.tone('roundDone');
+  confetti(25);
+
+  round++;
+  if (round >= ROUNDS.length) {
+    await delay(600);
+    endGame();
+    return;
+  }
+
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.speakPhrase('keep_going');
+
+  await delay(2200);
+  $('roundBanner').classList.remove('show');
+  await delay(400);
+
+  startRound();
+}
+
+async function startRound() {
+  const cfg = roundCfg();
+  choiceMode = cfg.choice;
+  $('hudRound').textContent = `${round + 1}/${ROUNDS.length}`;
+
+  // Pick numbers for this round
+  if (cfg.choice) {
+    // In choice mode, pick a subset to keep it reasonable
+    roundNumbers = shuffle(cfg.numbers.slice()).slice(0, 6);
+  } else {
+    roundNumbers = cfg.numbers.slice(); // keep in order for tracing rounds
+  }
+  roundIdx = 0;
+
+  buildProg();
+  buildCaterpillar();
+  $('charArea').style.display = '';
+  gameActive = true;
+  presentNumber();
+}
+
+function endGame() {
+  gameActive = false;
+  clearDrawing();
+  $('hud').style.display = 'none';
+  $('progBar').style.display = 'none';
+
+  // Transform caterpillar to butterfly!
+  $('caterpillar').style.display = 'none';
+  $('butterfly').style.display = '';
+
+  const stars = Math.min(5, Math.max(3, Math.floor(score / 4)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🦋 Beautiful! 🦋';
+  $('celebMsg').textContent = `You traced ${score} numbers! The caterpillar became a butterfly!`;
+
+  showScreen('scrCeleb');
+  audio.tone('celeb');
+  confetti(50, ['🦋','🐛','🎨','🖌️']);
+  setTimeout(() => confetti(35), 1500);
+  setTimeout(() => confetti(35), 3000);
+  audio.speakPhrase('you_did_it');
+}
+
+async function startGame() {
+  showScreen(null);
+  audio.unlock();
+  audio.startMusic();
+  round = 0; score = 0;
+  $('hudScore').textContent = '0';
+  $('hud').style.display = '';
+  $('drawArea').style.display = '';
+  resizeCanvases();
+
+  const cfg = roundCfg();
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.speakPhrase('lets_go');
+
+  await delay(2200);
+  $('roundBanner').classList.remove('show');
+  await delay(400);
+
+  startRound();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+buildScenery();
+resizeCanvases();
+window.addEventListener('resize', () => { if (gameActive) resizeCanvases(); });
+onTap($('btnStart'), () => startGame());
+onTap($('btnAgain'), () => startGame());
+</script>
+</body>
+</html>

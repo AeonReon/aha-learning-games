@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Spooky Number Match</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --dark: #0a0a2e; --purple: #2d1b69; --moon: #ffe066; --green: #4CAF50;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,#0a0a2e 0%,#15153f 35%,#1e1e55 65%,#2a1a40 100%)}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen)}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+
+.screen-title{background:linear-gradient(180deg,#0a0a2e,#1e1e55 60%,#2a1a40)}
+.screen-title .icon{font-size:clamp(90px,22vw,150px);animation:ghostfloat 3s ease-in-out infinite;filter:drop-shadow(0 8px 25px rgba(180,100,255,0.3))}
+.screen-title h1{font-size:clamp(24px,6vw,42px);color:var(--moon);text-shadow:3px 3px 0 #0a0a2e;margin:8px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:#b8a8d8;max-width:420px;padding:0 20px;line-height:1.4}
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-spooky{background:linear-gradient(135deg,#7c4dff,#b388ff);animation:glow 2s ease-in-out infinite}
+.btn-again{background:linear-gradient(135deg,#7c4dff,#b388ff)}
+
+/* ── Night Sky ── */
+.sky{position:fixed;inset:0;pointer-events:none;z-index:var(--z-bg);overflow:hidden}
+.star{position:absolute;color:#fff;animation:twinkle ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:0.15;transform:scale(0.7)}50%{opacity:0.85;transform:scale(1.1)}}
+.moon{position:absolute;top:6%;right:8%;width:clamp(50px,10vw,80px);height:clamp(50px,10vw,80px);border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff8e1,#ffe082,#ffca28);box-shadow:0 0 40px rgba(255,224,102,0.4),0 0 80px rgba(255,224,102,0.15);animation:moonglow 4s ease-in-out infinite}
+@keyframes moonglow{0%,100%{box-shadow:0 0 40px rgba(255,224,102,0.4),0 0 80px rgba(255,224,102,0.15)}50%{box-shadow:0 0 50px rgba(255,224,102,0.5),0 0 100px rgba(255,224,102,0.2)}}
+
+/* ── Ground with pumpkins ── */
+.ground{position:fixed;bottom:0;left:0;right:0;height:90px;z-index:1;background:linear-gradient(180deg,transparent,#1a0e20 30%,#15100a)}
+.pumpkin{position:absolute;bottom:10px;font-size:clamp(25px,5vw,40px);animation:pumpkinbob 3s ease-in-out infinite}
+@keyframes pumpkinbob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:8px;left:0;right:0;text-align:center;z-index:var(--z-ui)}
+.hud h1{font-size:clamp(16px,3.5vw,26px);color:#fff;text-shadow:2px 2px 0 #0a0a2e}
+.hud .sub{font-size:clamp(11px,2.5vw,16px);color:#b8a8d8}
+.hud-score{position:fixed;top:10px;right:12px;z-index:var(--z-ui);font-size:clamp(14px,3vw,22px);color:var(--moon);font-weight:bold;text-shadow:2px 2px 0 #0a0a2e}
+.hud-level{position:fixed;top:10px;left:12px;z-index:var(--z-ui);font-size:clamp(14px,3vw,22px);color:#b8a8d8;font-weight:bold;text-shadow:2px 2px 0 #0a0a2e}
+
+/* ── Prompt ── */
+.prompt-area{position:fixed;top:50px;left:0;right:0;z-index:var(--z-ui);text-align:center;pointer-events:none}
+.prompt-label{font-size:clamp(16px,3.5vw,24px);color:#b8a8d8;margin-bottom:4px}
+.prompt-number{font-size:clamp(44px,10vw,70px);font-weight:900;color:var(--moon);text-shadow:3px 3px 0 #4a2c8a,0 0 25px rgba(255,224,102,0.4);animation:numappear 0.5s ease-out}
+@keyframes numappear{0%{transform:scale(0) rotate(-15deg);opacity:0}60%{transform:scale(1.15) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+
+/* ── Ghost Area ── */
+.ghost-area{position:fixed;top:130px;left:0;right:0;bottom:130px;z-index:var(--z-game)}
+
+/* ── Ghost ── */
+.ghost{position:absolute;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.1s;display:flex;flex-direction:column;align-items:center}
+.ghost:active{transform:scale(0.9)!important}
+.ghost-body{font-size:clamp(55px,12vw,80px);line-height:1;filter:drop-shadow(0 4px 12px rgba(100,80,200,0.3));transition:filter 0.3s}
+.ghost-num{font-size:clamp(20px,5vw,32px);font-weight:900;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,0.3);margin-top:-8px;background:rgba(0,0,0,0.25);border-radius:12px;padding:2px 10px;min-width:40px;text-align:center}
+
+/* Ghost floating animation — each ghost gets a unique one via JS */
+.ghost.floating{animation-timing-function:ease-in-out;animation-iteration-count:infinite}
+
+/* Ghost states */
+.ghost.caught{pointer-events:none}
+.ghost.caught .ghost-body{animation:ghostcaught 0.8s ease-out forwards}
+.ghost.caught .ghost-num{animation:ghostnumcaught 0.5s ease-out forwards}
+.ghost.wrong-ghost .ghost-body{animation:ghostwrong 0.5s ease-in-out}
+
+/* Ghost giggle on correct */
+@keyframes ghostcaught{
+  0%{transform:scale(1);opacity:1}
+  20%{transform:scale(1.3) rotate(-10deg);opacity:1}
+  40%{transform:scale(1.2) rotate(10deg);opacity:1}
+  60%{transform:scale(1.4) rotate(-5deg);opacity:0.8}
+  80%{transform:scale(0.8) translateY(-30px);opacity:0.4}
+  100%{transform:scale(0) translateY(-60px);opacity:0}
+}
+@keyframes ghostnumcaught{
+  0%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.5);opacity:1}
+  100%{transform:scale(0);opacity:0}
+}
+@keyframes ghostwrong{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-12px) rotate(-8deg)}
+  30%{transform:translateX(12px) rotate(8deg)}
+  45%{transform:translateX(-8px) rotate(-5deg)}
+  60%{transform:translateX(8px) rotate(5deg)}
+  75%{transform:translateX(-4px)}
+}
+@keyframes ghostfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+
+/* ── Character ── */
+.char-wrap{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);z-index:var(--z-ui);text-align:center}
+.char{font-size:clamp(45px,9vw,65px);display:inline-block;filter:drop-shadow(0 4px 12px rgba(100,80,200,0.3));line-height:1}
+.char.idle{animation:bounce 3s ease-in-out infinite}
+.char.dance{animation:dance 0.9s ease-in-out infinite}
+.char.jump{animation:charjump 0.5s ease-out}
+.cbubble{position:absolute;top:-42px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);color:#2d1b69;padding:8px 16px;border-radius:20px;font-size:clamp(12px,2.8vw,17px);font-weight:bold;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:var(--z-ui);max-width:85vw;overflow:hidden;text-overflow:ellipsis}
+.cbubble.show{opacity:1}
+.cbubble::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid rgba(255,255,255,0.95)}
+
+/* ── Progress Bar ── */
+.prog-bar{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:center;align-items:center;gap:clamp(2px,0.8vw,7px);padding:8px 8px 10px;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
+.prog-dot{width:clamp(26px,5.5vw,38px);height:clamp(26px,5.5vw,38px);border-radius:50%;background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:clamp(9px,2vw,13px);font-weight:900;color:rgba(255,255,255,0.3);font-family:var(--font);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.prog-dot.done{background:linear-gradient(135deg,#7c4dff,#b388ff);border-color:#fff;color:#fff;transform:scale(1.1)}
+
+/* ── Level Banner ── */
+.level-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);font-size:clamp(28px,7vw,50px);color:var(--moon);text-shadow:3px 3px 0 #0a0a2e;font-weight:bold;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.level-banner.show{opacity:1}
+
+/* ── Celebration ── */
+.screen-celeb{background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);z-index:var(--z-celeb)}
+.screen-celeb .icon{font-size:clamp(70px,18vw,120px);animation:dance 1s ease-in-out infinite}
+.screen-celeb h2{font-size:clamp(24px,6vw,44px);color:var(--moon);text-shadow:3px 3px 0 rgba(0,0,0,0.4);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+
+.hint-wiggle{animation:wiggle 0.5s ease-in-out 3!important}
+.hint-glow .ghost-body{filter:drop-shadow(0 0 20px rgba(255,255,100,0.8))!important}
+
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes charjump{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-25px) scale(1.1)}100%{transform:translateY(0) scale(1)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg) scale(1.05)}75%{transform:rotate(6deg) scale(1.05)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="sky" id="sky"></div>
+<div class="ground">
+  <div class="pumpkin" style="left:5%">🎃</div>
+  <div class="pumpkin" style="left:25%;animation-delay:0.8s;font-size:clamp(20px,4vw,32px)">🎃</div>
+  <div class="pumpkin" style="left:55%;animation-delay:1.5s">🎃</div>
+  <div class="pumpkin" style="left:78%;animation-delay:0.3s;font-size:clamp(18px,3.5vw,28px)">🎃</div>
+  <div class="pumpkin" style="right:5%;animation-delay:2s">🎃</div>
+</div>
+
+<div class="hud" id="hud" style="display:none">
+  <h1>👻 Spooky Number Match 🎃</h1>
+  <div class="sub">Catch the ghost with the right number!</div>
+</div>
+<div class="hud-level" id="hudLevel" style="display:none">Round 1</div>
+<div class="hud-score" id="hudScore" style="display:none">🌙 0</div>
+
+<div class="prompt-area" id="promptArea" style="display:none">
+  <div class="prompt-label">Find the ghost with...</div>
+  <div class="prompt-number" id="promptNum">5</div>
+</div>
+
+<div class="ghost-area" id="ghostArea"></div>
+
+<div class="char-wrap" id="charWrap" style="display:none">
+  <div class="cbubble" id="bubble"></div>
+  <div class="char idle" id="char">🦉</div>
+</div>
+
+<div id="progBar" style="display:none"></div>
+<div class="level-banner" id="levelBanner"></div>
+
+<!-- TITLE -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon">👻</div>
+  <h1>Spooky Number Match</h1>
+  <p>Friendly ghosts are floating in the pumpkin patch!<br>Listen to the number and catch the right ghost!</p>
+  <button class="btn btn-spooky" id="btnStart" style="margin-top:20px">Let's Play! 👻</button>
+</div>
+
+<!-- CELEBRATION -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="icon">👻</div>
+  <h2 id="celebTitle">🎉 SPOOKTACULAR! 🎉</h2>
+  <p id="celebMsg">You caught all the ghosts!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain" style="margin-top:16px">Play Again! 👻</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ═══════════════════════════════
+// AUDIO
+// ═══════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.35; this.musicDucked = 0.02;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Spooky but cute — minor pentatonic, lower register
+    const notes = [196, 233.08, 261.63, 293.66, 349.23]; // G minor pentatonic
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.2);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.5);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1200 + Math.random() * 2000);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.5) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'correct') { p(523.25,t,0.18,0.5); p(659.25,t+0.15,0.25,0.6); }
+    else if (type === 'wrong') { p(350,t,0.12,0.2); p(300,t+0.1,0.12,0.15); p(280,t+0.18,0.18,0.1); }
+    else if (type === 'celeb') { p(523.25,t,0.15,0.4); p(659.25,t+0.13,0.15,0.45); p(783.99,t+0.26,0.18,0.5); p(659.25,t+0.42,0.15,0.45); p(1046.5,t+0.55,0.35,0.55); }
+    else if (type === 'ghosty') { p(300,t,0.1,0.2); p(400,t+0.05,0.15,0.25); p(350,t+0.15,0.2,0.2); } // cute ghost sound
+    else if (type === 'hint') { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({ file, resolve }); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true; const { file, resolve } = this.voiceQueue.shift(); this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 100);
+  }
+  _playFile(path) {
+    return new Promise((resolve) => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+  }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ═══════════════════════════════
+// HELPERS
+// ═══════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if (t) return; t = true; fn(e); setTimeout(() => t = false, 300); }, { passive: false });
+  el.addEventListener('click', e => { if (t) return; fn(e); });
+}
+
+const CHEERS = ['amazing','wonderful','brilliant','fantastic','you_got_it','super','awesome','well_done','great_job','incredible'];
+const RETRY_PHRASES = ['try_again','not_quite','almost','so_close','oops'];
+const GHOST_FACES = ['👻'];
+const GHOST_EXPRESSIONS = ['Boo!','Hehe!','Wooo!','Teehee!','Oooh!'];
+
+function confetti(count = 40, extra = []) {
+  const all = ['🎉','🎊','⭐','🌟','✨','💫','🎃','👻','🌙','💜',...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100)+'vw'; el.style.top = '-30px';
+    el.style.fontSize = (16+Math.random()*14)+'px';
+    el.style.animationDelay = (Math.random()*1.8)+'s';
+    el.style.animationDuration = (2.2+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6000);
+  }
+}
+function starBurst(el) {
+  const r = el.getBoundingClientRect(), cx = r.left+r.width/2, cy = r.top+r.height/2;
+  const c = ['⭐','🌟','✨','👻','🎃'];
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst'; s.textContent = pick(c);
+    s.style.left = (cx+(Math.random()-0.5)*130)+'px';
+    s.style.top = (cy+(Math.random()-0.5)*130)+'px';
+    s.style.animationDelay = (Math.random()*0.2)+'s';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function buildStars() {
+  const sky = $('sky');
+  // Stars
+  for (let i = 0; i < 45; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.textContent = pick(['✦','✧','⋆','·']);
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*70+'%';
+    s.style.fontSize = (5+Math.random()*10)+'px';
+    s.style.animationDuration = (2+Math.random()*4)+'s';
+    s.style.animationDelay = Math.random()*3+'s';
+    sky.appendChild(s);
+  }
+  // Moon
+  const moon = document.createElement('div');
+  moon.className = 'moon';
+  sky.appendChild(moon);
+}
+
+// ═══════════════════════════════
+// GAME STATE
+// ═══════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 1, score = 0;
+let currentTarget = -1, roundNumbers = [], roundIdx = 0;
+let hintTimer = null, hintVoiceTimer = null;
+let ghostAnimFrames = [];
+
+const ROUNDS = [
+  { numbers: [1,2,3,4,5],         ghosts: 3, label: 'Round 1 🌙' },
+  { numbers: [6,7,8,9,10],        ghosts: 3, label: 'Round 2 👻' },
+  { numbers: [0,11,12,13,14,15],  ghosts: 4, label: 'Round 3 🎃' },
+  { numbers: [16,17,18,19,20],    ghosts: 4, label: 'Round 4 🦇' },
+];
+
+function currentRoundCfg() { return ROUNDS[round - 1]; }
+
+// ═══════════════════════════════
+// UI
+// ═══════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+function showBubble(text, dur = 2200) {
+  const b = $('bubble'); b.textContent = text; b.classList.add('show');
+  clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+function charAnim(cls, dur = 600) {
+  const c = $('char'); c.className = 'char ' + cls;
+  setTimeout(() => { if (gameActive) c.className = 'char idle'; }, dur);
+}
+
+// ═══════════════════════════════
+// PROGRESS
+// ═══════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  currentRoundCfg().numbers.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + n; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+function markProg(n) { const d = $('prog'+n); if (d) d.classList.add('done'); }
+
+// ═══════════════════════════════
+// HINTS
+// ═══════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    const ghosts = [...document.querySelectorAll('.ghost:not(.caught)')];
+    const correct = ghosts.find(g => parseInt(g.dataset.num) === currentTarget);
+    if (correct) {
+      correct.classList.add('hint-wiggle','hint-glow');
+      setTimeout(() => correct.classList.remove('hint-wiggle','hint-glow'), 1800);
+      audio.tone('hint');
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => audio.speakPhrase('tap_the_number'), 7000);
+}
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ═══════════════════════════════
+// GHOST FLOATING (smooth CSS float paths)
+// ═══════════════════════════════
+function positionGhosts(ghostEls) {
+  const area = $('ghostArea');
+  const areaW = area.clientWidth;
+  const areaH = area.clientHeight;
+  const count = ghostEls.length;
+
+  // Spread ghosts across the area evenly with some randomness
+  const cols = Math.min(count, 4);
+  const colW = areaW / cols;
+
+  ghostEls.forEach((ghost, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+
+    const baseX = col * colW + colW * 0.15 + Math.random() * colW * 0.4;
+    const baseY = row * (areaH * 0.4) + 20 + Math.random() * (areaH * 0.3);
+
+    ghost.style.left = Math.max(10, Math.min(areaW - 90, baseX)) + 'px';
+    ghost.style.top = Math.max(5, Math.min(areaH - 100, baseY)) + 'px';
+
+    // Each ghost floats in its own unique pattern
+    const xRange = 15 + Math.random() * 25;
+    const yRange = 10 + Math.random() * 20;
+    const speed = 2.5 + Math.random() * 2;
+    const phaseX = Math.random() * Math.PI * 2;
+    const phaseY = Math.random() * Math.PI * 2;
+
+    let startTime = null;
+    const origX = parseFloat(ghost.style.left);
+    const origY = parseFloat(ghost.style.top);
+
+    function float(timestamp) {
+      if (!startTime) startTime = timestamp;
+      if (ghost.classList.contains('caught') || !gameActive) return;
+      const t = (timestamp - startTime) / 1000;
+      const x = origX + Math.sin(t / speed * Math.PI * 2 + phaseX) * xRange;
+      const y = origY + Math.sin(t / speed * 1.3 * Math.PI * 2 + phaseY) * yRange;
+      ghost.style.left = x + 'px';
+      ghost.style.top = y + 'px';
+      const frame = requestAnimationFrame(float);
+      ghostAnimFrames.push(frame);
+    }
+    const frame = requestAnimationFrame(float);
+    ghostAnimFrames.push(frame);
+  });
+}
+
+function stopGhostAnims() {
+  ghostAnimFrames.forEach(f => cancelAnimationFrame(f));
+  ghostAnimFrames = [];
+}
+
+// ═══════════════════════════════
+// BUILD GHOSTS FOR ONE QUESTION
+// ═══════════════════════════════
+function buildGhosts() {
+  const area = $('ghostArea');
+  area.innerHTML = '';
+  stopGhostAnims();
+
+  const rnd = currentRoundCfg();
+  const target = roundNumbers[roundIdx];
+  currentTarget = target;
+
+  // Update prompt
+  $('promptNum').textContent = target;
+  $('promptNum').style.animation = 'none';
+  void $('promptNum').offsetWidth;
+  $('promptNum').style.animation = '';
+
+  // Pick options
+  let options = [target];
+  let pool = rnd.numbers.filter(n => n !== target);
+  shuffle(pool);
+  while (options.length < rnd.ghosts && pool.length > 0) options.push(pool.pop());
+  while (options.length < rnd.ghosts) {
+    let extra = target + pick([-2,-1,1,2]);
+    if (extra < 0) extra = 0;
+    if (extra > 20) extra = 20;
+    if (!options.includes(extra)) options.push(extra);
+  }
+  shuffle(options);
+
+  const ghostEls = [];
+
+  options.forEach((num) => {
+    const ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.dataset.num = num;
+
+    const body = document.createElement('div');
+    body.className = 'ghost-body';
+    body.textContent = '👻';
+
+    const numEl = document.createElement('div');
+    numEl.className = 'ghost-num';
+    numEl.textContent = num;
+
+    ghost.appendChild(body);
+    ghost.appendChild(numEl);
+
+    onTap(ghost, () => handleGhostTap(ghost, num));
+    area.appendChild(ghost);
+    ghostEls.push(ghost);
+  });
+
+  // Position and start floating after a tiny delay
+  requestAnimationFrame(() => positionGhosts(ghostEls));
+
+  // Speak the number
+  audio.speakNumber(target);
+  resetHints();
+}
+
+// ═══════════════════════════════
+// TAP HANDLER
+// ═══════════════════════════════
+async function handleGhostTap(ghost, num) {
+  if (!gameActive) return;
+  if (ghost.classList.contains('caught')) return;
+  stopHints();
+
+  if (num === currentTarget) {
+    // CORRECT — catch the ghost!
+    gameActive = false;
+
+    ghost.classList.add('caught');
+    audio.tone('correct');
+    audio.tone('ghosty');
+    starBurst(ghost);
+
+    score++;
+    $('hudScore').textContent = `🌙 ${score}`;
+    markProg(num);
+
+    charAnim('jump');
+    showBubble(`${num}! ${pick(GHOST_EXPRESSIONS)}`, 2000);
+    await audio.speakPhrase(pick(CHEERS));
+
+    roundIdx++;
+    if (roundIdx >= roundNumbers.length) {
+      await delay(400);
+      advanceRound();
+    } else {
+      gameActive = true;
+      await delay(500);
+      buildGhosts();
+    }
+  } else {
+    // WRONG
+    ghost.classList.add('wrong-ghost');
+    audio.tone('wrong');
+    showBubble('Not that ghost! 👻', 1500);
+    await audio.speakPhrase(pick(RETRY_PHRASES));
+    await delay(500);
+    ghost.classList.remove('wrong-ghost');
+    resetHints();
+  }
+}
+
+// ═══════════════════════════════
+// ADVANCE ROUND
+// ═══════════════════════════════
+async function advanceRound() {
+  stopHints();
+  stopGhostAnims();
+  gameActive = false;
+
+  if (round >= ROUNDS.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  audio.tone('celeb');
+  confetti(30, ['👻','🎃']);
+  charAnim('dance', 2500);
+  showBubble('All ghosts caught! 🎉', 2500);
+
+  const banner = $('levelBanner');
+  banner.textContent = `Round ${round} Complete! 🎉`;
+  banner.classList.add('show');
+  await audio.speakPhrase('well_done');
+  await delay(1800);
+  banner.classList.remove('show');
+
+  round++;
+  $('hudLevel').textContent = `Round ${round}`;
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  roundIdx = 0;
+
+  banner.textContent = ROUNDS[round - 1].label;
+  banner.classList.add('show');
+  await audio.speakPhrase('ready');
+  await delay(1200);
+  banner.classList.remove('show');
+
+  buildProg();
+  buildGhosts();
+  $('char').className = 'char idle';
+  gameActive = true;
+}
+
+// ═══════════════════════════════
+// FINAL CELEBRATION
+// ═══════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopHints();
+  stopGhostAnims();
+  $('ghostArea').innerHTML = '';
+  $('promptArea').style.display = 'none';
+
+  audio.tone('celeb');
+  $('char').className = 'char dance';
+
+  await delay(400);
+  confetti(60, ['👻','🎃','🌙']);
+
+  $('celebStars').textContent = '⭐'.repeat(Math.min(score, 10));
+  $('celebTitle').textContent = '🎉 SPOOKTACULAR! 🎉';
+  $('celebMsg').textContent = 'You caught ALL the spooky ghosts from 0 to 20!';
+  showScreen('scrCeleb');
+
+  await delay(500);
+  await audio.speakPhrase('well_done_complete');
+  await delay(300);
+  await audio.speakPhrase('superstar');
+  setTimeout(() => confetti(35, ['👻']), 2000);
+}
+
+// ═══════════════════════════════
+// START
+// ═══════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  $('hud').style.display = '';
+  $('hudLevel').style.display = '';
+  $('hudScore').style.display = '';
+  $('charWrap').style.display = '';
+  $('promptArea').style.display = '';
+
+  round = 1; score = 0; roundIdx = 0;
+  $('hudScore').textContent = '🌙 0';
+  $('hudLevel').textContent = 'Round 1';
+  $('char').className = 'char idle';
+
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  buildProg();
+  gameActive = true;
+
+  audio.startMusic();
+
+  showBubble('Catch the number ghosts! 👻', 2800);
+  await audio.speakPhrase('lets_play');
+  await delay(800);
+
+  buildGhosts();
+}
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.stopMusic();
+  audio.clearQueue();
+  stopGhostAnims();
+  showScreen(null);
+  startGame();
+});
+
+buildStars();
+</script>
+</body>
+</html>

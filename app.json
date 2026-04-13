@@ -1,0 +1,67 @@
+{
+  "categories": [
+    {
+      "id": "numbers",
+      "title": "Numbers",
+      "icon": "🔢",
+      "color": "#4FC3F7",
+      "subcategories": [
+        {
+          "id": "numbers-learn",
+          "title": "Learn",
+          "subtitle": "Get to know your numbers",
+          "games": [
+            { "file": "games/numbers/21-number-cards.html", "title": "Number Cards", "icon": "🃏", "desc": "See it, learn it, find it!", "difficulty": 1 },
+            { "file": "games/numbers/15-count-and-match.html", "title": "Count & Match", "icon": "🌻", "desc": "Count objects and pick the number", "difficulty": 1 },
+            { "file": "games/numbers/16-number-doors.html", "title": "Number Doors", "icon": "🚪", "desc": "Tap the door with the right number", "difficulty": 1 },
+            { "file": "games/numbers/14-number-trace.html", "title": "Number Trace", "icon": "🎨", "desc": "Trace numbers with your finger", "difficulty": 2 },
+            { "file": "games/numbers/17-number-bridge.html", "title": "Number Bridge", "icon": "🌉", "desc": "What number comes next?", "difficulty": 2 }
+          ]
+        },
+        {
+          "id": "numbers-play",
+          "title": "Play",
+          "subtitle": "Fun number games!",
+          "games": [
+            { "file": "games/numbers/03-princess-pairs.html", "title": "Princess Pairs", "icon": "👸", "desc": "Flip cards and find matching pairs", "difficulty": 1 },
+            { "file": "games/numbers/04-dragon-egg-match.html", "title": "Dragon Egg Match", "icon": "🥚", "desc": "Match the dragon eggs", "difficulty": 1 },
+            { "file": "games/numbers/05-spooky-number-match.html", "title": "Spooky Match", "icon": "🎃", "desc": "Spooky number matching fun", "difficulty": 1 },
+            { "file": "games/numbers/08-starlight-path.html", "title": "Starlight Path", "icon": "🌟", "desc": "Tap stones in number order", "difficulty": 2 },
+            { "file": "games/numbers/09-bubble-pop.html", "title": "Bubble Pop", "icon": "🫧", "desc": "Pop the right number bubble", "difficulty": 2 },
+            { "file": "games/numbers/10-rocket-launch.html", "title": "Rocket Launch", "icon": "🚀", "desc": "Count down and blast off!", "difficulty": 2 },
+            { "file": "games/numbers/06-royal-rescue.html", "title": "Royal Rescue", "icon": "⚔️", "desc": "Save the princess with numbers", "difficulty": 3 },
+            { "file": "games/numbers/07-dragon-storm.html", "title": "Dragon Storm", "icon": "🐉", "desc": "Defeat dragons with number power", "difficulty": 3 },
+            { "file": "games/numbers/18-number-rush.html", "title": "Number Rush", "icon": "💫", "desc": "Catch falling number stars", "difficulty": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "letters",
+      "title": "Letters",
+      "icon": "🔤",
+      "color": "#81C784",
+      "subcategories": [
+        {
+          "id": "letters-learn",
+          "title": "Learn",
+          "subtitle": "Get to know your letters",
+          "games": [
+            { "file": "games/letters/19-letter-trace.html", "title": "Magic Spellbook", "icon": "📖", "desc": "Trace letters with your magic wand", "difficulty": 1 },
+            { "file": "games/letters/13-letter-pairs.html", "title": "Letter Pairs", "icon": "🦋", "desc": "Match uppercase with lowercase", "difficulty": 2 }
+          ]
+        },
+        {
+          "id": "letters-play",
+          "title": "Play",
+          "subtitle": "Fun letter games!",
+          "games": [
+            { "file": "games/letters/11-letter-fairy-forest.html", "title": "Fairy Forest", "icon": "🧚", "desc": "Catch the glowing firefly letters", "difficulty": 1 },
+            { "file": "games/letters/12-abc-pirate-treasure.html", "title": "Pirate Treasure", "icon": "🏴‍☠️", "desc": "Find letter treasure on the beach", "difficulty": 2 },
+            { "file": "games/letters/20-letter-potion.html", "title": "Letter Potion", "icon": "🧪", "desc": "Catch letters to brew magic potions", "difficulty": 2 }
+          ]
+        }
+      ]
+    }
+  ]
+}

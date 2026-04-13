@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aha!">
+<meta name="theme-color" content="#4FC3F7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Aha! — Learn Letters & Numbers</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --sky-top: #87CEEB;
+  --sky-mid: #4FC3F7;
+  --sky-bot: #B3E5FC;
+  --grass: #66BB6A;
+  --grass-dark: #43A047;
+  --tap: 80px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;transition:opacity 0.4s,transform 0.4s;opacity:0;visibility:hidden;pointer-events:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen.slide-right{transform:translateX(100%)}
+.screen.active.slide-right{transform:translateX(0)}
+
+/* ═══════════════════════════════════
+   HOME SCREEN
+   ═══════════════════════════════════ */
+.home{background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 50%,var(--sky-bot) 75%,var(--grass) 75%,var(--grass-dark) 100%);display:flex;flex-direction:column;align-items:center}
+
+/* Sky decorations */
+.cloud{position:fixed;pointer-events:none;opacity:0.7;font-size:clamp(30px,7vw,55px);animation:cloudFloat linear infinite;z-index:1}
+@keyframes cloudFloat{0%{transform:translateX(-120px)}100%{transform:translateX(calc(100vw + 120px))}}
+.sun{position:fixed;top:12px;right:15px;font-size:clamp(35px,8vw,55px);animation:sunPulse 3s ease-in-out infinite;z-index:1;pointer-events:none}
+@keyframes sunPulse{0%,100%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.1) rotate(10deg)}}
+.rainbow{position:fixed;top:0;left:50%;transform:translateX(-50%);width:clamp(200px,60vw,400px);height:clamp(100px,25vw,180px);pointer-events:none;z-index:1;opacity:0.4;background:conic-gradient(from 180deg at 50% 100%,
+  #ff0000 0deg,#ff8800 25deg,#ffff00 50deg,#00cc00 75deg,#0088ff 100deg,#8800ff 125deg,transparent 130deg,transparent 230deg,#8800ff 235deg,#0088ff 260deg,#00cc00 285deg,#ffff00 310deg,#ff8800 335deg,#ff0000 360deg);
+  border-radius:0 0 50% 50%/0 0 100% 100%;mask:radial-gradient(ellipse 50% 100% at 50% 100%,transparent 60%,black 61%,black 100%);-webkit-mask:radial-gradient(ellipse 50% 100% at 50% 100%,transparent 60%,black 61%,black 100%)}
+
+/* Logo area */
+.logo-area{margin-top:clamp(30px,8vh,60px);z-index:5;display:flex;flex-direction:column;align-items:center;position:relative}
+.logo-icon{width:clamp(90px,22vw,140px);height:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));animation:logoBounce 2.5s ease-in-out infinite}
+@keyframes logoBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.logo-text{font-size:clamp(44px,12vw,72px);font-weight:900;text-align:center;line-height:1;margin-top:5px;background:linear-gradient(135deg,#FF6B35,#F7C948,#E84393,#6C5CE7,#00B894);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(2px 3px 0 rgba(0,0,0,0.1))}
+.logo-sub{font-size:clamp(13px,3.2vw,18px);color:rgba(255,255,255,0.85);text-shadow:1px 1px 0 rgba(0,0,0,0.1);margin-top:4px}
+
+/* Category buttons */
+.categories{z-index:5;display:flex;gap:clamp(12px,3vw,20px);margin-top:clamp(20px,5vh,40px);flex-wrap:wrap;justify-content:center;padding:0 15px}
+.cat-btn{width:clamp(130px,38vw,180px);aspect-ratio:1;border-radius:24px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 6px 20px rgba(0,0,0,0.15),inset 0 -4px 0 rgba(0,0,0,0.1);transition:transform 0.15s;-webkit-tap-highlight-color:transparent;position:relative;overflow:hidden}
+.cat-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:rgba(255,255,255,0.15);border-radius:24px 24px 0 0}
+.cat-btn:active{transform:scale(0.94)}
+.cat-btn-numbers{background:linear-gradient(135deg,#4FC3F7,#039BE5)}
+.cat-btn-letters{background:linear-gradient(135deg,#81C784,#43A047)}
+.cat-icon{font-size:clamp(40px,10vw,60px);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2))}
+.cat-label{font-size:clamp(18px,4.5vw,26px);font-weight:900;color:#fff;text-shadow:1px 2px 0 rgba(0,0,0,0.15);font-family:var(--font)}
+.cat-count{font-size:clamp(10px,2.2vw,13px);color:rgba(255,255,255,0.75);font-weight:bold}
+
+/* Characters at bottom */
+.home-chars{position:fixed;bottom:0;left:0;right:0;z-index:4;display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px;pointer-events:none;height:25%}
+.home-char{height:clamp(60px,16vw,100px);width:auto;image-rendering:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.2))}
+.home-char-emoji{font-size:clamp(40px,10vw,65px)}
+
+/* Grass flowers */
+.flower{position:fixed;bottom:0;z-index:3;pointer-events:none;font-size:clamp(18px,4vw,28px);animation:flowerSway 3s ease-in-out infinite}
+@keyframes flowerSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+
+/* Stars */
+.sparkle{position:fixed;pointer-events:none;z-index:2;opacity:0;animation:sparkleAnim 2s ease-in-out infinite}
+@keyframes sparkleAnim{0%,100%{opacity:0;transform:scale(0.5)}50%{opacity:0.6;transform:scale(1.2)}}
+
+/* ═══════════════════════════════════
+   CATEGORY SCREEN
+   ═══════════════════════════════════ */
+.cat-screen{display:flex;flex-direction:column}
+.cat-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;padding:10px 12px;gap:10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:2px solid rgba(255,255,255,0.15)}
+.back-btn{width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,0.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.back-btn:active{transform:scale(0.9)}
+.cat-title{font-size:clamp(20px,5vw,30px);font-weight:900;color:#fff;text-shadow:1px 2px 0 rgba(0,0,0,0.15)}
+
+.cat-body{flex:1;padding:10px 12px 30px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sub-section{margin-bottom:20px}
+.sub-title{font-size:clamp(16px,4vw,22px);font-weight:900;color:rgba(255,255,255,0.9);text-shadow:1px 1px 0 rgba(0,0,0,0.1);margin-bottom:4px}
+.sub-subtitle{font-size:clamp(11px,2.5vw,14px);color:rgba(255,255,255,0.6);margin-bottom:10px}
+
+/* Game cards */
+.game-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(130px,38vw,170px),1fr));gap:clamp(8px,2vw,14px)}
+.game-card{background:rgba(255,255,255,0.18);border-radius:16px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:transform 0.15s,background 0.15s;-webkit-tap-highlight-color:transparent;border:2px solid rgba(255,255,255,0.1);min-height:120px;justify-content:center}
+.game-card:active{transform:scale(0.95);background:rgba(255,255,255,0.3)}
+.game-icon{font-size:clamp(32px,8vw,44px)}
+.game-title{font-size:clamp(12px,2.8vw,15px);font-weight:900;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,0.1);text-align:center;line-height:1.2}
+.game-desc{font-size:clamp(9px,2vw,11px);color:rgba(255,255,255,0.65);text-align:center;line-height:1.2}
+.game-dots{display:flex;gap:3px;margin-top:2px}
+.game-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25)}
+.game-dot.filled{background:rgba(255,255,255,0.8)}
+
+/* ═══════════════════════════════════
+   GAME IFRAME
+   ═══════════════════════════════════ */
+.game-frame-screen{background:#000;z-index:100}
+.game-frame-screen iframe{width:100%;height:100%;border:none}
+.game-back-btn{position:fixed;top:8px;left:8px;z-index:200;width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,0.4);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);transition:transform 0.1s,opacity 0.3s;-webkit-tap-highlight-color:transparent;opacity:0.5}
+.game-back-btn:active{transform:scale(0.9)}
+.game-back-btn:hover{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     HOME SCREEN
+     ═══════════════════════════════ -->
+<div class="screen home active" id="homeScreen">
+  <!-- Sky decorations -->
+  <div class="sun">☀️</div>
+  <div class="rainbow"></div>
+
+  <!-- Logo -->
+  <div class="logo-area">
+    <img class="logo-icon" src="icon.png" alt="Aha!">
+    <div class="logo-text">aha!</div>
+    <div class="logo-sub">Learn Letters & Numbers</div>
+  </div>
+
+  <!-- Category buttons -->
+  <div class="categories">
+    <button class="cat-btn cat-btn-numbers" id="btnNumbers">
+      <div class="cat-icon">🔢</div>
+      <div class="cat-label">Numbers</div>
+      <div class="cat-count" id="countNumbers"></div>
+    </button>
+    <button class="cat-btn cat-btn-letters" id="btnLetters">
+      <div class="cat-icon">🔤</div>
+      <div class="cat-label">Letters</div>
+      <div class="cat-count" id="countLetters"></div>
+    </button>
+  </div>
+
+  <!-- Characters on the grass -->
+  <div class="home-chars">
+    <img class="home-char" src="Characters/Princess with bird.gif" alt="" onerror="this.outerHTML='<span class=home-char-emoji>👸</span>'">
+    <img class="home-char" src="Characters/horse.gif" alt="" onerror="this.outerHTML='<span class=home-char-emoji>🐴</span>'">
+    <img class="home-char" src="Characters/Prince on horse.gif" alt="" onerror="this.outerHTML='<span class=home-char-emoji>🤴</span>'">
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     NUMBERS CATEGORY SCREEN
+     ═══════════════════════════════ -->
+<div class="screen cat-screen slide-right" id="numbersScreen" style="background:linear-gradient(180deg,#039BE5,#4FC3F7,#B3E5FC)">
+  <div class="cat-header" style="background:rgba(3,155,229,0.7)">
+    <button class="back-btn" id="backFromNumbers">←</button>
+    <div class="cat-title">🔢 Numbers</div>
+  </div>
+  <div class="cat-body" id="numbersBody"></div>
+</div>
+
+<!-- ═══════════════════════════════
+     LETTERS CATEGORY SCREEN
+     ═══════════════════════════════ -->
+<div class="screen cat-screen slide-right" id="lettersScreen" style="background:linear-gradient(180deg,#43A047,#81C784,#C8E6C9)">
+  <div class="cat-header" style="background:rgba(67,160,71,0.7)">
+    <button class="back-btn" id="backFromLetters">←</button>
+    <div class="cat-title">🔤 Letters</div>
+  </div>
+  <div class="cat-body" id="lettersBody"></div>
+</div>
+
+<!-- ═══════════════════════════════
+     GAME IFRAME SCREEN
+     ═══════════════════════════════ -->
+<div class="screen game-frame-screen" id="gameScreen">
+  <button class="game-back-btn" id="gameBack">←</button>
+  <iframe id="gameFrame" src="about:blank" allow="autoplay"></iframe>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// APP DATA
+// ═══════════════════════════════════════
+let appData = null;
+let currentCategory = null;
+
+async function loadAppData() {
+  try {
+    const resp = await fetch('app.json');
+    appData = await resp.json();
+  } catch(e) {
+    console.error('Failed to load app.json', e);
+    appData = { categories: [] };
+  }
+  buildUI();
+}
+
+// ═══════════════════════════════════════
+// UI BUILDING
+// ═══════════════════════════════════════
+function buildUI() {
+  appData.categories.forEach(cat => {
+    const totalGames = cat.subcategories.reduce((sum, sub) => sum + sub.games.length, 0);
+    const countEl = document.getElementById(cat.id === 'numbers' ? 'countNumbers' : 'countLetters');
+    if (countEl) countEl.textContent = `${totalGames} games`;
+
+    const bodyEl = document.getElementById(cat.id === 'numbers' ? 'numbersBody' : 'lettersBody');
+    if (!bodyEl) return;
+
+    bodyEl.innerHTML = '';
+    cat.subcategories.forEach(sub => {
+      const section = document.createElement('div');
+      section.className = 'sub-section';
+
+      const title = document.createElement('div');
+      title.className = 'sub-title';
+      title.textContent = sub.title;
+      section.appendChild(title);
+
+      if (sub.subtitle) {
+        const subtitle = document.createElement('div');
+        subtitle.className = 'sub-subtitle';
+        subtitle.textContent = sub.subtitle;
+        section.appendChild(subtitle);
+      }
+
+      const list = document.createElement('div');
+      list.className = 'game-list';
+
+      sub.games.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        card.innerHTML = `
+          <div class="game-icon">${game.icon}</div>
+          <div class="game-title">${game.title}</div>
+          <div class="game-desc">${game.desc}</div>
+          <div class="game-dots">
+            ${[1,2,3].map(d => `<div class="game-dot${d <= game.difficulty ? ' filled' : ''}"></div>`).join('')}
+          </div>
+        `;
+        card.addEventListener('click', () => openGame(game.file));
+        card.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          openGame(game.file);
+        });
+        list.appendChild(card);
+      });
+
+      section.appendChild(list);
+      bodyEl.appendChild(section);
+    });
+  });
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function openCategory(catId) {
+  currentCategory = catId;
+  showScreen(catId === 'numbers' ? 'numbersScreen' : 'lettersScreen');
+}
+
+function goHome() {
+  currentCategory = null;
+  showScreen('homeScreen');
+}
+
+function openGame(file) {
+  const frame = document.getElementById('gameFrame');
+  frame.src = file;
+  showScreen('gameScreen');
+}
+
+function closeGame() {
+  const frame = document.getElementById('gameFrame');
+  frame.src = 'about:blank';
+  if (currentCategory) {
+    showScreen(currentCategory === 'numbers' ? 'numbersScreen' : 'lettersScreen');
+  } else {
+    showScreen('homeScreen');
+  }
+}
+
+// Event listeners
+document.getElementById('btnNumbers').addEventListener('click', () => openCategory('numbers'));
+document.getElementById('btnLetters').addEventListener('click', () => openCategory('letters'));
+document.getElementById('backFromNumbers').addEventListener('click', goHome);
+document.getElementById('backFromLetters').addEventListener('click', goHome);
+document.getElementById('gameBack').addEventListener('click', closeGame);
+
+// ═══════════════════════════════════════
+// SCENERY
+// ═══════════════════════════════════════
+function buildScenery() {
+  const home = document.getElementById('homeScreen');
+
+  // Clouds
+  for (let i = 0; i < 4; i++) {
+    const cloud = document.createElement('div');
+    cloud.className = 'cloud';
+    cloud.textContent = '☁️';
+    cloud.style.top = (5 + Math.random() * 20) + '%';
+    cloud.style.animationDelay = (-Math.random() * 30) + 's';
+    cloud.style.animationDuration = (25 + Math.random() * 20) + 's';
+    cloud.style.fontSize = (25 + Math.random() * 30) + 'px';
+    home.appendChild(cloud);
+  }
+
+  // Flowers on the grass
+  const flowers = ['🌸','🌻','🌺','🌷','🌼','🌹'];
+  for (let i = 0; i < 8; i++) {
+    const f = document.createElement('div');
+    f.className = 'flower';
+    f.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+    f.style.left = (Math.random() * 95) + '%';
+    f.style.bottom = (Math.random() * 5) + '%';
+    f.style.animationDelay = (-Math.random() * 3) + 's';
+    f.style.fontSize = (15 + Math.random() * 15) + 'px';
+    home.appendChild(f);
+  }
+
+  // Sparkles in the sky
+  const sparkChars = ['✨','⭐','✧','⋆'];
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = sparkChars[Math.floor(Math.random() * sparkChars.length)];
+    s.style.left = (10 + Math.random() * 80) + '%';
+    s.style.top = (5 + Math.random() * 35) + '%';
+    s.style.fontSize = (12 + Math.random() * 14) + 'px';
+    s.style.animationDelay = (Math.random() * 3) + 's';
+    s.style.animationDuration = (2 + Math.random() * 2) + 's';
+    home.appendChild(s);
+  }
+}
+
+// ═══════════════════════════════════════
+// SERVICE WORKER (offline support)
+// ═══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+buildScenery();
+loadAppData();
+</script>
+</body>
+</html>

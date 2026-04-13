@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Royal Rescue</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --gold: #ffe066; --green: #2d8f2d; --dgreen: #1a5a1a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,#87CEEB 0%,#a8d8ea 40%,#4a9e4a 60%,#2d8f2d 80%,#1a5a1a 100%)}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen)}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+
+.screen-title{background:linear-gradient(180deg,#87CEEB,#a8d8ea 40%,#4a9e4a 70%,#2d8f2d)}
+.screen-title .icon{font-size:clamp(70px,18vw,120px);animation:bounce 2s ease-in-out infinite}
+.screen-title .icon-row{display:flex;gap:10px;justify-content:center;align-items:center}
+.screen-title h1{font-size:clamp(24px,6vw,42px);color:var(--gold);text-shadow:3px 3px 0 var(--dgreen);margin:8px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:#d8f0d8;max-width:440px;padding:0 20px;line-height:1.4}
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-rescue{background:linear-gradient(135deg,#ff6f00,#ffab00);animation:glow 2s ease-in-out infinite}
+.btn-again{background:linear-gradient(135deg,#4CAF50,#8BC34A)}
+
+/* ── Scenery ── */
+.scenery{position:fixed;inset:0;pointer-events:none;z-index:var(--z-bg);overflow:hidden}
+.cloud{position:absolute;color:#fff;font-size:clamp(30px,6vw,50px);opacity:0.7;animation:drift linear infinite}
+@keyframes drift{0%{transform:translateX(-80px)}100%{transform:translateX(calc(100vw + 80px))}}
+.tree{position:absolute;bottom:38%;font-size:clamp(30px,5vw,45px)}
+
+/* ── Grass and path ── */
+.ground{position:fixed;bottom:0;left:0;right:0;height:42%;z-index:1;background:linear-gradient(180deg,#4a9e4a 0%,#3d8a3d 20%,#2d7a2d 100%)}
+.path{position:fixed;bottom:8%;left:0;right:0;height:18%;z-index:2;background:linear-gradient(180deg,#c4a265,#b8955a,#a8854a);border-top:3px solid #d4b275;border-bottom:3px solid #8a6a35}
+.path-line{position:absolute;top:50%;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,transparent 0 15px,rgba(255,255,255,0.2) 15px 30px)}
+
+/* ── HUD ── */
+.hud{position:fixed;top:8px;left:0;right:0;text-align:center;z-index:var(--z-ui)}
+.hud h1{font-size:clamp(15px,3.2vw,24px);color:#fff;text-shadow:2px 2px 0 var(--dgreen)}
+.hud-score{position:fixed;top:10px;right:12px;z-index:var(--z-ui);font-size:clamp(14px,3vw,22px);color:var(--gold);font-weight:bold;text-shadow:2px 2px 0 var(--dgreen)}
+.hud-level{position:fixed;top:10px;left:12px;z-index:var(--z-ui);font-size:clamp(14px,3vw,22px);color:#d8f0d8;font-weight:bold;text-shadow:2px 2px 0 var(--dgreen)}
+.hud-hearts{position:fixed;top:32px;right:12px;z-index:var(--z-ui);font-size:clamp(16px,3.5vw,24px)}
+
+/* ── Princess (right side, on the path) ── */
+.princess{position:fixed;z-index:5;transition:all 0.3s}
+.princess-char{display:flex;flex-direction:column;align-items:center}
+.princess-img{width:clamp(50px,10vw,70px);height:auto;image-rendering:auto}
+.princess-emoji{font-size:clamp(45px,9vw,65px);line-height:1}
+.princess.scared .princess-emoji{animation:scared 0.3s ease-in-out infinite}
+.princess.happy .princess-emoji{animation:dance 0.9s ease-in-out infinite}
+@keyframes scared{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* ── Castle backdrop ── */
+.castle{position:fixed;z-index:3;font-size:clamp(50px,10vw,80px);opacity:0.6;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2))}
+
+/* ── Prompt (which number to find) ── */
+.prompt-bar{position:fixed;top:38px;left:50%;transform:translateX(-50%);z-index:var(--z-ui);background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);border-radius:20px;padding:6px 20px;display:flex;align-items:center;gap:10px}
+.prompt-label{font-size:clamp(13px,3vw,18px);color:#fff}
+.prompt-number{font-size:clamp(28px,6vw,42px);font-weight:900;color:var(--gold);text-shadow:2px 2px 0 rgba(0,0,0,0.3);animation:numappear 0.4s ease-out}
+@keyframes numappear{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
+
+/* ── Enemies (cute dragons/critters on the path) ── */
+.enemy{position:absolute;z-index:6;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;transition:transform 0.1s}
+.enemy:active{transform:scale(0.88)!important}
+.enemy-body{font-size:clamp(40px,8vw,58px);line-height:1;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.2));transition:all 0.2s}
+.enemy-num{font-size:clamp(18px,4vw,26px);font-weight:900;color:#fff;background:rgba(0,0,0,0.35);border-radius:10px;padding:1px 8px;min-width:32px;text-align:center;margin-top:-4px}
+.enemy.walking .enemy-body{animation:waddle 0.4s ease-in-out infinite}
+.enemy.zapped{pointer-events:none}
+.enemy.zapped .enemy-body{animation:zapped 0.7s ease-out forwards}
+.enemy.zapped .enemy-num{animation:zappedNum 0.4s ease-out forwards}
+.enemy.wrong-tap .enemy-body{animation:enemyshake 0.4s ease-in-out}
+.enemy.reached{pointer-events:none;opacity:0.4}
+
+@keyframes waddle{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-4deg)}75%{transform:translateY(-2px) rotate(4deg)}}
+@keyframes zapped{0%{transform:scale(1);opacity:1}30%{transform:scale(1.4) rotate(-15deg);opacity:1}60%{transform:scale(1.2) rotate(15deg) translateY(-20px);opacity:0.7}100%{transform:scale(0) rotate(30deg) translateY(-50px);opacity:0}}
+@keyframes zappedNum{0%{transform:scale(1);opacity:1}100%{transform:scale(2) translateY(-20px);opacity:0}}
+@keyframes enemyshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+/* ── Prince (guide character) ── */
+.prince-wrap{position:fixed;bottom:calc(8% + 18% + 5px);left:10px;z-index:var(--z-ui);text-align:center}
+.prince-img{width:clamp(55px,11vw,80px);height:auto;image-rendering:auto;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.3))}
+.prince-emoji{font-size:clamp(40px,8vw,58px);filter:drop-shadow(0 3px 8px rgba(0,0,0,0.2))}
+.prince-wrap.cheer .prince-emoji{animation:bounce 0.5s ease-in-out}
+.pbubble{position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);color:var(--dgreen);padding:6px 14px;border-radius:18px;font-size:clamp(11px,2.5vw,16px);font-weight:bold;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:var(--z-ui)}
+.pbubble.show{opacity:1}
+.pbubble::after{content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid rgba(255,255,255,0.95)}
+
+/* ── Progress Bar ── */
+.prog-bar{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:center;align-items:center;gap:clamp(2px,0.8vw,7px);padding:6px 8px 8px;background:rgba(0,0,0,0.4);backdrop-filter:blur(6px)}
+.prog-dot{width:clamp(24px,5vw,36px);height:clamp(24px,5vw,36px);border-radius:50%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:clamp(9px,1.8vw,12px);font-weight:900;color:rgba(255,255,255,0.35);font-family:var(--font);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.prog-dot.done{background:linear-gradient(135deg,#4CAF50,#8BC34A);border-color:#fff;color:#fff;transform:scale(1.1)}
+
+.level-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);font-size:clamp(26px,6.5vw,46px);color:var(--gold);text-shadow:3px 3px 0 var(--dgreen);font-weight:bold;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.level-banner.show{opacity:1}
+
+.screen-celeb{background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:var(--z-celeb)}
+.screen-celeb .icon{font-size:clamp(60px,15vw,100px);animation:dance 1s ease-in-out infinite}
+.screen-celeb h2{font-size:clamp(24px,6vw,44px);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,0.4);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Scenery -->
+<div class="scenery" id="scenery"></div>
+<div class="ground"></div>
+<div class="path"><div class="path-line"></div></div>
+
+<!-- Castle backdrop -->
+<div class="castle" id="castle" style="display:none">🏰</div>
+
+<!-- Princess (right side) -->
+<div class="princess" id="princess" style="display:none">
+  <div class="princess-char">
+    <img class="princess-img" src="../../Characters/Princess with bird.gif" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <div class="princess-emoji" style="display:none">👸</div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <h1>⚔️ Royal Rescue 🏰</h1>
+</div>
+<div class="hud-level" id="hudLevel" style="display:none">Round 1</div>
+<div class="hud-score" id="hudScore" style="display:none">⭐ 0</div>
+<div class="hud-hearts" id="hudHearts" style="display:none">❤️❤️❤️</div>
+
+<!-- Prompt -->
+<div class="prompt-bar" id="promptBar" style="display:none">
+  <span class="prompt-label">Zap!</span>
+  <span class="prompt-number" id="promptNum">5</span>
+</div>
+
+<!-- Prince guide -->
+<div class="prince-wrap" id="princeWrap" style="display:none">
+  <div class="pbubble" id="bubble"></div>
+  <img class="prince-img" src="../../Characters/Prince on horse.gif" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+  <div class="prince-emoji" style="display:none">🤴</div>
+</div>
+
+<!-- Progress -->
+<div id="progBar" style="display:none"></div>
+<div class="level-banner" id="levelBanner"></div>
+
+<!-- TITLE -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span style="font-size:clamp(50px,12vw,80px)">🤴</span>
+    <span style="font-size:clamp(30px,7vw,50px)">⚔️</span>
+    <span style="font-size:clamp(40px,9vw,60px)">🐲</span>
+  </div>
+  <h1>Royal Rescue</h1>
+  <p>Cute dragons are marching toward the princess! 🐲<br>Listen to the number and zap the right dragon before it reaches her!</p>
+  <button class="btn btn-rescue" id="btnStart" style="margin-top:20px">Rescue Time! ⚔️</button>
+</div>
+
+<!-- CELEBRATION -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="icon-row" style="display:flex;gap:10px;justify-content:center">
+    <span style="font-size:clamp(50px,12vw,80px)">🤴</span>
+    <span style="font-size:clamp(50px,12vw,80px)">👸</span>
+  </div>
+  <h2 id="celebTitle">🎉 RESCUED! 🎉</h2>
+  <p id="celebMsg">The princess is safe!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain" style="margin-top:16px">Play Again! ⚔️</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.10; this.sfxVol = 0.35; this.musicDucked = 0.03;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Adventurous, bright — major key, faster tempo
+    const notes = [329.63, 392, 440, 523.25, 587.33]; // E major-ish pentatonic
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 0.08);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.2);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 1.4);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 500 + Math.random() * 700);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.5) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'correct') { p(523.25,t,0.18,0.5); p(659.25,t+0.12,0.2,0.55); p(783.99,t+0.24,0.25,0.6); }
+    else if (type === 'wrong') { p(350,t,0.12,0.2); p(300,t+0.1,0.12,0.15); }
+    else if (type === 'celeb') { p(523.25,t,0.15,0.4); p(659.25,t+0.13,0.15,0.45); p(783.99,t+0.26,0.18,0.5); p(659.25,t+0.42,0.15,0.45); p(1046.5,t+0.55,0.35,0.55); }
+    else if (type === 'zap') { p(800,t,0.06,0.3); p(1000,t+0.04,0.08,0.35); p(1200,t+0.08,0.1,0.3); }
+    else if (type === 'ouch') { p(250,t,0.15,0.25); p(200,t+0.12,0.2,0.2); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({ file, resolve }); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true; const { file, resolve } = this.voiceQueue.shift(); this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) { return new Promise((resolve) => { const a = new window.Audio(path); a.onended = resolve; a.onerror = () => resolve(); a.play().catch(() => resolve()); }); }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if (t) return; t = true; fn(e); setTimeout(() => t = false, 300); }, { passive: false });
+  el.addEventListener('click', e => { if (t) return; fn(e); });
+}
+
+const CHEERS = ['amazing','wonderful','brilliant','fantastic','you_got_it','super','awesome','great_job','incredible'];
+const ENEMIES = ['🐲','🐉','🦖','🐊'];
+
+function confetti(count = 40, extra = []) {
+  const all = ['🎉','🎊','⭐','🌟','✨','💫','⚔️','👑','🛡️',...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100)+'vw'; el.style.top = '-30px';
+    el.style.fontSize = (16+Math.random()*14)+'px';
+    el.style.animationDelay = (Math.random()*1.8)+'s';
+    el.style.animationDuration = (2.2+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6000);
+  }
+}
+function starBurst(el) {
+  const r = el.getBoundingClientRect(), cx = r.left+r.width/2, cy = r.top+r.height/2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst'; s.textContent = pick(['⭐','🌟','✨','💥','⚡']);
+    s.style.left = (cx+(Math.random()-0.5)*130)+'px';
+    s.style.top = (cy+(Math.random()-0.5)*130)+'px';
+    s.style.animationDelay = (Math.random()*0.15)+'s';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function buildScenery() {
+  const s = $('scenery');
+  // Clouds
+  for (let i = 0; i < 4; i++) {
+    const c = document.createElement('div');
+    c.className = 'cloud'; c.textContent = '☁️';
+    c.style.top = (5 + Math.random() * 20) + '%';
+    c.style.animationDuration = (25 + Math.random() * 30) + 's';
+    c.style.animationDelay = (-Math.random() * 30) + 's';
+    c.style.fontSize = (25 + Math.random() * 25) + 'px';
+    s.appendChild(c);
+  }
+  // Trees
+  ['🌳','🌲','🌳','🌲','🌳'].forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'tree'; el.textContent = t;
+    el.style.left = (5 + i * 22) + '%';
+    el.style.bottom = '38%';
+    el.style.fontSize = (28 + Math.random() * 15) + 'px';
+    s.appendChild(el);
+  });
+}
+
+// ═══════════════════════════════
+// GAME STATE
+// ═══════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 1, score = 0, lives = 3;
+let currentTarget = -1, roundNumbers = [], roundIdx = 0;
+let activeEnemies = [], moveInterval = null;
+
+const ROUNDS = [
+  { numbers: [1,2,3,4,5],         enemies: 3, speed: 0.4, spawnGap: 0, label: 'Round 1 🌿' },
+  { numbers: [6,7,8,9,10],        enemies: 3, speed: 0.5, spawnGap: 0, label: 'Round 2 ⚔️' },
+  { numbers: [0,11,12,13,14,15],  enemies: 4, speed: 0.55, spawnGap: 0, label: 'Round 3 🔥' },
+  { numbers: [16,17,18,19,20],    enemies: 4, speed: 0.65, spawnGap: 0, label: 'Round 4 👑' },
+];
+
+function currentRoundCfg() { return ROUNDS[round - 1]; }
+
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); if (id) $(id).classList.add('active'); }
+function showBubble(text, dur = 2000) { const b = $('bubble'); b.textContent = text; b.classList.add('show'); clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('show'), dur); }
+
+function updateHearts() {
+  $('hudHearts').textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+}
+
+function buildProg() {
+  const bar = $('progBar'); bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  currentRoundCfg().numbers.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + n; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+function markProg(n) { const d = $('prog'+n); if (d) d.classList.add('done'); }
+
+// ═══════════════════════════════
+// POSITION PRINCESS AND CASTLE
+// ═══════════════════════════════
+function positionCharacters() {
+  const p = $('princess');
+  p.style.display = '';
+  p.style.right = '15px';
+  // On the path
+  p.style.bottom = 'calc(8% + 2%)';
+
+  const c = $('castle');
+  c.style.display = '';
+  c.style.right = '5px';
+  c.style.bottom = 'calc(8% + 18% + 8px)';
+}
+
+// ═══════════════════════════════
+// SPAWN ENEMIES ON PATH
+// ═══════════════════════════════
+function spawnWave() {
+  // Clear old enemies
+  activeEnemies.forEach(e => e.el.remove());
+  activeEnemies = [];
+
+  const rnd = currentRoundCfg();
+  const target = roundNumbers[roundIdx];
+  currentTarget = target;
+
+  // Update prompt
+  $('promptNum').textContent = target;
+  $('promptNum').style.animation = 'none';
+  void $('promptNum').offsetWidth;
+  $('promptNum').style.animation = '';
+
+  // Pick options
+  let options = [target];
+  let pool = rnd.numbers.filter(n => n !== target);
+  shuffle(pool);
+  while (options.length < rnd.enemies && pool.length > 0) options.push(pool.pop());
+  while (options.length < rnd.enemies) {
+    let extra = target + pick([-2,-1,1,2]);
+    if (extra < 0) extra = 0; if (extra > 20) extra = 20;
+    if (!options.includes(extra)) options.push(extra);
+  }
+  shuffle(options);
+
+  const pathEl = document.querySelector('.path');
+  const pathRect = pathEl.getBoundingClientRect();
+  const princessX = window.innerWidth - 90;
+
+  options.forEach((num, i) => {
+    const enemy = document.createElement('div');
+    enemy.className = 'enemy walking';
+    enemy.dataset.num = num;
+
+    const body = document.createElement('div');
+    body.className = 'enemy-body';
+    body.textContent = pick(ENEMIES);
+
+    const numEl = document.createElement('div');
+    numEl.className = 'enemy-num';
+    numEl.textContent = num;
+
+    enemy.appendChild(body);
+    enemy.appendChild(numEl);
+
+    // Start from left, spread vertically on the path
+    const startX = -60 - (i * 40);
+    const yPos = pathRect.top + 5 + (i / options.length) * (pathRect.height - 55);
+
+    enemy.style.position = 'fixed';
+    enemy.style.left = startX + 'px';
+    enemy.style.top = yPos + 'px';
+
+    onTap(enemy, () => handleEnemyTap(enemy, num));
+    document.body.appendChild(enemy);
+
+    activeEnemies.push({
+      el: enemy,
+      num: num,
+      x: startX,
+      targetX: princessX,
+      speed: rnd.speed + (Math.random() * 0.15),
+      alive: true
+    });
+  });
+
+  // Speak the number
+  audio.speakNumber(target);
+
+  // Start movement
+  startMovement();
+}
+
+// ═══════════════════════════════
+// MOVEMENT LOOP
+// ═══════════════════════════════
+function startMovement() {
+  stopMovement();
+  moveInterval = setInterval(() => {
+    if (!gameActive) return;
+
+    activeEnemies.forEach(e => {
+      if (!e.alive) return;
+
+      e.x += e.speed;
+      e.el.style.left = e.x + 'px';
+
+      // Check if reached princess
+      if (e.x >= e.targetX - 30) {
+        e.alive = false;
+        e.el.classList.remove('walking');
+        e.el.classList.add('reached');
+
+        // Only lose heart if this was the TARGET enemy
+        if (e.num === currentTarget) {
+          lives--;
+          updateHearts();
+          audio.tone('ouch');
+          $('princess').classList.add('scared');
+          setTimeout(() => $('princess').classList.remove('scared'), 800);
+          showBubble('Oh no! 😱', 1500);
+
+          if (lives <= 0) {
+            gameOver();
+            return;
+          }
+
+          // Skip to next number
+          skipToNext();
+        }
+      }
+    });
+  }, 16); // ~60fps
+}
+
+function stopMovement() {
+  if (moveInterval) clearInterval(moveInterval);
+  moveInterval = null;
+}
+
+function skipToNext() {
+  stopMovement();
+  activeEnemies.forEach(e => e.el.remove());
+  activeEnemies = [];
+
+  roundIdx++;
+  if (roundIdx >= roundNumbers.length) {
+    setTimeout(() => advanceRound(), 500);
+  } else {
+    setTimeout(() => spawnWave(), 800);
+  }
+}
+
+// ═══════════════════════════════
+// TAP HANDLER
+// ═══════════════════════════════
+async function handleEnemyTap(enemyEl, num) {
+  if (!gameActive) return;
+  if (enemyEl.classList.contains('zapped') || enemyEl.classList.contains('reached')) return;
+
+  const enemyData = activeEnemies.find(e => e.el === enemyEl);
+
+  if (num === currentTarget) {
+    // CORRECT — zap it!
+    gameActive = false;
+    stopMovement();
+
+    if (enemyData) enemyData.alive = false;
+    enemyEl.classList.remove('walking');
+    enemyEl.classList.add('zapped');
+    audio.tone('zap');
+    audio.tone('correct');
+    starBurst(enemyEl);
+
+    score++;
+    $('hudScore').textContent = `⭐ ${score}`;
+    markProg(num);
+    showBubble(pick(['Zapped!','Got it!','Pow!','Boom!']) + ' ⚡', 1500);
+
+    $('princeWrap').classList.add('cheer');
+    setTimeout(() => $('princeWrap').classList.remove('cheer'), 600);
+
+    await audio.speakPhrase(pick(CHEERS));
+
+    // Clear remaining enemies
+    activeEnemies.forEach(e => { if (e.el !== enemyEl) e.el.remove(); });
+    activeEnemies = [];
+
+    roundIdx++;
+    if (roundIdx >= roundNumbers.length) {
+      await delay(300);
+      advanceRound();
+    } else {
+      gameActive = true;
+      await delay(500);
+      spawnWave();
+    }
+  } else {
+    // WRONG
+    enemyEl.classList.add('wrong-tap');
+    audio.tone('wrong');
+    showBubble('Wrong one!', 1000);
+    setTimeout(() => enemyEl.classList.remove('wrong-tap'), 500);
+  }
+}
+
+// ═══════════════════════════════
+// GAME OVER (lost all hearts)
+// ═══════════════════════════════
+async function gameOver() {
+  gameActive = false;
+  stopMovement();
+  activeEnemies.forEach(e => e.el.remove());
+  activeEnemies = [];
+
+  await delay(500);
+
+  // Give them another chance — reset hearts and continue from this round
+  lives = 3;
+  updateHearts();
+  showBubble('Let\'s try again! 💪', 2500);
+  audio.tone('whoosh');
+  await audio.speakPhrase('lets_try');
+  await delay(800);
+
+  // Restart current round
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  roundIdx = 0;
+  buildProg();
+  gameActive = true;
+  spawnWave();
+}
+
+// ═══════════════════════════════
+// ADVANCE ROUND
+// ═══════════════════════════════
+async function advanceRound() {
+  stopMovement();
+  gameActive = false;
+  activeEnemies.forEach(e => e.el.remove());
+  activeEnemies = [];
+
+  if (round >= ROUNDS.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  audio.tone('celeb');
+  confetti(30, ['⚔️','🛡️']);
+  $('princess').classList.add('happy');
+  showBubble('The princess is safe! 🎉', 2500);
+
+  const banner = $('levelBanner');
+  banner.textContent = `Round ${round} Complete! ⚔️`;
+  banner.classList.add('show');
+  await audio.speakPhrase('well_done');
+  await delay(1800);
+  banner.classList.remove('show');
+  $('princess').classList.remove('happy');
+
+  round++;
+  $('hudLevel').textContent = `Round ${round}`;
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  roundIdx = 0;
+
+  // Restore hearts for new round
+  lives = 3;
+  updateHearts();
+
+  banner.textContent = ROUNDS[round - 1].label;
+  banner.classList.add('show');
+  await audio.speakPhrase('ready');
+  await delay(1200);
+  banner.classList.remove('show');
+
+  buildProg();
+  gameActive = true;
+  spawnWave();
+}
+
+// ═══════════════════════════════
+// CELEBRATION
+// ═══════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopMovement();
+  $('promptBar').style.display = 'none';
+
+  audio.tone('celeb');
+  $('princess').classList.add('happy');
+
+  await delay(400);
+  confetti(60, ['👸','🤴','⚔️']);
+
+  $('celebStars').textContent = '⭐'.repeat(Math.min(score, 10));
+  $('celebTitle').textContent = '🎉 RESCUED! 🎉';
+  $('celebMsg').textContent = 'The princess is safe! You zapped numbers 0 to 20!';
+  showScreen('scrCeleb');
+
+  await delay(500);
+  await audio.speakPhrase('well_done_complete');
+  await delay(300);
+  await audio.speakPhrase('superstar');
+  setTimeout(() => confetti(35), 2000);
+}
+
+// ═══════════════════════════════
+// START
+// ═══════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  $('hud').style.display = '';
+  $('hudLevel').style.display = '';
+  $('hudScore').style.display = '';
+  $('hudHearts').style.display = '';
+  $('promptBar').style.display = '';
+  $('princeWrap').style.display = '';
+
+  round = 1; score = 0; lives = 3; roundIdx = 0;
+  $('hudScore').textContent = '⭐ 0';
+  $('hudLevel').textContent = 'Round 1';
+  updateHearts();
+
+  positionCharacters();
+  roundNumbers = shuffle([...currentRoundCfg().numbers]);
+  buildProg();
+  gameActive = true;
+
+  audio.startMusic();
+
+  showBubble('Protect the princess! ⚔️', 2800);
+  await audio.speakPhrase('lets_go');
+  await delay(800);
+
+  spawnWave();
+}
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.stopMusic();
+  audio.clearQueue();
+  stopMovement();
+  activeEnemies.forEach(e => e.el.remove());
+  activeEnemies = [];
+  $('princess').classList.remove('happy','scared');
+  showScreen(null);
+  startGame();
+});
+
+buildScenery();
+</script>
+</body>
+</html>

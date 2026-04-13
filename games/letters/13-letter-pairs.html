@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Pairs</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-deco: 2; --z-cards: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --gold: #ffe066; --green: #43a047; --dgreen: #1b5e20; --pink: #f48fb1; --lpink: #fce4ec;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#e8f5e9}
+
+/* ── Garden Background ── */
+.garden{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#81d4fa 0%,#b3e5fc 25%,#c8e6c9 50%,#a5d6a7 70%,#81c784 85%,#66bb6a 100%)}
+.garden-clouds{position:fixed;top:0;left:0;right:0;height:30%;z-index:1;pointer-events:none}
+.g-cloud{position:absolute;font-size:clamp(25px,6vw,45px);opacity:0.6;animation:gdrift linear infinite}
+@keyframes gdrift{0%{transform:translateX(-60px)}100%{transform:translateX(calc(100vw + 60px))}}
+
+/* ── Flowers & butterflies ── */
+.flower{position:fixed;bottom:0;z-index:var(--z-deco);pointer-events:none;font-size:clamp(20px,5vw,35px)}
+.butterfly{position:fixed;z-index:var(--z-deco);pointer-events:none;font-size:clamp(18px,4vw,28px);animation:flutter linear infinite}
+@keyframes flutter{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(30px,-20px) rotate(5deg)}50%{transform:translate(60px,0) rotate(-3deg)}75%{transform:translate(30px,15px) rotate(4deg)}100%{transform:translate(0,0) rotate(0deg)}}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#81d4fa,#a5d6a7,#66bb6a)}
+.screen-title h1{font-size:clamp(28px,7vw,48px);color:#fff;text-shadow:3px 3px 0 var(--dgreen);margin:10px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:rgba(255,255,255,0.9);max-width:440px;line-height:1.4}
+.screen-title .icon-row{display:flex;gap:10px;justify-content:center;align-items:center;margin-bottom:5px}
+.screen-title .icon-row span{font-size:clamp(40px,10vw,70px)}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,var(--green),#66bb6a);animation:glow 2s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,var(--green),#66bb6a);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(0,0,0,0.15);backdrop-filter:blur(4px)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:rgba(255,255,255,0.6);font-weight:bold}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900;text-shadow:2px 2px 0 rgba(0,0,0,0.4)}
+.hud-round .hud-val{color:#e8f5e9}
+.hud-score .hud-val{color:var(--gold)}
+.hud-center .hud-label{color:rgba(255,255,255,0.6)}
+.hud-center .hud-val{color:var(--gold);font-size:clamp(14px,3vw,20px)}
+
+/* ── Card Grid ── */
+.card-grid{position:fixed;z-index:var(--z-cards);display:grid;gap:clamp(6px,1.5vw,12px);padding:10px;justify-content:center;align-content:center;left:50%;top:50%;transform:translate(-50%,-50%)}
+
+/* ── Cards ── */
+.card{width:clamp(65px,14vw,90px);height:clamp(80px,17vw,110px);perspective:600px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.card-inner{width:100%;height:100%;position:relative;transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);transform-style:preserve-3d}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;border-radius:14px;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 3px 12px rgba(0,0,0,0.2)}
+.card-front{background:linear-gradient(135deg,#7e57c2,#ab47bc);border:3px solid rgba(255,255,255,0.3)}
+.card-front::after{content:'🦋';font-size:clamp(22px,5vw,32px)}
+.card-back{transform:rotateY(180deg);border:3px solid rgba(255,255,255,0.5)}
+.card-back.upper{background:linear-gradient(135deg,#ef5350,#e91e63)}
+.card-back.lower{background:linear-gradient(135deg,#42a5f5,#1e88e5)}
+.card-letter{font-size:clamp(26px,6vw,40px);font-weight:900;color:#fff;text-shadow:1px 1px 3px rgba(0,0,0,0.3);font-family:var(--font)}
+.card.matched{pointer-events:none}
+.card.matched .card-inner{animation:matchPop 0.5s ease-out}
+.card.matched .card-back{border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.4)}
+@keyframes matchPop{0%{transform:rotateY(180deg) scale(1)}40%{transform:rotateY(180deg) scale(1.15)}100%{transform:rotateY(180deg) scale(1)}}
+.card.wrong .card-inner{animation:cardShake 0.4s ease-in-out}
+@keyframes cardShake{0%,100%{transform:rotateY(180deg) translateX(0)}20%{transform:rotateY(180deg) translateX(-6px)}40%{transform:rotateY(180deg) translateX(6px)}60%{transform:rotateY(180deg) translateX(-4px)}80%{transform:rotateY(180deg) translateX(4px)}}
+
+/* ── Character ── */
+.char{position:fixed;bottom:8px;left:10px;z-index:var(--z-ui);pointer-events:none}
+.char-emoji{font-size:clamp(35px,8vw,50px);filter:drop-shadow(0 3px 6px rgba(0,0,0,0.2))}
+.char.cheer .char-emoji{animation:bounce 0.5s ease-in-out}
+.cbubble{position:absolute;top:-36px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.92);color:var(--dgreen);padding:4px 11px;border-radius:14px;font-size:clamp(10px,2.2vw,15px);font-weight:bold;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.25s;pointer-events:none}
+.cbubble.show{opacity:1}
+.cbubble::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid rgba(255,255,255,0.92)}
+
+/* ── Round Banner ── */
+.round-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);text-align:center;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.round-banner.show{opacity:1}
+.round-banner h2{font-size:clamp(24px,6vw,40px);color:#fff;text-shadow:3px 3px 0 var(--dgreen);font-weight:900}
+.round-banner p{font-size:clamp(13px,2.8vw,18px);color:rgba(255,255,255,0.8);margin-top:4px}
+
+/* ── Celebration ── */
+.screen-celeb{background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:var(--z-celeb)}
+.screen-celeb h2{font-size:clamp(26px,6.5vw,46px);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,0.5);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+.celeb-icon-row{display:flex;gap:12px;justify-content:center;margin-bottom:8px}
+.celeb-icon-row span{font-size:clamp(50px,12vw,80px);animation:dance 1s ease-in-out infinite}
+
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Garden Background -->
+<div class="garden"></div>
+<div class="garden-clouds" id="clouds"></div>
+
+<!-- Character -->
+<div class="char" id="char" style="display:none">
+  <div class="cbubble" id="cbubble"></div>
+  <div class="char-emoji">🐛</div>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round"><span class="hud-label">ROUND</span><span class="hud-val" id="hudRound">1/4</span></div>
+  <div class="hud-center"><span class="hud-label">MATCHES</span><span class="hud-val" id="hudMatches">0/4</span></div>
+  <div class="hud-right hud-score"><span class="hud-label">STARS</span><span class="hud-val" id="hudScore">0</span></div>
+</div>
+
+<!-- Card Grid -->
+<div class="card-grid" id="cardGrid"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner"><h2 id="roundTitle"></h2><p id="roundSub"></p></div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🌸</span>
+    <span style="font-size:clamp(50px,13vw,80px)">🦋</span>
+    <span>🌸</span>
+  </div>
+  <h1>Letter Pairs</h1>
+  <p>Flip the cards to match big letters with little letters! Can you find A and a? 🦋🌸</p>
+  <button class="btn btn-start" id="btnStart">Let's Play! 🌸</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🦋</span>
+    <span>🌸</span>
+    <span>🐛</span>
+  </div>
+  <h2 id="celebTitle">🌸 Beautiful! 🌸</h2>
+  <p id="celebMsg">You matched all the letters!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🦋</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ═══════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.05; this.sfxVol = 0.3; this.musicDucked = 0.02;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Gentle garden ambient — F major pentatonic
+    const notes = [349.23, 392, 440, 523.25, 587.33];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f * (Math.random() > 0.5 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 0.2);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3.0);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1400 + Math.random() * 1800);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4) => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'flip') { p(600,t,0.06,0.15); p(800,t+0.04,0.08,0.12); }
+    else if (type === 'match') { p(523.25,t,0.12,0.3); p(659.25,t+0.1,0.15,0.35); p(783.99,t+0.2,0.2,0.4); }
+    else if (type === 'wrong') { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type === 'celeb') { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type === 'roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(600,t+0.12);
+      g.gain.setValueAtTime(0.12,t); g.gain.linearRampToValueAtTime(0,t+0.18);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.22);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({ file, resolve }); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true; const { file, resolve } = this.voiceQueue.shift(); this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) { return new Promise((resolve) => { const a = new window.Audio(path); a.onended = resolve; a.onerror = () => resolve(); a.play().catch(() => resolve()); }); }
+  speakLetter(l) { return this.speak(`${AUDIO_BASE}/letters/${l.toLowerCase()}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const CHEERS = ['amazing','wonderful','brilliant','fantastic','you_got_it','super','awesome','great_job','incredible'];
+
+function confetti(count = 40, extra = []) {
+  const all = ['🦋','🌸','⭐','✨','💫','🌟','🌺','🌼',...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className='confetti'; el.textContent=pick(all);
+    el.style.left=(Math.random()*100)+'vw'; el.style.top='-30px';
+    el.style.fontSize=(16+Math.random()*14)+'px';
+    el.style.animationDelay=(Math.random()*1.8)+'s';
+    el.style.animationDuration=(2.5+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),6000);
+  }
+}
+function starBurst(el) {
+  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  for(let i=0;i<8;i++){
+    const s=document.createElement('div');
+    s.className='starburst'; s.textContent=pick(['🦋','✨','💫','⭐','🌸']);
+    s.style.left=(cx+(Math.random()-0.5)*100)+'px';
+    s.style.top=(cy+(Math.random()-0.5)*100)+'px';
+    s.style.animationDelay=(Math.random()*0.15)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),900);
+  }
+}
+
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+// ═══════════════════════════════════════
+// SCENERY
+// ═══════════════════════════════════════
+function buildScenery() {
+  const cc = $('clouds');
+  for (let i = 0; i < 3; i++) {
+    const c = document.createElement('div');
+    c.className = 'g-cloud'; c.textContent = '☁️';
+    c.style.top = (3 + Math.random() * 15) + '%';
+    c.style.animationDuration = (35 + Math.random() * 40) + 's';
+    c.style.animationDelay = (-Math.random() * 30) + 's';
+    cc.appendChild(c);
+  }
+
+  // Flowers
+  const flowers = ['🌸','🌺','🌷','🌼','🌻','🌹','🌸','🌺'];
+  flowers.forEach((f, i) => {
+    const el = document.createElement('div');
+    el.className = 'flower';
+    el.textContent = f;
+    el.style.left = (i * 13 + Math.random() * 5) + '%';
+    el.style.bottom = (Math.random() * 3) + '%';
+    document.body.appendChild(el);
+  });
+
+  // Butterflies
+  for (let i = 0; i < 3; i++) {
+    const b = document.createElement('div');
+    b.className = 'butterfly';
+    b.textContent = '🦋';
+    b.style.left = (10 + Math.random() * 70) + '%';
+    b.style.top = (15 + Math.random() * 40) + '%';
+    b.style.animationDuration = (8 + Math.random() * 10) + 's';
+    b.style.animationDelay = (-Math.random() * 8) + 's';
+    b.style.opacity = 0.4 + Math.random() * 0.3;
+    document.body.appendChild(b);
+  }
+}
+
+// ═══════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let matchesFound = 0, totalPairs = 0;
+let flippedCards = []; // max 2
+let lockBoard = false;
+let cardData = [];
+
+const ROUNDS = [
+  { label: 'Round 1 — Spring Buds 🌱', sub: 'Match A-D', letters: 'ABCD'.split(''), cols: 4, rows: 2 },
+  { label: 'Round 2 — Blooming 🌸', sub: 'Match A-F', letters: 'ABCDEF'.split(''), cols: 4, rows: 3 },
+  { label: 'Round 3 — Full Garden 🌺', sub: 'Match A-H', letters: 'ABCDEFGH'.split(''), cols: 4, rows: 4 },
+  { label: 'Round 4 — Butterfly Meadow 🦋', sub: 'Match A-J', letters: 'ABCDEFGHIJ'.split(''), cols: 5, rows: 4 },
+];
+
+function roundCfg() { return ROUNDS[round]; }
+
+// ═══════════════════════════════════════
+// UI
+// ═══════════════════════════════════════
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); if(id) $(id).classList.add('active'); }
+function showCharMsg(text, dur=2000) { const b=$('cbubble'); b.textContent=text; b.classList.add('show'); clearTimeout(b._t); b._t=setTimeout(()=>b.classList.remove('show'),dur); }
+
+function updateMatchHud() {
+  $('hudMatches').textContent = `${matchesFound}/${totalPairs}`;
+}
+
+// ═══════════════════════════════════════
+// CARD GRID
+// ═══════════════════════════════════════
+function buildCards() {
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  const cfg = roundCfg();
+  totalPairs = cfg.letters.length;
+  matchesFound = 0;
+  flippedCards = [];
+  lockBoard = false;
+  cardData = [];
+  updateMatchHud();
+
+  // Create pairs: uppercase + lowercase for each letter
+  let cards = [];
+  cfg.letters.forEach(l => {
+    cards.push({ letter: l, display: l, type: 'upper', matchId: l });
+    cards.push({ letter: l, display: l.toLowerCase(), type: 'lower', matchId: l });
+  });
+  shuffle(cards);
+
+  grid.style.gridTemplateColumns = `repeat(${cfg.cols}, clamp(65px,14vw,90px))`;
+  grid.style.gridTemplateRows = `repeat(${cfg.rows}, clamp(80px,17vw,110px))`;
+
+  cards.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face card-front"></div>
+        <div class="card-face card-back ${c.type}">
+          <div class="card-letter">${c.display}</div>
+        </div>
+      </div>
+    `;
+
+    const data = { el: card, ...c, index: i, flipped: false, matched: false };
+    onTap(card, () => onCardTap(data));
+    grid.appendChild(card);
+    cardData.push(data);
+  });
+
+  // Brief peek: show all cards for a moment then hide
+  cardData.forEach(c => c.el.classList.add('flipped'));
+  setTimeout(() => {
+    cardData.forEach(c => {
+      if (!c.matched) c.el.classList.remove('flipped');
+    });
+    gameActive = true;
+    audio.speakPhrase('find_the_letter');
+  }, 1500);
+}
+
+// ═══════════════════════════════════════
+// INTERACTION
+// ═══════════════════════════════════════
+async function onCardTap(data) {
+  if (!gameActive || lockBoard || data.flipped || data.matched) return;
+
+  // Flip this card
+  data.flipped = true;
+  data.el.classList.add('flipped');
+  audio.tone('flip');
+
+  // Say the letter
+  audio.speakLetter(data.letter);
+
+  flippedCards.push(data);
+
+  if (flippedCards.length === 2) {
+    lockBoard = true;
+    const [a, b] = flippedCards;
+
+    if (a.matchId === b.matchId && a.type !== b.type) {
+      // MATCH!
+      await delay(300);
+      a.matched = true;
+      b.matched = true;
+      a.el.classList.add('matched');
+      b.el.classList.add('matched');
+      audio.tone('match');
+      starBurst(a.el);
+      starBurst(b.el);
+
+      score++;
+      $('hudScore').textContent = score;
+      matchesFound++;
+      updateMatchHud();
+
+      const ch = $('char');
+      ch.classList.add('cheer');
+      setTimeout(() => ch.classList.remove('cheer'), 600);
+
+      const cheer = pick(CHEERS);
+      showCharMsg(cheer.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), 1500);
+      audio.speakPhrase(cheer);
+
+      flippedCards = [];
+      lockBoard = false;
+
+      if (matchesFound >= totalPairs) {
+        await delay(500);
+        await finishRound();
+      }
+    } else {
+      // NO MATCH
+      await delay(800);
+      audio.tone('wrong');
+      a.el.classList.add('wrong');
+      b.el.classList.add('wrong');
+
+      showCharMsg('Try again!', 1000);
+
+      await delay(500);
+      a.el.classList.remove('flipped', 'wrong');
+      b.el.classList.remove('flipped', 'wrong');
+      a.flipped = false;
+      b.flipped = false;
+      flippedCards = [];
+      lockBoard = false;
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+// ROUND / GAME FLOW
+// ═══════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  audio.tone('roundDone');
+  confetti(25);
+
+  round++;
+  if (round >= ROUNDS.length) {
+    await delay(600);
+    endGame();
+    return;
+  }
+
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.speakPhrase('keep_going');
+
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(400);
+
+  startRound();
+}
+
+async function startRound() {
+  const cfg = roundCfg();
+  $('hudRound').textContent = `${round+1}/${ROUNDS.length}`;
+  buildCards();
+}
+
+function endGame() {
+  gameActive = false;
+  $('hud').style.display = 'none';
+  $('cardGrid').innerHTML = '';
+  $('char').style.display = 'none';
+
+  const stars = Math.min(5, Math.max(3, Math.floor(score / 5)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🌸 Beautiful! 🌸';
+  $('celebMsg').textContent = `You matched ${score} letter pairs!`;
+
+  showScreen('scrCeleb');
+  audio.tone('celeb');
+  confetti(50, ['🦋','🌸','🌺']);
+  setTimeout(() => confetti(35), 1500);
+  setTimeout(() => confetti(35), 3000);
+  audio.speakPhrase('you_did_it');
+}
+
+async function startGame() {
+  showScreen(null);
+  audio.unlock();
+  audio.startMusic();
+  round = 0; score = 0;
+  $('hudScore').textContent = '0';
+  $('char').style.display = '';
+  $('hud').style.display = '';
+
+  const cfg = roundCfg();
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.speakPhrase('lets_play');
+
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(400);
+
+  startRound();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+buildScenery();
+onTap($('btnStart'), () => startGame());
+onTap($('btnAgain'), () => startGame());
+</script>
+</body>
+</html>

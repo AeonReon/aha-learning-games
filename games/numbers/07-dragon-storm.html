@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dragon Storm</title>
+<style>
+:root {
+  --font: 'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --gold: #ffe066; --green: #2d8f2d; --dgreen: #1a5a1a; --red: #e53935; --blue: #2196F3;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#1a1a2e}
+
+/* ── Arena ── */
+.arena{position:fixed;inset:0;overflow:hidden;z-index:var(--z-game)}
+.arena-bg{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#0f0c29 0%,#302b63 40%,#24243e 100%)}
+.arena-ground{position:fixed;bottom:0;left:0;right:0;height:15%;z-index:1;background:linear-gradient(180deg,#2d5a2d,#1a3a1a)}
+.arena-stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.arena-star{position:absolute;background:#fff;border-radius:50%;animation:twinkle ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:0.3}50%{opacity:1}}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#0f0c29,#302b63,#24243e)}
+.screen-title h1{font-size:clamp(28px,7vw,48px);color:var(--gold);text-shadow:3px 3px 0 #000;margin:10px 0}
+.screen-title p{font-size:clamp(14px,3.5vw,20px);color:#c8c8ff;max-width:440px;line-height:1.4}
+.screen-title .icon-row{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:5px}
+.screen-title .icon-row span{font-size:clamp(40px,10vw,70px)}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:bold;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#ff6f00,#ffab00);animation:glow 2s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#4CAF50,#8BC34A);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
+
+/* ── HUD ── */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none}
+.hud-left,.hud-right,.hud-center{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);align-items:center}
+.hud-label{font-size:clamp(11px,2.5vw,15px);color:rgba(255,255,255,0.6);font-weight:bold}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900;text-shadow:2px 2px 0 rgba(0,0,0,0.5)}
+.hud-score .hud-val{color:var(--gold)}
+.hud-wave .hud-val{color:#c8c8ff}
+.hud-hearts .hud-val{font-size:clamp(18px,4vw,26px)}
+.hud-combo{position:fixed;top:42px;right:12px;z-index:var(--z-ui);text-align:right;pointer-events:none;opacity:0;transition:opacity 0.3s}
+.hud-combo.show{opacity:1}
+.combo-count{font-size:clamp(20px,5vw,34px);font-weight:900;color:#ff6f00;text-shadow:2px 2px 0 #000}
+.combo-bar{width:clamp(80px,20vw,140px);height:8px;background:rgba(255,255,255,0.15);border-radius:4px;margin:4px auto 0;overflow:hidden}
+.combo-fill{height:100%;background:linear-gradient(90deg,#ff6f00,#ffab00);border-radius:4px;transition:width 0.3s;width:0%}
+
+/* ── Prompt (top-left, below wave label) ── */
+.prompt-bar{position:fixed;top:38px;left:12px;z-index:var(--z-ui);background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);border-radius:16px;padding:4px 14px;display:flex;align-items:center;gap:8px;pointer-events:none}
+.prompt-label{font-size:clamp(12px,2.5vw,16px);color:#fff}
+.prompt-number{font-size:clamp(24px,5vw,36px);font-weight:900;color:var(--gold);text-shadow:2px 2px 0 rgba(0,0,0,0.5);animation:numappear 0.4s ease-out}
+@keyframes numappear{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+
+/* ── Enemies ── */
+.enemy{position:fixed;z-index:var(--z-game);cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;transition:transform 0.1s}
+.enemy:active{transform:scale(0.88)!important}
+.enemy-body{font-size:clamp(42px,9vw,62px);line-height:1;filter:drop-shadow(0 3px 10px rgba(0,0,0,0.4));transition:all 0.2s}
+.enemy-num{font-size:clamp(18px,4vw,26px);font-weight:900;color:#fff;background:rgba(0,0,0,0.45);border-radius:12px;padding:2px 10px;min-width:34px;text-align:center;margin-top:-6px;border:2px solid rgba(255,255,255,0.15)}
+.enemy.walking .enemy-body{animation:waddle 0.4s ease-in-out infinite}
+.enemy.zigzag .enemy-body{animation:zigwaddle 0.6s ease-in-out infinite}
+.enemy.zapped{pointer-events:none}
+.enemy.zapped .enemy-body{animation:zapped 0.7s ease-out forwards}
+.enemy.zapped .enemy-num{animation:zappedNum 0.5s ease-out forwards}
+.enemy.wrong-tap .enemy-body{animation:enemyshake 0.4s ease-in-out}
+
+/* Shielded enemies */
+.enemy.shielded .enemy-body{filter:drop-shadow(0 0 12px rgba(100,200,255,0.6)) drop-shadow(0 3px 10px rgba(0,0,0,0.4))}
+.enemy.shielded .enemy-num{border-color:rgba(100,200,255,0.5);box-shadow:0 0 8px rgba(100,200,255,0.3)}
+.shield-crack{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:clamp(50px,10vw,70px);pointer-events:none;animation:shieldpop 0.5s ease-out forwards;z-index:30}
+@keyframes shieldpop{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}
+
+@keyframes waddle{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-4deg)}75%{transform:translateY(-2px) rotate(4deg)}}
+@keyframes zigwaddle{0%,100%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-6px) rotate(-6deg) scale(1.02)}75%{transform:translateY(-3px) rotate(6deg) scale(1.02)}}
+@keyframes zapped{0%{transform:scale(1);opacity:1}30%{transform:scale(1.4) rotate(-15deg);opacity:1}60%{transform:scale(1.2) rotate(15deg) translateY(-30px);opacity:0.7}100%{transform:scale(0) rotate(30deg) translateY(-60px);opacity:0}}
+@keyframes zappedNum{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5) translateY(-25px);opacity:0}}
+@keyframes enemyshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+
+/* ── Power-up ── */
+.powerup{position:fixed;z-index:calc(var(--z-game) + 2);cursor:pointer;font-size:clamp(38px,8vw,54px);filter:drop-shadow(0 0 15px rgba(255,230,100,0.7));animation:powerFloat 1.5s ease-in-out infinite;-webkit-tap-highlight-color:transparent}
+.powerup:active{transform:scale(0.9)!important}
+@keyframes powerFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.08)}}
+.powerup.grabbed{animation:powerGrab 0.5s ease-out forwards;pointer-events:none}
+@keyframes powerGrab{0%{transform:scale(1);opacity:1}50%{transform:scale(1.8);opacity:1}100%{transform:scale(0);opacity:0}}
+
+/* ── Freeze effect ── */
+.freeze-overlay{position:fixed;inset:0;z-index:calc(var(--z-game) + 1);background:rgba(100,200,255,0.12);pointer-events:none;animation:freezePulse 0.5s ease-out;display:none}
+.freeze-overlay.active{display:block}
+@keyframes freezePulse{0%{background:rgba(100,200,255,0.35)}100%{background:rgba(100,200,255,0.12)}}
+.enemy.frozen .enemy-body{filter:brightness(1.3) saturate(0.4) drop-shadow(0 0 8px rgba(100,200,255,0.6))!important;animation:none!important}
+
+/* ── Prince charge (combo reward) ── */
+.prince-charge{position:fixed;z-index:calc(var(--z-game) + 5);pointer-events:none;display:none}
+.prince-charge.active{display:block;animation:chargeAcross 1.2s ease-in-out forwards}
+.prince-charge-img{width:clamp(70px,14vw,100px);height:auto}
+.prince-charge-emoji{font-size:clamp(55px,11vw,80px)}
+@keyframes chargeAcross{0%{left:-120px;top:50%;transform:translateY(-50%)}40%{left:45%;top:50%;transform:translateY(-50%) scale(1.2)}60%{left:55%;top:50%;transform:translateY(-50%) scale(1.2)}100%{left:110%;top:50%;transform:translateY(-50%)}}
+
+/* ── Boss ── */
+.boss{position:fixed;z-index:calc(var(--z-game) + 3);display:none;flex-direction:column;align-items:center}
+.boss.active{display:flex}
+.boss-body{font-size:clamp(80px,18vw,130px);line-height:1;filter:drop-shadow(0 5px 20px rgba(255,0,0,0.4));animation:bossBreathe 2s ease-in-out infinite}
+@keyframes bossBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.boss-hp{width:clamp(100px,25vw,180px);height:14px;background:rgba(0,0,0,0.5);border-radius:7px;margin-top:5px;overflow:hidden;border:2px solid rgba(255,255,255,0.2)}
+.boss-hp-fill{height:100%;background:linear-gradient(90deg,var(--red),#ff8a80);border-radius:5px;transition:width 0.5s}
+.boss-nums{display:flex;gap:clamp(8px,2vw,16px);margin-top:12px;flex-wrap:wrap;justify-content:center}
+.boss-choice{width:clamp(60px,14vw,80px);height:clamp(60px,14vw,80px);border-radius:50%;background:rgba(0,0,0,0.5);border:3px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:clamp(22px,5vw,32px);font-weight:900;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;font-family:var(--font)}
+.boss-choice:active{transform:scale(0.9)}
+.boss-choice.correct{background:linear-gradient(135deg,#4CAF50,#8BC34A);border-color:#fff;animation:bossCorrect 0.5s ease-out}
+.boss-choice.wrong{background:linear-gradient(135deg,var(--red),#ff5252);border-color:#fff;animation:enemyshake 0.4s ease-in-out}
+@keyframes bossCorrect{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+.boss-label{font-size:clamp(14px,3vw,20px);color:var(--gold);font-weight:bold;margin-top:8px;text-shadow:2px 2px 0 #000}
+
+/* ── Wave Banner ── */
+.wave-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:var(--z-overlay);text-align:center;opacity:0;pointer-events:none;transition:opacity 0.4s}
+.wave-banner.show{opacity:1}
+.wave-banner h2{font-size:clamp(28px,7vw,48px);color:var(--gold);text-shadow:3px 3px 0 #000;font-weight:900}
+.wave-banner p{font-size:clamp(14px,3vw,20px);color:rgba(255,255,255,0.8);margin-top:4px}
+
+/* ── Progress ── */
+.prog-bar{position:fixed;bottom:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:center;align-items:center;gap:clamp(2px,0.8vw,6px);padding:6px 8px 8px;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);pointer-events:none}
+.prog-dot{width:clamp(22px,4.5vw,32px);height:clamp(22px,4.5vw,32px);border-radius:50%;background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:clamp(9px,1.8vw,12px);font-weight:900;color:rgba(255,255,255,0.3);font-family:var(--font);transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.prog-dot.done{background:linear-gradient(135deg,#4CAF50,#8BC34A);border-color:#fff;color:#fff;transform:scale(1.1)}
+.prog-dot.current{border-color:var(--gold);color:var(--gold)}
+
+/* ── Prince character (bottom left, the defender) ── */
+.prince-area{position:fixed;bottom:calc(15% + 8px);left:10px;z-index:var(--z-ui);text-align:center;pointer-events:none}
+.prince-area-img{width:clamp(55px,11vw,80px);height:auto;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.4))}
+.prince-area-emoji{font-size:clamp(42px,9vw,60px);filter:drop-shadow(0 3px 8px rgba(0,0,0,0.3))}
+.prince-area.cheer .prince-area-img,.prince-area.cheer .prince-area-emoji{animation:bounce 0.5s ease-in-out}
+.pbubble{position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);color:#1a1a2e;padding:6px 14px;border-radius:18px;font-size:clamp(11px,2.5vw,16px);font-weight:bold;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,0.3);opacity:0;transition:opacity 0.25s;pointer-events:none}
+.pbubble.show{opacity:1}
+.pbubble::after{content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid rgba(255,255,255,0.95)}
+
+/* ── Princess in castle (CENTER of screen — the one being defended) ── */
+.princess-castle{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:calc(var(--z-game) + 1);text-align:center;pointer-events:none;display:flex;flex-direction:column;align-items:center}
+.castle-tower{font-size:clamp(90px,22vw,150px);line-height:1;filter:drop-shadow(0 5px 20px rgba(0,0,0,0.6));position:relative}
+.castle-glow{position:absolute;inset:-30px;background:radial-gradient(circle,rgba(255,224,100,0.2) 0%,transparent 70%);border-radius:50%;pointer-events:none;animation:castleGlow 3s ease-in-out infinite}
+@keyframes castleGlow{0%,100%{opacity:0.6}50%{opacity:1}}
+.princess-in-castle{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:6}
+.princess-in-castle-img{width:clamp(45px,9vw,60px);height:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4))}
+.princess-in-castle-emoji{font-size:clamp(34px,8vw,50px)}
+.princess-castle.scared .princess-in-castle-img,.princess-castle.scared .princess-in-castle-emoji{animation:scared 0.3s ease-in-out infinite}
+.princess-castle.happy .princess-in-castle-img,.princess-castle.happy .princess-in-castle-emoji{animation:dance 0.9s ease-in-out infinite}
+.princess-castle.scared .castle-tower{animation:castleShake 0.3s ease-in-out infinite}
+@keyframes scared{0%,100%{transform:translateX(-50%)}25%{transform:translateX(calc(-50% - 5px))}75%{transform:translateX(calc(-50% + 5px))}}
+@keyframes castleShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-1deg)}75%{transform:rotate(1deg)}}
+
+/* ── Celebration ── */
+.screen-celeb{background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:var(--z-celeb)}
+.screen-celeb h2{font-size:clamp(26px,6.5vw,46px);color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,0.5);animation:bounce 1.5s ease-in-out infinite}
+.screen-celeb p{font-size:clamp(15px,3.5vw,22px);color:rgba(255,255,255,0.9);margin:6px 0}
+.celeb-stars{font-size:clamp(28px,6vw,46px);margin:10px 0;letter-spacing:4px}
+.celeb-icon-row{display:flex;gap:10px;justify-content:center;margin-bottom:8px}
+.celeb-icon-row span{font-size:clamp(50px,12vw,80px);animation:dance 1s ease-in-out infinite}
+
+.confetti{position:fixed;z-index:calc(var(--z-celeb)+5);pointer-events:none;font-size:22px;animation:cfall linear forwards}
+.starburst{position:fixed;pointer-events:none;z-index:calc(var(--z-celeb)+2);font-size:26px;animation:starpop 0.7s ease-out forwards}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(0) scale(1)}15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}30%{transform:translateY(0) rotate(8deg)}45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}60%{transform:translateY(0) rotate(5deg)}75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}}
+@keyframes cfall{0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}}
+@keyframes starpop{0%{transform:scale(0) rotate(0);opacity:1}60%{transform:scale(1.4) rotate(200deg);opacity:1}100%{transform:scale(0) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Arena -->
+<div class="arena">
+  <div class="arena-bg"></div>
+  <div class="arena-stars" id="arenaStars"></div>
+  <div class="arena-ground"></div>
+</div>
+
+<!-- Freeze overlay -->
+<div class="freeze-overlay" id="freezeOverlay"></div>
+
+<!-- Prince charge effect -->
+<div class="prince-charge" id="princeCharge">
+  <img class="prince-charge-img" src="../../Characters/Prince on horse.gif" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+  <div class="prince-charge-emoji" style="display:none">🤴⚔️</div>
+</div>
+
+<!-- Princess in Castle (CENTER of screen) -->
+<div class="princess-castle" id="princessArea" style="display:none">
+  <div class="castle-tower">🏰<div class="castle-glow"></div>
+    <div class="princess-in-castle">
+      <img class="princess-in-castle-img" src="../../Characters/Princess with bird.gif" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="princess-in-castle-emoji" style="display:none">👸</div>
+    </div>
+  </div>
+</div>
+
+<!-- Prince -->
+<div class="prince-area" id="princeArea" style="display:none">
+  <div class="pbubble" id="bubble"></div>
+  <img class="prince-area-img" src="../../Characters/Prince on horse.gif" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+  <div class="prince-area-emoji" style="display:none">🤴</div>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-wave"><span class="hud-label">WAVE</span><span class="hud-val" id="hudWave">1/5</span></div>
+  <div class="hud-center hud-score"><span class="hud-label">SCORE</span><span class="hud-val" id="hudScore">0</span></div>
+  <div class="hud-right hud-hearts"><span class="hud-val" id="hudHearts">❤️❤️❤️❤️❤️</span></div>
+</div>
+
+<!-- Combo meter -->
+<div class="hud-combo" id="hudCombo">
+  <div class="combo-count" id="comboCount">🔥 x2</div>
+  <div class="combo-bar"><div class="combo-fill" id="comboFill"></div></div>
+</div>
+
+<!-- Prompt -->
+<div class="prompt-bar" id="promptBar" style="display:none">
+  <span class="prompt-label">Zap!</span>
+  <span class="prompt-number" id="promptNum">5</span>
+</div>
+
+<!-- Boss -->
+<div class="boss" id="boss">
+  <div class="boss-body" id="bossBody">🐲</div>
+  <div class="boss-hp"><div class="boss-hp-fill" id="bossHpFill" style="width:100%"></div></div>
+  <div class="boss-label" id="bossLabel">Find the number!</div>
+  <div class="boss-nums" id="bossNums"></div>
+</div>
+
+<!-- Wave banner -->
+<div class="wave-banner" id="waveBanner"><h2 id="waveBannerTitle"></h2><p id="waveBannerSub"></p></div>
+
+<!-- Progress -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>⚔️</span>
+    <span style="font-size:clamp(55px,14vw,90px)">🐲</span>
+    <span>🛡️</span>
+  </div>
+  <h1>Dragon Storm</h1>
+  <p>A storm of dragons is coming! Zap the right numbers to protect the princess through 5 waves — and defeat the Dragon King! 🐲👑</p>
+  <button class="btn btn-start" id="btnStart">Battle! ⚔️</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🤴</span>
+    <span>👸</span>
+  </div>
+  <h2 id="celebTitle">🎉 VICTORY! 🎉</h2>
+  <p id="celebMsg">The Dragon King is defeated!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! ⚔️</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ═══════════════════════════════════════
+// AUDIO ENGINE
+// ═══════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.35; this.musicDucked = 0.02;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Dark, dramatic minor key — battle music
+    const notes = [261.63, 311.13, 349.23, 392, 466.16]; // C minor pentatonic
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'triangle' : 'square';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.06);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 1);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 300 + Math.random() * 400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.5, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'correct') { p(523.25,t,0.18,0.5); p(659.25,t+0.12,0.2,0.55); p(783.99,t+0.24,0.25,0.6); }
+    else if (type === 'wrong') { p(350,t,0.12,0.2); p(300,t+0.1,0.12,0.15); }
+    else if (type === 'celeb') { p(523.25,t,0.15,0.4); p(659.25,t+0.13,0.15,0.45); p(783.99,t+0.26,0.18,0.5); p(659.25,t+0.42,0.15,0.45); p(1046.5,t+0.55,0.35,0.55); }
+    else if (type === 'zap') { p(800,t,0.06,0.3); p(1000,t+0.04,0.08,0.35); p(1200,t+0.08,0.1,0.3); }
+    else if (type === 'ouch') { p(250,t,0.15,0.25); p(200,t+0.12,0.2,0.2); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type === 'freeze') {
+      p(1200,t,0.2,0.3,'triangle'); p(1600,t+0.08,0.25,0.25,'sine'); p(2000,t+0.16,0.3,0.2,'triangle');
+    }
+    else if (type === 'charge') {
+      p(392,t,0.1,0.4); p(523.25,t+0.08,0.1,0.45); p(659.25,t+0.16,0.12,0.5); p(783.99,t+0.24,0.15,0.55); p(1046.5,t+0.35,0.3,0.6);
+    }
+    else if (type === 'boss_hit') {
+      p(400,t,0.08,0.5,'square'); p(300,t+0.06,0.1,0.4,'square'); p(200,t+0.14,0.15,0.35,'square');
+    }
+    else if (type === 'boss_roar') {
+      p(120,t,0.4,0.35,'sawtooth'); p(100,t+0.1,0.5,0.3,'sawtooth'); p(80,t+0.3,0.4,0.25,'sawtooth');
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({ file, resolve }); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true; const { file, resolve } = this.voiceQueue.shift(); this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) { return new Promise((resolve) => { const a = new window.Audio(path); a.onended = resolve; a.onerror = () => resolve(); a.play().catch(() => resolve()); }); }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+
+const CHEERS = ['amazing','wonderful','brilliant','fantastic','you_got_it','super','awesome','great_job','incredible'];
+const ENEMIES_EMOJI = ['🐲','🐉','🦖','🐊','🦎'];
+const POWERUP_EMOJI = ['⭐','🌟'];
+
+// ═══════════════════════════════════════
+// EFFECTS
+// ═══════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['🎉','🎊','⭐','🌟','✨','💫','⚔️','👑','🛡️',...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className='confetti'; el.textContent=pick(all);
+    el.style.left=(Math.random()*100)+'vw'; el.style.top='-30px';
+    el.style.fontSize=(16+Math.random()*14)+'px';
+    el.style.animationDelay=(Math.random()*1.8)+'s';
+    el.style.animationDuration=(2.2+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),6000);
+  }
+}
+function starBurst(el) {
+  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  for(let i=0;i<10;i++){
+    const s=document.createElement('div');
+    s.className='starburst'; s.textContent=pick(['⭐','🌟','✨','💥','⚡','🔥']);
+    s.style.left=(cx+(Math.random()-0.5)*150)+'px';
+    s.style.top=(cy+(Math.random()-0.5)*150)+'px';
+    s.style.animationDelay=(Math.random()*0.15)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),900);
+  }
+}
+
+function buildStars() {
+  const c = $('arenaStars');
+  for (let i = 0; i < 50; i++) {
+    const s = document.createElement('div');
+    s.className = 'arena-star';
+    const size = 1 + Math.random() * 2;
+    s.style.width = size+'px'; s.style.height = size+'px';
+    s.style.left = (Math.random()*100)+'%';
+    s.style.top = (Math.random()*80)+'%';
+    s.style.animationDuration = (2+Math.random()*3)+'s';
+    s.style.animationDelay = (-Math.random()*3)+'s';
+    c.appendChild(s);
+  }
+}
+
+// ═══════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let wave = 0, score = 0, lives = 5, combo = 0, maxCombo = 0;
+let currentTarget = -1, waveNumbers = [], waveIdx = 0;
+let activeEnemies = [], activePowerups = [], moveRAF = null;
+let frozen = false, frozenTimer = null;
+let inBossFight = false, bossHP = 0;
+
+// ═══════════════════════════════════════
+// WAVE DEFINITIONS
+// ═══════════════════════════════════════
+const WAVES = [
+  {
+    label: 'Wave 1 — The Scouts 🐲',
+    sub: '3 little dragons!',
+    numbers: [1,2,3,4,5],
+    enemyCount: 3,
+    speed: [0.3, 0.4],
+    spawnFrom: ['left'],
+    zigzag: false,
+    shielded: 0,
+    powerupChance: 0,
+  },
+  {
+    label: 'Wave 2 — Getting Harder ⚔️',
+    sub: 'They come from both sides!',
+    numbers: [3,4,5,6,7,8],
+    enemyCount: 4,
+    speed: [0.35, 0.5],
+    spawnFrom: ['left','right'],
+    zigzag: false,
+    shielded: 0,
+    powerupChance: 0.3,
+  },
+  {
+    label: 'Wave 3 — Dragon Swarm 🔥',
+    sub: 'More dragons, more directions!',
+    numbers: [5,6,7,8,9,10],
+    enemyCount: 5,
+    speed: [0.4, 0.6],
+    spawnFrom: ['left','right','top'],
+    zigzag: true,
+    shielded: 0,
+    powerupChance: 0.4,
+  },
+  {
+    label: 'Wave 4 — Shielded Dragons 🛡️',
+    sub: 'Some need TWO taps!',
+    numbers: [8,9,10,11,12,13,14,15],
+    enemyCount: 5,
+    speed: [0.45, 0.65],
+    spawnFrom: ['left','right','top'],
+    zigzag: true,
+    shielded: 1,
+    powerupChance: 0.5,
+  },
+  {
+    label: 'Wave 5 — Dragon King 👑🐲',
+    sub: 'Defeat the boss!',
+    numbers: [10,11,12,13,14,15,16,17,18,19,20],
+    enemyCount: 0, // boss fight
+    speed: [0,0],
+    spawnFrom: [],
+    zigzag: false,
+    shielded: 0,
+    powerupChance: 0,
+    boss: true,
+  },
+];
+
+function waveCfg() { return WAVES[wave]; }
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); if(id) $(id).classList.add('active'); }
+function showBubble(text, dur=2000) { const b=$('bubble'); b.textContent=text; b.classList.add('show'); clearTimeout(b._t); b._t=setTimeout(()=>b.classList.remove('show'),dur); }
+function updateHearts() { $('hudHearts').textContent = '❤️'.repeat(Math.max(0,lives)) + '🖤'.repeat(Math.max(0,5-lives)); }
+function updateComboUI() {
+  const h = $('hudCombo');
+  if (combo >= 2) {
+    h.classList.add('show');
+    $('comboCount').textContent = `🔥 x${combo}`;
+    $('comboFill').style.width = ((combo % 3) / 3 * 100) + '%';
+    if (combo % 3 === 0) $('comboFill').style.width = '100%';
+  } else {
+    h.classList.remove('show');
+  }
+}
+
+function buildProg() {
+  const bar = $('progBar'); bar.innerHTML = ''; bar.style.display = '';
+  const cfg = waveCfg();
+  if (cfg.boss) {
+    // Boss wave: show 3 dots for 3 hits
+    for (let i = 0; i < 3; i++) {
+      const d = document.createElement('div');
+      d.className = 'prog-dot'; d.id = 'prog_boss_' + i; d.textContent = '🐲';
+      bar.appendChild(d);
+    }
+    return;
+  }
+  cfg.numbers.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + n; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+function markProg(n) { const d = $('prog'+n); if(d) d.classList.add('done'); }
+
+// ═══════════════════════════════════════
+// ENEMY SPAWNING
+// ═══════════════════════════════════════
+function clearEnemies() {
+  activeEnemies.forEach(e => e.el.remove());
+  activeEnemies = [];
+  activePowerups.forEach(p => p.el.remove());
+  activePowerups = [];
+}
+
+function spawnWave() {
+  clearEnemies();
+  const cfg = waveCfg();
+  if (cfg.boss) { startBossFight(); return; }
+
+  const target = waveNumbers[waveIdx];
+  currentTarget = target;
+
+  // Update prompt
+  const pn = $('promptNum');
+  pn.textContent = target;
+  pn.style.animation = 'none'; void pn.offsetWidth; pn.style.animation = '';
+
+  // Build option set: target + distractors
+  let options = [target];
+  let pool = cfg.numbers.filter(n => n !== target);
+  shuffle(pool);
+  while (options.length < cfg.enemyCount && pool.length > 0) options.push(pool.pop());
+  while (options.length < cfg.enemyCount) {
+    let extra = target + pick([-3,-2,-1,1,2,3]);
+    extra = clamp(extra, 0, 20);
+    if (!options.includes(extra)) options.push(extra);
+  }
+  shuffle(options);
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const castleX = W / 2;
+  const castleY = H / 2;
+  const dirs = cfg.spawnFrom;
+
+  // Safe zones: avoid HUD (top 50px), progress bar (bottom 50px), ground (bottom 15%)
+  const minY = 60;
+  const maxY = H * 0.82;
+  const margin = 70; // off-screen margin
+
+  options.forEach((num, i) => {
+    const isTarget = (num === target);
+    const dir = dirs[i % dirs.length];
+    let startX, startY, targetX, targetY;
+
+    if (isTarget) {
+      // ── THE THREAT: heads straight for the castle ──
+      // Pick a random edge to spawn from
+      const side = dirs.length > 1 ? pick(dirs) : dirs[0];
+      if (side === 'left') {
+        startX = -margin;
+        startY = minY + Math.random() * (maxY - minY);
+      } else if (side === 'right') {
+        startX = W + margin;
+        startY = minY + Math.random() * (maxY - minY);
+      } else {
+        startX = W * 0.25 + Math.random() * (W * 0.5);
+        startY = -margin;
+      }
+      targetX = castleX;
+      targetY = castleY;
+    } else {
+      // ── DISTRACTORS: wander across screen, NEVER touch the castle ──
+      // They cross from one edge to the opposite, passing through the play area
+      // but their path goes AROUND the castle (offset from center)
+
+      // Pick a vertical band for this distractor — spread them out
+      const bandCount = cfg.enemyCount - 1; // number of distractors
+      const distractorIdx = activeEnemies.filter(e => e.num !== target).length;
+      const bandSize = (maxY - minY) / Math.max(1, bandCount);
+      const bandY = minY + bandSize * distractorIdx + bandSize * 0.5 + (Math.random() - 0.5) * bandSize * 0.4;
+
+      // Alternate: some go left-to-right, some right-to-left, some top-down
+      const pattern = i % 3;
+      if (pattern === 0) {
+        // Left to right
+        startX = -margin - (i * 60);
+        startY = bandY;
+        targetX = W + margin;
+        targetY = bandY + (Math.random() - 0.5) * 80;
+      } else if (pattern === 1) {
+        // Right to left
+        startX = W + margin + (i * 60);
+        startY = bandY;
+        targetX = -margin;
+        targetY = bandY + (Math.random() - 0.5) * 80;
+      } else {
+        // Top to bottom
+        startX = W * 0.15 + (distractorIdx / Math.max(1, bandCount)) * (W * 0.7);
+        startY = -margin - (i * 50);
+        targetX = startX + (Math.random() - 0.5) * 120;
+        targetY = maxY + margin;
+      }
+    }
+
+    const enemy = document.createElement('div');
+    enemy.className = 'enemy ' + (cfg.zigzag && Math.random() > 0.5 ? 'zigzag' : 'walking');
+    enemy.dataset.num = num;
+
+    // Shielded? Only the target can be shielded (needs 2 taps)
+    let shielded = false;
+    if (cfg.shielded > 0 && isTarget && Math.random() > 0.4) {
+      shielded = true;
+      enemy.classList.add('shielded');
+    }
+
+    const body = document.createElement('div');
+    body.className = 'enemy-body';
+    body.textContent = pick(ENEMIES_EMOJI);
+    const numEl = document.createElement('div');
+    numEl.className = 'enemy-num';
+    numEl.textContent = num;
+    enemy.appendChild(body);
+    enemy.appendChild(numEl);
+
+    enemy.style.left = startX + 'px';
+    enemy.style.top = startY + 'px';
+
+    onTap(enemy, () => handleEnemyTap(enemy, num));
+    document.body.appendChild(enemy);
+
+    const baseSpeed = cfg.speed[0] + Math.random() * (cfg.speed[1] - cfg.speed[0]);
+    // Distractors move a bit faster so they clear through quicker
+    const finalSpeed = isTarget ? baseSpeed : baseSpeed * 1.15;
+
+    activeEnemies.push({
+      el: enemy, num, x: startX, y: startY,
+      targetX, targetY,
+      speed: finalSpeed,
+      dir: startX > castleX ? 'right' : 'left',
+      isTarget,
+      alive: true,
+      shielded,
+      zigzagPhase: Math.random() * Math.PI * 2,
+      zigzagAmp: cfg.zigzag ? (15 + Math.random() * 20) : 0,
+    });
+  });
+
+  // Maybe spawn a power-up
+  if (cfg.powerupChance > 0 && Math.random() < cfg.powerupChance) {
+    spawnPowerup();
+  }
+
+  // Speak the number
+  audio.speakNumber(target);
+
+  // Start movement
+  startMovement();
+}
+
+function spawnPowerup() {
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const pu = document.createElement('div');
+  pu.className = 'powerup';
+  pu.textContent = pick(POWERUP_EMOJI);
+
+  // Spawn in corners / edges — away from the castle center
+  const corners = [
+    { x: 30 + Math.random()*60, y: 70 + Math.random()*60 },
+    { x: W - 90 + Math.random()*40, y: 70 + Math.random()*60 },
+    { x: 30 + Math.random()*60, y: H - 180 + Math.random()*40 },
+    { x: W - 90 + Math.random()*40, y: H - 180 + Math.random()*40 },
+  ];
+  const pos = pick(corners);
+  pu.style.left = pos.x + 'px';
+  pu.style.top = pos.y + 'px';
+
+  onTap(pu, () => grabPowerup(pu));
+  document.body.appendChild(pu);
+
+  activePowerups.push({ el: pu, timer: setTimeout(() => {
+    pu.remove();
+    activePowerups = activePowerups.filter(p => p.el !== pu);
+  }, 5000)});
+}
+
+function grabPowerup(el) {
+  if (el.classList.contains('grabbed')) return;
+  el.classList.add('grabbed');
+  audio.tone('freeze');
+  activateFreeze();
+  setTimeout(() => el.remove(), 600);
+  activePowerups = activePowerups.filter(p => p.el !== el);
+}
+
+function activateFreeze() {
+  frozen = true;
+  $('freezeOverlay').classList.add('active');
+  activeEnemies.forEach(e => e.el.classList.add('frozen'));
+  showBubble('FROZEN! ❄️', 2000);
+
+  clearTimeout(frozenTimer);
+  frozenTimer = setTimeout(() => {
+    frozen = false;
+    $('freezeOverlay').classList.remove('active');
+    activeEnemies.forEach(e => e.el.classList.remove('frozen'));
+  }, 2500);
+}
+
+// ═══════════════════════════════════════
+// MOVEMENT
+// ═══════════════════════════════════════
+let lastTime = 0;
+
+function startMovement() {
+  stopMovement();
+  lastTime = performance.now();
+  const tick = (now) => {
+    if (!gameActive && !inBossFight) return;
+    const dt = Math.min(now - lastTime, 50); // cap delta to avoid jumps
+    lastTime = now;
+
+    if (!frozen) {
+      activeEnemies.forEach(e => {
+        if (!e.alive) return;
+
+        const dx = e.targetX - e.x;
+        const dy = e.targetY - e.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        // Target dragon: reached the castle? Distractors: reached their exit point?
+        const reachDist = e.isTarget ? 50 : 30;
+        if (dist < reachDist) { enemyReached(e); return; }
+
+        const moveAmt = e.speed * (dt / 16); // normalize to ~60fps
+        const nx = (dx / dist) * moveAmt;
+        const ny = (dy / dist) * moveAmt;
+        e.x += nx;
+        e.y += ny;
+
+        // Zigzag perpendicular to movement direction
+        let drawX = e.x, drawY = e.y;
+        if (e.zigzagAmp > 0) {
+          e.zigzagPhase += 0.04;
+          const perp = Math.sin(e.zigzagPhase) * e.zigzagAmp;
+          // Perpendicular to dx/dy
+          const len = Math.sqrt(dx*dx + dy*dy) || 1;
+          drawX += (-dy / len) * perp;
+          drawY += (dx / len) * perp;
+        }
+
+        e.el.style.left = drawX + 'px';
+        e.el.style.top = drawY + 'px';
+
+        // Flip sprite if coming from right
+        if (e.dir === 'right') {
+          e.el.style.transform = 'scaleX(-1)';
+          e.el.querySelector('.enemy-num').style.transform = 'scaleX(-1)';
+        }
+      });
+    }
+
+    moveRAF = requestAnimationFrame(tick);
+  };
+  moveRAF = requestAnimationFrame(tick);
+}
+
+function stopMovement() {
+  if (moveRAF) cancelAnimationFrame(moveRAF);
+  moveRAF = null;
+}
+
+function enemyReached(e) {
+  e.alive = false;
+
+  if (e.isTarget) {
+    // The REAL threat reached the castle — lose a heart
+    e.el.style.opacity = '0.3';
+    e.el.style.pointerEvents = 'none';
+    lives--;
+    updateHearts();
+    audio.tone('ouch');
+    $('princessArea').classList.add('scared');
+    setTimeout(() => $('princessArea').classList.remove('scared'), 800);
+    showBubble('Oh no! 😱', 1500);
+    combo = 0;
+    updateComboUI();
+
+    if (lives <= 0) { gameOver(); return; }
+    skipToNext();
+  } else {
+    // Distractor — just wanders off screen, remove quietly
+    e.el.remove();
+  }
+}
+
+function skipToNext() {
+  clearEnemies();
+  unfreezeAll();
+  waveIdx++;
+  if (waveIdx >= waveNumbers.length) {
+    setTimeout(() => advanceWave(), 500);
+  } else {
+    gameActive = true;
+    setTimeout(() => spawnWave(), 700);
+  }
+}
+
+function unfreezeAll() {
+  frozen = false;
+  clearTimeout(frozenTimer);
+  $('freezeOverlay').classList.remove('active');
+}
+
+// ═══════════════════════════════════════
+// TAP HANDLER
+// ═══════════════════════════════════════
+async function handleEnemyTap(enemyEl, num) {
+  if (!gameActive) return;
+  if (enemyEl.classList.contains('zapped')) return;
+
+  const eData = activeEnemies.find(e => e.el === enemyEl);
+  if (!eData || !eData.alive) return;
+
+  if (num === currentTarget) {
+    // Shielded? First tap breaks shield
+    if (eData.shielded) {
+      eData.shielded = false;
+      enemyEl.classList.remove('shielded');
+      audio.tone('zap');
+      // Show shield crack
+      const crack = document.createElement('div');
+      crack.className = 'shield-crack';
+      crack.textContent = '🛡️';
+      enemyEl.appendChild(crack);
+      setTimeout(() => crack.remove(), 600);
+      showBubble('Shield broken! 🛡️💥', 1200);
+      return;
+    }
+
+    // CORRECT
+    gameActive = false;
+    stopMovement();
+    eData.alive = false;
+    enemyEl.classList.remove('walking','zigzag');
+    enemyEl.classList.add('zapped');
+    audio.tone('zap');
+    audio.tone('correct');
+    starBurst(enemyEl);
+
+    score++;
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    $('hudScore').textContent = score;
+    markProg(num);
+    updateComboUI();
+
+    const quips = ['Zapped!','Got it!','Pow!','Boom!','Ka-pow!','Smashed!'];
+    showBubble(pick(quips) + ' ⚡', 1200);
+    $('princeArea').classList.add('cheer');
+    setTimeout(() => $('princeArea').classList.remove('cheer'), 600);
+
+    // Combo charge! Every 3 correct in a row
+    if (combo > 0 && combo % 3 === 0) {
+      await triggerComboCharge();
+    } else {
+      await audio.speakPhrase(pick(CHEERS));
+    }
+
+    // Clear remaining
+    clearEnemies();
+    unfreezeAll();
+
+    waveIdx++;
+    if (waveIdx >= waveNumbers.length) {
+      await delay(300);
+      advanceWave();
+    } else {
+      gameActive = true;
+      await delay(400);
+      spawnWave();
+    }
+  } else {
+    // WRONG
+    enemyEl.classList.add('wrong-tap');
+    audio.tone('wrong');
+    showBubble('Not that one!', 1000);
+    combo = 0;
+    updateComboUI();
+    setTimeout(() => enemyEl.classList.remove('wrong-tap'), 500);
+  }
+}
+
+// ═══════════════════════════════════════
+// COMBO CHARGE
+// ═══════════════════════════════════════
+async function triggerComboCharge() {
+  audio.tone('charge');
+  showBubble('COMBO CHARGE! ⚡🤴⚡', 2500);
+  confetti(25, ['⚔️','⚡','🔥']);
+
+  const pc = $('princeCharge');
+  pc.style.display = 'block';
+  pc.classList.remove('active');
+  void pc.offsetWidth;
+  pc.classList.add('active');
+
+  await delay(1200);
+  pc.classList.remove('active');
+  pc.style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+// BOSS FIGHT
+// ═══════════════════════════════════════
+let bossTarget = -1, bossHits = 0;
+
+async function startBossFight() {
+  inBossFight = true;
+  gameActive = false;
+  $('promptBar').style.display = 'none';
+
+  const boss = $('boss');
+  boss.style.display = 'flex';
+  boss.style.left = '50%';
+  boss.style.top = '20%';
+  boss.style.transform = 'translateX(-50%)';
+  boss.classList.add('active');
+
+  bossHP = 3;
+  bossHits = 0;
+  $('bossHpFill').style.width = '100%';
+
+  audio.tone('boss_roar');
+  showBubble('The Dragon King! 👑🐲', 2500);
+  await audio.speakPhrase('ready');
+  await delay(800);
+
+  gameActive = true;
+  nextBossRound();
+}
+
+function nextBossRound() {
+  if (bossHits >= 3) { bossDefeated(); return; }
+
+  const cfg = waveCfg();
+  const target = pick(cfg.numbers);
+  bossTarget = target;
+
+  $('bossLabel').textContent = `Zap: ${target}`;
+
+  // Generate choices
+  let choices = [target];
+  let pool = cfg.numbers.filter(n => n !== target);
+  shuffle(pool);
+  while (choices.length < 4 && pool.length) choices.push(pool.pop());
+  shuffle(choices);
+
+  const numsEl = $('bossNums');
+  numsEl.innerHTML = '';
+  choices.forEach(n => {
+    const btn = document.createElement('div');
+    btn.className = 'boss-choice';
+    btn.textContent = n;
+    onTap(btn, () => handleBossTap(btn, n));
+    numsEl.appendChild(btn);
+  });
+
+  audio.speakNumber(target);
+}
+
+async function handleBossTap(btn, num) {
+  if (!gameActive || !inBossFight) return;
+  if (btn.classList.contains('correct') || btn.classList.contains('wrong')) return;
+
+  if (num === bossTarget) {
+    gameActive = false;
+    btn.classList.add('correct');
+    bossHits++;
+    score++;
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
+    $('hudScore').textContent = score;
+    updateComboUI();
+
+    const bp = $('prog_boss_' + (bossHits - 1));
+    if (bp) bp.classList.add('done');
+
+    audio.tone('boss_hit');
+    $('bossBody').style.animation = 'none';
+    void $('bossBody').offsetWidth;
+    $('bossBody').style.animation = '';
+
+    bossHP--;
+    $('bossHpFill').style.width = ((bossHP / 3) * 100) + '%';
+
+    starBurst($('bossBody'));
+    showBubble(pick(['Direct hit!','Take that!','Ka-pow!']) + ' 💥', 1500);
+    await audio.speakPhrase(pick(CHEERS));
+    await delay(500);
+
+    gameActive = true;
+    nextBossRound();
+  } else {
+    btn.classList.add('wrong');
+    audio.tone('wrong');
+    combo = 0;
+    updateComboUI();
+    showBubble('Try again!', 1000);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+async function bossDefeated() {
+  gameActive = false;
+  inBossFight = false;
+  $('boss').classList.remove('active');
+  $('boss').style.display = 'none';
+
+  audio.tone('celeb');
+  confetti(60, ['👑','🐲','⚔️']);
+  showBubble('Dragon King defeated! 👑💥', 3000);
+  $('princessArea').classList.add('happy');
+  await audio.speakPhrase('well_done');
+  await delay(1000);
+  celebrateFinish();
+}
+
+// ═══════════════════════════════════════
+// GAME OVER (hearts gone)
+// ═══════════════════════════════════════
+async function gameOver() {
+  gameActive = false;
+  inBossFight = false;
+  stopMovement();
+  clearEnemies();
+  unfreezeAll();
+  $('boss').classList.remove('active');
+  $('boss').style.display = 'none';
+
+  await delay(500);
+  lives = 5;
+  updateHearts();
+  combo = 0;
+  updateComboUI();
+  showBubble('Let\'s try again! 💪', 2500);
+  audio.tone('whoosh');
+  await audio.speakPhrase('lets_try');
+  await delay(800);
+
+  // Restart current wave
+  waveNumbers = shuffle([...waveCfg().numbers]);
+  waveIdx = 0;
+  buildProg();
+  gameActive = true;
+
+  if (waveCfg().boss) {
+    startBossFight();
+  } else {
+    spawnWave();
+  }
+}
+
+// ═══════════════════════════════════════
+// ADVANCE WAVE
+// ═══════════════════════════════════════
+async function advanceWave() {
+  stopMovement();
+  gameActive = false;
+  clearEnemies();
+  unfreezeAll();
+
+  if (wave >= WAVES.length - 1) {
+    celebrateFinish();
+    return;
+  }
+
+  audio.tone('celeb');
+  confetti(35, ['⚔️','🛡️']);
+  $('princessArea').classList.add('happy');
+
+  const banner = $('waveBanner');
+  $('waveBannerTitle').textContent = `Wave ${wave + 1} Complete! ⚔️`;
+  $('waveBannerSub').textContent = '';
+  banner.classList.add('show');
+  await audio.speakPhrase('well_done');
+  await delay(1800);
+  banner.classList.remove('show');
+  $('princessArea').classList.remove('happy');
+
+  wave++;
+  $('hudWave').textContent = `${wave + 1}/5`;
+
+  // Restore some hearts
+  lives = Math.min(5, lives + 2);
+  updateHearts();
+
+  const nextCfg = waveCfg();
+  $('waveBannerTitle').textContent = nextCfg.label;
+  $('waveBannerSub').textContent = nextCfg.sub;
+  banner.classList.add('show');
+  await audio.speakPhrase('ready');
+  await delay(1500);
+  banner.classList.remove('show');
+
+  waveNumbers = shuffle([...nextCfg.numbers]);
+  waveIdx = 0;
+  buildProg();
+  gameActive = true;
+  spawnWave();
+}
+
+// ═══════════════════════════════════════
+// CELEBRATION
+// ═══════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  inBossFight = false;
+  stopMovement();
+  $('promptBar').style.display = 'none';
+  $('boss').style.display = 'none';
+
+  audio.tone('celeb');
+  $('princessArea').classList.add('happy');
+
+  await delay(400);
+  confetti(70, ['👸','🤴','⚔️','👑','🐲']);
+
+  const stars = Math.min(5, 1 + Math.floor(score / 5));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🎉 VICTORY! 🎉';
+  $('celebMsg').textContent = `The Dragon King is defeated! Score: ${score} | Best combo: ${maxCombo}x`;
+  showScreen('scrCeleb');
+
+  await delay(500);
+  await audio.speakPhrase('well_done_complete');
+  await delay(300);
+  await audio.speakPhrase('superstar');
+  setTimeout(() => confetti(40), 2000);
+}
+
+// ═══════════════════════════════════════
+// START GAME
+// ═══════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  $('hud').style.display = '';
+  $('promptBar').style.display = '';
+  $('princeArea').style.display = '';
+  $('princessArea').style.display = '';
+
+  wave = 0; score = 0; lives = 5; combo = 0; maxCombo = 0; waveIdx = 0;
+  inBossFight = false;
+  $('hudScore').textContent = '0';
+  $('hudWave').textContent = '1/5';
+  updateHearts();
+  updateComboUI();
+
+  $('princessArea').classList.remove('happy','scared');
+  $('boss').classList.remove('active');
+  $('boss').style.display = 'none';
+
+  waveNumbers = shuffle([...waveCfg().numbers]);
+  buildProg();
+  gameActive = true;
+  audio.startMusic();
+
+  const banner = $('waveBanner');
+  $('waveBannerTitle').textContent = WAVES[0].label;
+  $('waveBannerSub').textContent = WAVES[0].sub;
+  banner.classList.add('show');
+  showBubble('Protect the princess! ⚔️', 2800);
+  await audio.speakPhrase('lets_go');
+  await delay(1500);
+  banner.classList.remove('show');
+
+  spawnWave();
+}
+
+// ═══════════════════════════════════════
+// EVENT BINDINGS
+// ═══════════════════════════════════════
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.stopMusic();
+  audio.clearQueue();
+  stopMovement();
+  clearEnemies();
+  unfreezeAll();
+  $('princessArea').classList.remove('happy','scared');
+  $('boss').classList.remove('active');
+  $('boss').style.display = 'none';
+  showScreen(null);
+  startGame();
+});
+
+buildStars();
+</script>
+</body>
+</html>

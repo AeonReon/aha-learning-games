@@ -58,6 +58,7 @@
           "title": "Play",
           "subtitle": "Fun letter games!",
           "games": [
+            { "file": "games/letters/24-letter-bubbles.html", "title": "Letter Bubbles", "icon": "🫧", "desc": "Pop the right letter bubble!", "difficulty": 1 },
             { "file": "games/letters/11-letter-fairy-forest.html", "title": "Fairy Forest", "icon": "🧚", "desc": "Catch the glowing firefly letters", "difficulty": 1 },
             { "file": "games/letters/12-abc-pirate-treasure.html", "title": "Pirate Treasure", "icon": "🏴‍☠️", "desc": "Find letter treasure on the beach", "difficulty": 2 },
             { "file": "games/letters/20-letter-potion.html", "title": "Letter Potion", "icon": "🧪", "desc": "Catch letters to brew magic potions", "difficulty": 2 }

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Letter Bubbles</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);overflow:hidden;height:100vh;height:100dvh;width:100vw;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;background:#E3F2FD}
+
+/* Background - underwater theme */
+.bg{position:fixed;inset:0;z-index:var(--z-bg);background:linear-gradient(180deg,#E3F2FD 0%,#BBDEFB 30%,#90CAF9 60%,#64B5F6 100%)}
+.bg-wave{position:fixed;bottom:0;left:0;right:0;height:40%;z-index:1;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(66,165,245,0.2));border-radius:100% 100% 0 0}
+
+/* Screens */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.5s;opacity:0;visibility:hidden;pointer-events:none;z-index:var(--z-screen);padding:20px}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}
+.screen-title{background:linear-gradient(180deg,#E3F2FD,#BBDEFB,#90CAF9)}
+.screen-title h1{font-size:clamp(30px,8vw,50px);color:#1565C0;margin:10px 0;font-weight:900}
+.screen-title p{font-size:clamp(15px,3.8vw,22px);color:#333;max-width:440px;line-height:1.4;font-weight:600}
+.screen-title .icon-row{font-size:clamp(40px,10vw,70px);margin-bottom:5px}
+
+.btn{min-width:var(--tap);min-height:60px;padding:14px 40px;font-size:clamp(20px,5vw,28px);font-family:var(--font);color:#fff;border:none;border-radius:30px;cursor:pointer;font-weight:900;box-shadow:0 4px 15px rgba(0,0,0,0.15);transition:transform 0.1s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(0.93)}
+.btn-start{background:linear-gradient(135deg,#42A5F5,#1565C0);animation:glow 2.5s ease-in-out infinite;margin-top:20px}
+.btn-again{background:linear-gradient(135deg,#42A5F5,#1565C0);margin-top:16px}
+@keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.1)}}
+
+/* HUD */
+.hud{position:fixed;top:0;left:0;right:0;z-index:var(--z-ui);display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;pointer-events:none;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);border-bottom:3px solid rgba(0,0,0,0.06)}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:2px}
+.hud-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:clamp(10px,2.2vw,14px);color:#888;font-weight:900}
+.hud-val{font-size:clamp(16px,3.5vw,24px);font-weight:900}
+.hud-round .hud-val{color:#1565C0}
+.hud-score .hud-val{color:#e65100}
+.hud-prompt{font-size:clamp(22px,5.5vw,34px);font-weight:900;color:#1565C0}
+
+/* Bubble */
+.bubble{position:fixed;z-index:var(--z-game);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 0.1s;animation:bubbleFloat linear forwards}
+.bubble:active{transform:scale(0.9)}
+.bubble-letter{font-size:clamp(28px,7vw,42px);font-weight:900;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
+.bubble-sub{font-size:clamp(16px,4vw,24px);color:rgba(255,255,255,0.8);font-weight:700}
+.bubble-shine{position:absolute;top:15%;left:20%;width:30%;height:25%;background:rgba(255,255,255,0.4);border-radius:50%;transform:rotate(-30deg)}
+
+@keyframes bubbleFloat{
+  0%{transform:translateY(0) scale(1)}
+  25%{transform:translateY(-25vh) scale(1.02) translateX(10px)}
+  50%{transform:translateY(-50vh) scale(0.98) translateX(-10px)}
+  75%{transform:translateY(-75vh) scale(1.02) translateX(10px)}
+  100%{transform:translateY(-110vh) scale(1)}
+}
+
+/* Pop effect */
+.pop-ring{position:fixed;z-index:999;border-radius:50%;border:4px solid;pointer-events:none;animation:popRing 0.6s ease-out forwards}
+@keyframes popRing{0%{transform:scale(0.3);opacity:1}100%{transform:scale(2.5);opacity:0}}
+
+.splash{position:fixed;z-index:998;pointer-events:none;font-size:20px;animation:splashUp 0.8s ease-out forwards}
+@keyframes splashUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-60px) scale(0.3);opacity:0}}
+
+/* Confetti */
+.confetti-piece{position:fixed;z-index:999;pointer-events:none;border-radius:3px}
+
+/* Celebration */
+.celeb{position:fixed;inset:0;z-index:var(--z-celeb);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,#E3F2FD,#BBDEFB,#90CAF9);opacity:0;visibility:hidden;pointer-events:none;transition:opacity 0.6s}
+.celeb.active{opacity:1;visibility:visible;pointer-events:auto}
+.celeb h1{font-size:clamp(30px,8vw,50px);color:#1565C0;font-weight:900;margin:10px 0}
+.celeb .stars{font-size:clamp(40px,10vw,60px);margin:10px 0}
+.celeb p{font-size:clamp(16px,4vw,22px);color:#333;font-weight:700}
+
+/* Progress bubbles */
+.progress-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:15px 0}
+.progress-bubble{width:clamp(30px,7vw,40px);height:clamp(30px,7vw,40px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,3.5vw,18px);font-weight:900;color:#fff;opacity:0.3;transition:opacity 0.4s}
+.progress-bubble.popped{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="bg-wave"></div>
+
+<!-- Title -->
+<div class="screen screen-title active" id="titleScreen">
+  <div class="icon-row">🫧 🔤 🫧</div>
+  <h1>Letter Bubbles</h1>
+  <p>Pop the right letter bubble before it floats away!</p>
+  <button class="btn btn-start" id="startBtn">Pop! 🫧</button>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1 / 5</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-prompt" id="hudPrompt">Pop the A!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">POPPED</span>
+    <span class="hud-val" id="hudScore">🫧 0</span>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress-row" id="progressRow" style="position:fixed;bottom:8px;left:0;right:0;z-index:20"></div>
+
+<!-- Celebration -->
+<div class="celeb" id="celebScreen">
+  <div class="stars">⭐ ⭐ ⭐</div>
+  <h1>All Bubbles Popped!</h1>
+  <div class="progress-row" id="finalProgress"></div>
+  <p>You popped <span id="celebCount">0</span> letter bubbles!</p>
+  <button class="btn btn-again" id="againBtn">Pop Again! 🫧</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+// ── Audio ──
+class GameAudio {
+  constructor() { this.ctx = null; this.musicGain = null; this.voiceQueue = []; this.voicePlaying = false; }
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = 0.07;
+    this.musicGain.connect(this.ctx.destination);
+  }
+  startMusic() {
+    this.init();
+    const notes = [392, 440, 523, 587, 659, 587, 523, 440];
+    let i = 0;
+    const play = () => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i % notes.length];
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.85);
+      osc.connect(g); g.connect(this.musicGain);
+      osc.start(); osc.stop(this.ctx.currentTime + 0.9);
+      i++;
+      this.musicTimer = setTimeout(play, 900);
+    };
+    play();
+  }
+  stopMusic() { clearTimeout(this.musicTimer); }
+  playSFX(freq, type = 'sine', dur = 0.3) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + dur);
+    osc.connect(g); g.connect(this.ctx.destination);
+    osc.start(); osc.stop(this.ctx.currentTime + dur);
+  }
+  playPop() {
+    this.playSFX(800, 'sine', 0.08);
+    setTimeout(() => this.playSFX(1200, 'sine', 0.1), 50);
+    setTimeout(() => this.playSFX(600, 'sine', 0.15), 100);
+  }
+  playCorrect() {
+    this.playSFX(523, 'sine', 0.12);
+    setTimeout(() => this.playSFX(659, 'sine', 0.12), 80);
+    setTimeout(() => this.playSFX(784, 'sine', 0.25), 160);
+  }
+  playWrong() { this.playSFX(200, 'square', 0.2); }
+  playCelebration() {
+    [523, 659, 784, 1047, 784, 1047].forEach((n, i) => setTimeout(() => this.playSFX(n, 'sine', 0.3), i * 150));
+  }
+  duckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.02, this.ctx.currentTime + 0.2); }
+  unduckMusic() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(0.07, this.ctx.currentTime + 0.3); }
+  queueVoice(file) {
+    return new Promise(resolve => {
+      this.voiceQueue.push({ file, resolve });
+      if (!this.voicePlaying) this._playNext();
+    });
+  }
+  _playNext() {
+    if (!this.voiceQueue.length) { this.voicePlaying = false; return; }
+    this.voicePlaying = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this.duckMusic();
+    const a = new Audio(file); a.volume = 0.9;
+    a.onended = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.onerror = () => { this.unduckMusic(); resolve(); this._playNext(); };
+    a.play().catch(() => { this.unduckMusic(); resolve(); this._playNext(); });
+  }
+}
+
+const audio = new GameAudio();
+
+// ── Effects ──
+function burstConfetti(x, y, count = 20) {
+  const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#FFD93D','#C9B1FF','#FF85A2'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (4 + Math.random() * 6) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 100;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 80}px) rotate(${360+Math.random()*360}deg)`, opacity: 0 }
+    ], { duration: 1200 + Math.random() * 800, easing: 'ease-out' });
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+}
+
+function popEffect(x, y, color) {
+  // Ring
+  const ring = document.createElement('div');
+  ring.className = 'pop-ring';
+  ring.style.left = (x - 30) + 'px'; ring.style.top = (y - 30) + 'px';
+  ring.style.width = '60px'; ring.style.height = '60px';
+  ring.style.borderColor = color;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 700);
+  // Splashes
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'splash';
+    s.textContent = '💧';
+    s.style.left = (x - 10 + (Math.random() - 0.5) * 80) + 'px';
+    s.style.top = (y - 10 + (Math.random() - 0.5) * 60) + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+// ── Game ──
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const BUBBLE_COLORS = ['#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#00BCD4','#009688','#4CAF50','#8BC34A','#FF9800','#FF5722','#795548'];
+
+const ROUNDS = [
+  { letters: 'ABCDE'.split(''), simultaneous: 3, speed: 7000 },
+  { letters: 'FGHIJ'.split(''), simultaneous: 3, speed: 6500 },
+  { letters: 'KLMNO'.split(''), simultaneous: 4, speed: 6000 },
+  { letters: 'PQRST'.split(''), simultaneous: 4, speed: 5500 },
+  { letters: 'UVWXYZ'.split(''), simultaneous: 4, speed: 5000 },
+];
+
+let currentRound = 0;
+let roundLetters = [];
+let currentLetterIndex = 0;
+let targetLetter = '';
+let score = 0;
+let canTap = false;
+let activeBubbles = [];
+let spawnTimer = null;
+let allPopped = [];
+
+const $ = id => document.getElementById(id);
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function shuffle(a) { const b = [...a]; for (let i = b.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); t = true; fn(e); }, { passive: false });
+  el.addEventListener('click', e => { if (!t) fn(e); t = false; });
+}
+
+function buildProgressRow(container) {
+  container.innerHTML = '';
+  const total = ROUNDS.reduce((s, r) => s + r.letters.length, 0);
+  for (let i = 0; i < total; i++) {
+    const b = document.createElement('div');
+    b.className = 'progress-bubble';
+    b.style.background = BUBBLE_COLORS[i % BUBBLE_COLORS.length];
+    container.appendChild(b);
+  }
+}
+
+function markProgress(letter) {
+  const bubbles = $('progressRow').querySelectorAll('.progress-bubble');
+  const idx = allPopped.length - 1;
+  if (bubbles[idx]) {
+    bubbles[idx].classList.add('popped');
+    bubbles[idx].textContent = letter;
+  }
+}
+
+// ── Bubble Creation ──
+function createBubble(letter, isTarget, speed) {
+  const size = 80 + Math.random() * 20;
+  const color = BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)];
+  const el = document.createElement('div');
+  el.className = 'bubble';
+  const vw = window.innerWidth;
+  const left = 20 + Math.random() * (vw - size - 40);
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.left = left + 'px';
+  el.style.bottom = '-' + (size + 20) + 'px';
+  el.style.background = `radial-gradient(circle at 35% 35%, ${color}88, ${color})`;
+  el.style.border = `3px solid ${color}`;
+  el.style.animationDuration = speed + 'ms';
+  el.dataset.letter = letter;
+
+  el.innerHTML = `
+    <div class="bubble-shine"></div>
+    <span class="bubble-letter">${letter}</span>
+    <span class="bubble-sub">${letter.toLowerCase()}</span>
+  `;
+
+  onTap(el, (e) => {
+    if (!canTap) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    if (letter === targetLetter) {
+      canTap = false;
+      audio.playPop();
+      audio.playCorrect();
+      popEffect(cx, cy, color);
+      burstConfetti(cx, cy, 20);
+      el.remove();
+
+      score++;
+      allPopped.push(letter);
+      $('hudScore').textContent = '🫧 ' + score;
+      markProgress(letter);
+
+      // Clear other bubbles
+      clearSpawning();
+      document.querySelectorAll('.bubble').forEach(b => {
+        b.style.transition = 'opacity 0.3s';
+        b.style.opacity = '0';
+        setTimeout(() => b.remove(), 400);
+      });
+
+      // Say letter
+      audio.queueVoice(`${AUDIO_BASE}/letters/${letter.toLowerCase()}.mp3`).then(() => {
+        delay(300).then(nextLetter);
+      });
+    } else {
+      audio.playWrong();
+      el.style.transform = 'scale(0.85)';
+      setTimeout(() => { el.style.transform = ''; }, 200);
+      audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+    }
+  });
+
+  document.body.appendChild(el);
+
+  // Remove when floated off
+  setTimeout(() => {
+    if (el.parentNode) el.remove();
+  }, speed + 200);
+
+  return el;
+}
+
+function clearSpawning() {
+  clearInterval(spawnTimer);
+  spawnTimer = null;
+}
+
+// ── Game Flow ──
+async function startGame() {
+  audio.init();
+  audio.startMusic();
+  $('titleScreen').classList.remove('active');
+  await delay(400);
+  $('hud').style.display = '';
+  $('progressRow').style.display = '';
+  currentRound = 0;
+  score = 0;
+  allPopped = [];
+  buildProgressRow($('progressRow'));
+  $('hudScore').textContent = '🫧 0';
+  startRound();
+}
+
+async function startRound() {
+  const round = ROUNDS[currentRound];
+  roundLetters = shuffle(round.letters);
+  currentLetterIndex = 0;
+  $('hudRound').textContent = `${currentRound + 1} / ${ROUNDS.length}`;
+  nextLetter();
+}
+
+async function nextLetter() {
+  if (currentLetterIndex >= roundLetters.length) {
+    currentRound++;
+    if (currentRound >= ROUNDS.length) {
+      endGame();
+      return;
+    }
+    await delay(500);
+    startRound();
+    return;
+  }
+
+  const round = ROUNDS[currentRound];
+  targetLetter = roundLetters[currentLetterIndex];
+  currentLetterIndex++;
+
+  $('hudPrompt').textContent = `Pop the ${targetLetter}!`;
+
+  // Say the letter
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+  await delay(200);
+  await audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}_sound.mp3`);
+  await delay(300);
+
+  canTap = true;
+
+  // Spawn bubbles in waves
+  const others = LETTERS.filter(l => l !== targetLetter);
+  let spawned = 0;
+
+  function spawnWave() {
+    // Remove old bubbles
+    document.querySelectorAll('.bubble').forEach(b => {
+      const rect = b.getBoundingClientRect();
+      if (rect.bottom < -20) b.remove();
+    });
+
+    const waveLetters = [targetLetter];
+    const distractors = shuffle(others).slice(0, round.simultaneous - 1);
+    waveLetters.push(...distractors);
+    const mixed = shuffle(waveLetters);
+
+    mixed.forEach((letter, i) => {
+      setTimeout(() => {
+        if (canTap || letter !== targetLetter) {
+          createBubble(letter, letter === targetLetter, round.speed);
+        }
+      }, i * 400);
+    });
+    spawned++;
+  }
+
+  spawnWave();
+  spawnTimer = setInterval(spawnWave, round.speed * 0.6);
+
+  // Hint
+  clearTimeout(window.hintTimer);
+  window.hintTimer = setTimeout(() => {
+    if (canTap) {
+      audio.queueVoice(`${AUDIO_BASE}/letters/${targetLetter.toLowerCase()}.mp3`);
+    }
+  }, 6000);
+}
+
+async function endGame() {
+  audio.stopMusic();
+  clearSpawning();
+  document.querySelectorAll('.bubble').forEach(b => b.remove());
+  audio.playCelebration();
+
+  await delay(400);
+  $('hud').style.display = 'none';
+  $('progressRow').style.display = 'none';
+
+  // Build final progress
+  const fp = $('finalProgress');
+  fp.innerHTML = '';
+  allPopped.forEach((letter, i) => {
+    const b = document.createElement('div');
+    b.className = 'progress-bubble popped';
+    b.style.background = BUBBLE_COLORS[i % BUBBLE_COLORS.length];
+    b.textContent = letter;
+    fp.appendChild(b);
+  });
+  $('celebCount').textContent = score;
+  $('celebScreen').classList.add('active');
+
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => burstConfetti(Math.random() * window.innerWidth, Math.random() * window.innerHeight * 0.4, 30), i * 400);
+  }
+
+  await audio.queueVoice(`${AUDIO_BASE}/phrases/great_job.mp3`);
+}
+
+// ── Init ──
+onTap($('startBtn'), startGame);
+onTap($('againBtn'), () => {
+  $('celebScreen').classList.remove('active');
+  currentRound = 0;
+  score = 0;
+  allPopped = [];
+  buildProgressRow($('progressRow'));
+  $('hudScore').textContent = '🫧 0';
+  $('hud').style.display = '';
+  $('progressRow').style.display = '';
+  audio.startMusic();
+  startRound();
+});
+</script>
+</body>
+</html>

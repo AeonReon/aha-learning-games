@@ -47,6 +47,7 @@
           "title": "Learn",
           "subtitle": "Get to know your letters",
           "games": [
+            { "file": "games/letters/22-letter-cards.html", "title": "Letter Cards", "icon": "🃏", "desc": "See it, learn it, find it!", "difficulty": 1 },
             { "file": "games/letters/19-letter-trace.html", "title": "Magic Spellbook", "icon": "📖", "desc": "Trace letters with your magic wand", "difficulty": 1 },
             { "file": "games/letters/13-letter-pairs.html", "title": "Letter Pairs", "icon": "🦋", "desc": "Match uppercase with lowercase", "difficulty": 2 }
           ]

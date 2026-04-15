@@ -93,7 +93,7 @@ body{font-family:var(--font);touch-action:manipulation;-webkit-user-select:none;
 
 /* Game cards */
 .game-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(130px,38vw,170px),1fr));gap:clamp(10px,2.5vw,16px)}
-.game-card{background:#fff;border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;-webkit-tap-highlight-color:transparent;border:3px solid rgba(0,0,0,0.12);min-height:130px;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.08)}
+.game-card{background:#fff;border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;-webkit-tap-highlight-color:transparent;border:3px solid rgba(0,0,0,0.12);min-height:130px;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.08);touch-action:pan-y}
 .game-card:active{transform:scale(0.95);box-shadow:0 1px 4px rgba(0,0,0,0.15)}
 .game-icon{font-size:clamp(36px,9vw,48px)}
 .game-title{font-size:clamp(14px,3.2vw,18px);font-weight:900;color:#222;text-align:center;line-height:1.2}
@@ -241,9 +241,24 @@ function buildUI() {
             ${[1,2,3].map(d => `<div class="game-dot${d <= game.difficulty ? ' filled' : ''}"></div>`).join('')}
           </div>
         `;
-        card.addEventListener('click', () => openGame(game.file));
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let touchHandled = false;
+        card.addEventListener('touchstart', (e) => {
+          touchStartY = e.touches[0].clientY;
+          touchStartX = e.touches[0].clientX;
+          touchHandled = false;
+        }, { passive: true });
         card.addEventListener('touchend', (e) => {
-          e.preventDefault();
+          const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+          const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
+          if (dy < 8 && dx < 8) {
+            touchHandled = true;
+            openGame(game.file);
+          }
+        }, { passive: true });
+        card.addEventListener('click', () => {
+          if (touchHandled) { touchHandled = false; return; }
           openGame(game.file);
         });
         list.appendChild(card);

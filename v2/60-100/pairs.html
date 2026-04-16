@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Safari Memory 🦁</title>
+<title>Dragon Memory Pairs</title>
 <style>
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
   --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
-  --jungle-dark: #0b2a1a; --jungle: #143d26; --emerald: #0f7a3b; --emerald-bright: #1eaa5a;
-  --earth: #6b4423; --earth-light: #8b5a2b; --tropical-yellow: #ffd447; --sunshine: #ffb000;
-  --leaf: #2e8b3d; --white85: rgba(255,255,255,0.85);
+  --deep-teal: #053838; --teal: #0d5c5c; --amber: #ffb347; --fire peak: #d94a1f;
+  --gold: #ffd966; --fern: #4caf50; --white85: rgba(255,255,255,0.88);
+  --bone: #f4ecd2;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -22,22 +22,31 @@ body {
   touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
   -webkit-tap-highlight-color: transparent;
-  background: linear-gradient(160deg, #051a0d 0%, #0b2a1a 30%, #143d26 60%, #0f5a2b 100%);
+  background: linear-gradient(160deg, #021f22 0%, #053838 30%, #0d5c5c 60%, #2d1a0a 100%);
 }
 
-/* ── Background floating leaves & toucans ── */
+/* ── Enchanted mountains background ── */
 .bg-sparkle {
   position: fixed; pointer-events: none; z-index: var(--z-bg);
-  font-size: clamp(12px, 2.5vw, 20px);
+  font-size: clamp(14px, 2.8vw, 22px);
   opacity: 0.45;
   animation: sparkleFloat linear infinite;
 }
 @keyframes sparkleFloat {
-  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  0%   { transform: translateY(105vh) translateX(0) rotate(0deg) scale(0.7); opacity: 0; }
   8%   { opacity: 0.45; }
   92%  { opacity: 0.45; }
-  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+  100% { transform: translateY(-60px) translateX(40px) rotate(15deg) scale(1.1); opacity: 0; }
 }
+
+.fire peak-glow {
+  position: fixed; bottom: 0; left: -5vw;
+  width: 40vw; height: 35vh;
+  pointer-events: none; z-index: var(--z-bg);
+  background: radial-gradient(ellipse at 50% 100%, rgba(217,74,31,0.25), transparent 70%);
+  animation: fire peakPulse 4s ease-in-out infinite;
+}
+@keyframes fire peakPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
 
 /* ── Screen system ── */
 .screen {
@@ -53,21 +62,21 @@ body {
 
 /* ── Title screen ── */
 .screen-title .icon-row {
-  display: flex; gap: 10px;
+  display: flex; gap: 12px;
   justify-content: center; align-items: flex-end;
   margin-bottom: 10px;
 }
-.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 68px); }
 .screen-title h1 {
   font-size: clamp(28px, 7vw, 50px);
-  color: var(--tropical-yellow);
-  text-shadow: 0 0 30px rgba(255,212,71,0.6), 2px 2px 0 rgba(0,0,0,0.4);
+  color: var(--amber);
+  text-shadow: 0 0 30px rgba(255,179,71,0.6), 2px 2px 0 rgba(0,0,0,0.4);
   margin: 6px 0 8px;
 }
 .screen-title p {
   font-size: clamp(14px, 3.5vw, 20px);
   color: var(--white85);
-  max-width: 360px; line-height: 1.45;
+  max-width: 380px; line-height: 1.45;
 }
 
 /* ── Buttons ── */
@@ -76,15 +85,15 @@ body {
   padding: 14px 44px;
   font-size: clamp(18px, 4.5vw, 26px);
   font-family: var(--font); font-weight: bold;
-  color: #0b2a1a; border: none; border-radius: 32px;
-  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.35);
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
   transition: transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active { transform: scale(0.93); }
-.btn-start  { background: linear-gradient(135deg, #ffd447, #ffb000); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; color: #0b2a1a; }
-.btn-again  { background: linear-gradient(135deg, #ffd447, #ffb000); margin-top: 16px; color: #0b2a1a; }
-@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+.btn-start  { background: linear-gradient(135deg, #ffb347, #d94a1f); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again  { background: linear-gradient(135deg, #ffb347, #d94a1f); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
 
 /* ── HUD ── */
 .hud {
@@ -92,8 +101,8 @@ body {
   z-index: var(--z-ui);
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 8px 14px;
-  background: rgba(11,42,26,0.94); backdrop-filter: blur(6px);
-  border-bottom: 2px solid rgba(255,212,71,0.25);
+  background: rgba(2,31,34,0.93); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,179,71,0.2);
   pointer-events: none;
 }
 .hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
@@ -101,25 +110,33 @@ body {
   position: absolute; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center;
 }
-.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.4); font-weight: bold; letter-spacing: 0.05em; }
 .hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
-.hud-round .hud-val { color: var(--tropical-yellow); }
-.hud-score .hud-val { color: var(--emerald-bright); }
-.hud-pairs-text { color: var(--tropical-yellow); font-size: clamp(14px,3vw,20px); font-weight: 900; }
+.hud-round .hud-val { color: var(--amber); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-pairs-text { color: var(--amber); font-size: clamp(14px,3vw,20px); font-weight: 900; }
 
-/* ── Character (Zara the Explorer) ── */
+/* Treasure counter — tiny, inline with HUD */
+.treasure-counter {
+  display: flex; align-items: center; gap: 3px;
+  margin-top: 2px;
+}
+.treasure-counter .fc-icon { font-size: clamp(11px,2.3vw,14px); }
+.treasure-counter .fc-num  { font-size: clamp(11px,2.3vw,14px); color: var(--bone); font-weight: 900; }
+
+/* ── Character (Sparky the baby dragon) ── */
 .char-area {
   position: fixed; bottom: 58px; left: 10px;
   z-index: var(--z-char); pointer-events: none;
 }
-.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+.char-emoji { font-size: clamp(42px,9.5vw,64px); }
 .char-bubble {
   position: absolute; bottom: 100%; left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,255,255,0.96); color: var(--jungle-dark);
+  background: rgba(255,255,255,0.96); color: var(--deep-teal);
   padding: 6px 14px; border-radius: 20px;
   font-size: clamp(12px,2.6vw,16px); font-weight: bold;
-  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.3);
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.25);
   opacity: 0; transition: opacity 0.28s; pointer-events: none;
   margin-bottom: 7px;
 }
@@ -156,8 +173,8 @@ body {
 .card:active { transform: scale(0.95); }
 .card-inner {
   position: relative;
-  width: clamp(70px, 18vw, 100px);
-  height: clamp(90px, 24vw, 120px);
+  width: clamp(72px, 19vw, 108px);
+  height: clamp(92px, 25vw, 128px);
   transition: transform 0.5s;
   transform-style: preserve-3d;
 }
@@ -173,110 +190,99 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-/* Card back — jungle leaf with exotic pattern */
+/* Card back — dragon egg on teal gradient */
 .card-back {
-  background:
-    radial-gradient(circle at 30% 30%, rgba(46,139,61,0.55) 0%, transparent 45%),
-    radial-gradient(circle at 70% 70%, rgba(30,170,90,0.4) 0%, transparent 50%),
-    linear-gradient(135deg, #0f5a2b, #0b2a1a);
-  border: 3px solid rgba(255,212,71,0.4);
-  box-shadow: 0 0 15px rgba(46,139,61,0.3), 0 4px 12px rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, #0d5c5c, #053838);
+  border: 3px solid rgba(255,179,71,0.35);
+  box-shadow: 0 0 15px rgba(255,179,71,0.18), 0 4px 12px rgba(0,0,0,0.35);
   gap: 2px;
 }
-.card-back-icon { font-size: clamp(30px,7.5vw,44px); line-height: 1; animation: leafSway 3s ease-in-out infinite; }
-@keyframes leafSway { 0%,100%{transform:rotate(-6deg)} 50%{transform:rotate(6deg)} }
-.card-back-sparkle { font-size: 10px; color: var(--tropical-yellow); letter-spacing: 1px; }
+.card-back-icon { font-size: clamp(30px,7.5vw,46px); line-height: 1; animation: eggWobble 3s ease-in-out infinite; }
+@keyframes eggWobble { 0%,100%{transform:rotate(-3deg) scale(1)} 50%{transform:rotate(3deg) scale(1.04)} }
+.card-back-sparkle { font-size: 10px; color: var(--amber); opacity: 0.7; }
 
-/* Card front — dark jungle background with content */
+/* Card front — bone/parchment with HUGE content */
 .card-front {
-  background: linear-gradient(135deg, #143d26, #0b2a1a);
-  border: 3px solid rgba(255,212,71,0.55);
+  background: linear-gradient(135deg, #1a3535, #0d2525);
+  border: 3px solid rgba(255,179,71,0.55);
   transform: rotateY(180deg);
-  gap: 2px;
-  padding: 4px;
+  padding: 2px;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Card content types */
+/* ═══ HERO CONTENT — numerals FILL the card ═══ */
 .card-numeral {
-  font-size: clamp(28px, 7.5vw, 46px);
+  font-size: clamp(38px, 11vw, 64px);
   font-weight: 900;
-  color: var(--tropical-yellow);
-  text-shadow: 0 0 15px rgba(255,212,71,0.6), 1px 1px 0 rgba(0,0,0,0.35);
+  color: var(--amber);
+  text-shadow: 0 0 18px rgba(255,179,71,0.7), 2px 2px 0 rgba(0,0,0,0.4);
   line-height: 1;
+  letter-spacing: -0.02em;
 }
-.card-animals {
-  font-size: clamp(13px, 2.8vw, 17px);
-  line-height: 1.25;
-  text-align: center;
-  letter-spacing: -0.5px;
+/* Three-digit numbers (100) need slightly smaller size */
+.card-numeral.three-digit {
+  font-size: clamp(30px, 8.5vw, 52px);
 }
+
 .card-word {
-  font-size: clamp(13px, 3.2vw, 19px);
+  font-size: clamp(15px, 4.2vw, 24px);
   font-weight: 900;
-  color: var(--emerald-bright);
-  text-shadow: 0 0 10px rgba(30,170,90,0.5);
+  color: var(--fern);
+  text-shadow: 0 0 12px rgba(76,175,80,0.5), 1px 1px 0 rgba(0,0,0,0.3);
   text-transform: uppercase;
   line-height: 1.05;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.01em;
+  text-align: center;
+  padding: 0 2px;
 }
-.card-small-num {
-  font-size: clamp(11px, 2.5vw, 14px);
-  font-weight: 900;
-  color: rgba(255,212,71,0.8);
-  margin-top: 2px;
+/* Longer words (seventy, eighty, ninety, one hundred) need smaller */
+.card-word.long    { font-size: clamp(13px, 3.5vw, 20px); }
+.card-word.xlong   { font-size: clamp(11px, 3vw, 17px); }
+
+/* Tiny corner decoration — never competes with numeral */
+.card-deco {
+  position: absolute;
+  top: 3px; right: 4px;
+  font-size: clamp(10px, 2.2vw, 13px);
+  opacity: 0.55;
+  pointer-events: none;
+  line-height: 1;
+}
+.card-deco-bl {
+  position: absolute;
+  bottom: 3px; left: 4px;
+  font-size: clamp(9px, 2vw, 12px);
+  opacity: 0.5;
+  pointer-events: none;
+  line-height: 1;
 }
 
-/* Matched cards — animal wanders off */
+/* Matched cards — dragon emerges */
 .card.matched .card-front {
-  background: linear-gradient(135deg, #1a5a2f, #0f3d1f);
-  border-color: var(--tropical-yellow);
+  background: linear-gradient(135deg, #1a4a1a, #0d3515);
+  border-color: var(--fern);
 }
 .card.matched .card-inner {
   animation: cardmatch 0.4s ease-out;
 }
 .card.match-anim .card-front::after {
-  content: '🦁✨';
+  content: '💎✨';
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: clamp(28px, 7vw, 42px);
-  background: rgba(15,61,31,0.88);
+  font-size: clamp(28px, 7vw, 44px);
+  background: rgba(13,53,21,0.85);
   border-radius: 11px;
-  animation: animalWander 1.3s ease-out forwards;
+  animation: treasureFloat 1.2s ease-out forwards;
 }
-@keyframes animalWander {
-  0%   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
-  40%  { opacity: 1; transform: translateX(30px) translateY(-10px) scale(1.1) rotate(-8deg); }
-  100% { opacity: 0; transform: translateX(80px) translateY(-40px) scale(0.5) rotate(15deg); }
+@keyframes treasureFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.5) rotate(25deg); }
 }
 
 /* Hint styles */
 .hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
-.hint-glow   { box-shadow: 0 0 25px rgba(255,212,71,0.7), 0 0 50px rgba(255,212,71,0.35) !important; border-radius: 14px; }
-
-/* ── Safari Lodge ── */
-.safari-lodge {
-  position: fixed; bottom: 52px; right: 8px;
-  z-index: var(--z-char);
-  width: clamp(72px,17vw,115px);
-  pointer-events: none;
-}
-.lodge-svg { width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(255,212,71,0.25)); }
-.lodge-slot {
-  fill: rgba(11,42,26,0.75);
-  transition: fill 0.6s, filter 0.6s;
-}
-.lodge-slot.filled {
-  fill: var(--tropical-yellow);
-  filter: drop-shadow(0 0 6px rgba(255,212,71,0.8));
-}
-.lodge-animal {
-  opacity: 0;
-  transition: opacity 0.5s;
-  font-size: 11px;
-}
-.lodge-animal.show { opacity: 1; }
-.lodge-complete { animation: lodgeGlow 1.5s ease-in-out infinite; }
-@keyframes lodgeGlow { 0%,100%{filter:drop-shadow(0 0 8px rgba(255,212,71,0.4))} 50%{filter:drop-shadow(0 0 26px rgba(255,212,71,0.9))} }
+.hint-glow   { box-shadow: 0 0 25px rgba(255,179,71,0.7), 0 0 50px rgba(255,179,71,0.35) !important; border-radius: 14px; }
 
 /* ── Progress bar ── */
 .prog-bar {
@@ -285,22 +291,23 @@ body {
   display: flex; justify-content: center; align-items: center;
   gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
   padding: 5px 10px 8px;
-  background: rgba(11,42,26,0.94); backdrop-filter: blur(5px);
+  background: rgba(2,31,34,0.93); backdrop-filter: blur(5px);
   pointer-events: none;
 }
 .prog-dot {
-  width: clamp(30px,6vw,42px);
-  height: clamp(30px,6vw,42px);
-  border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: 2px solid rgba(255,255,255,0.15);
+  min-width: clamp(30px,6vw,42px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 18px;
+  padding: 0 6px;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.14);
   display: flex; align-items: center; justify-content: center;
-  font-size: clamp(10px,2vw,13px); font-weight: 900;
-  color: rgba(255,255,255,0.28);
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.26);
 }
 .prog-dot.done {
-  background: linear-gradient(135deg,var(--tropical-yellow),var(--sunshine));
-  border-color: var(--emerald-bright); color: var(--jungle-dark);
+  background: linear-gradient(135deg,var(--amber),#d94a1f);
+  border-color: var(--gold); color: #fff;
   animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
 }
 @keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
@@ -310,35 +317,65 @@ body {
   position: fixed; top: 50%; left: 50%;
   transform: translate(-50%,-50%);
   z-index: var(--z-overlay); text-align: center;
-  background: rgba(11,42,26,0.95); backdrop-filter: blur(12px);
-  border: 2px solid rgba(255,212,71,0.35); border-radius: 26px;
+  background: rgba(2,31,34,0.95); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,179,71,0.25); border-radius: 26px;
   padding: 22px 40px; min-width: 280px;
   opacity: 0; pointer-events: none; transition: opacity 0.38s;
 }
 .round-banner.show { opacity: 1; }
 .round-banner h2 {
   font-size: clamp(20px,5vw,34px); font-weight: 900;
-  color: var(--tropical-yellow); text-shadow: 0 0 15px rgba(255,212,71,0.4), 1px 1px 0 rgba(0,0,0,0.35);
+  color: var(--amber); text-shadow: 0 0 15px rgba(255,179,71,0.45), 1px 1px 0 rgba(0,0,0,0.3);
 }
 .round-banner p {
   font-size: clamp(12px,2.8vw,17px);
-  color: rgba(255,255,255,0.65); margin-top: 5px;
+  color: rgba(255,255,255,0.6); margin-top: 5px;
 }
 
 /* ── Celebration screen ── */
 .screen-celeb {
-  background: rgba(11,42,26,0.95); backdrop-filter: blur(12px);
+  background: rgba(2,31,34,0.94); backdrop-filter: blur(12px);
   z-index: var(--z-celeb);
+  overflow-y: auto;
 }
 .screen-celeb h2 {
-  font-size: clamp(26px,6.5vw,48px); color: var(--tropical-yellow);
-  text-shadow: 0 0 20px rgba(255,212,71,0.55), 3px 3px 0 rgba(0,0,0,0.45);
+  font-size: clamp(26px,6.5vw,48px); color: var(--amber);
+  text-shadow: 0 0 20px rgba(255,179,71,0.55), 3px 3px 0 rgba(0,0,0,0.45);
   animation: bounce 1.5s ease-in-out infinite;
 }
-.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.92); margin: 6px 0; }
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.9); margin: 6px 0; }
 .celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
 .celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
 .celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* Treasure gallery on celebration screen */
+.treasure-gallery {
+  margin: 14px auto 8px;
+  padding: 14px 18px;
+  max-width: 420px;
+  background: rgba(244,236,210,0.08);
+  border: 2px dashed rgba(255,179,71,0.4);
+  border-radius: 18px;
+}
+.treasure-gallery-title {
+  font-size: clamp(14px,3.2vw,18px);
+  color: var(--bone);
+  font-weight: 900;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+.treasure-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; align-items: center;
+}
+.treasure-item {
+  font-size: clamp(22px,5vw,32px);
+  padding: 4px 7px;
+  background: rgba(244,236,210,0.1);
+  border-radius: 10px;
+  animation: treasurePop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes treasurePop { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
 
 /* ── Particles ── */
 .confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
@@ -357,11 +394,17 @@ body {
 </head>
 <body>
 
+<div class="fire peak-glow"></div>
+
 <!-- HUD -->
 <div class="hud" id="hud" style="display:none">
   <div class="hud-left hud-round">
     <span class="hud-label">ROUND</span>
     <span class="hud-val" id="hudRound">1/4</span>
+    <div class="treasure-counter">
+      <span class="fc-icon">💎</span>
+      <span class="fc-num" id="treasureNum">0</span>
+    </div>
   </div>
   <div class="hud-center">
     <span class="hud-pairs-text" id="hudPairs">Find the matching pairs!</span>
@@ -375,49 +418,10 @@ body {
 <!-- Card Grid -->
 <div class="card-grid" id="cardGrid"></div>
 
-<!-- Zara the Explorer -->
+<!-- Sparky the baby dragon -->
 <div class="char-area" id="charArea" style="display:none">
   <div class="char-bubble" id="charBubble"></div>
-  <div class="char-emoji" id="charEmoji">🧑‍🦱</div>
-</div>
-
-<!-- Safari Lodge -->
-<div class="safari-lodge" id="safariLodge" style="display:none">
-  <svg class="lodge-svg" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
-    <!-- Thatched roof -->
-    <polygon points="60,5 8,48 112,48" fill="#6b4423" stroke="#ffd447" stroke-width="1.5"/>
-    <polygon points="60,8 16,46 104,46" fill="#8b5a2b" stroke="#a67240" stroke-width="0.6"/>
-    <!-- Roof lines -->
-    <line x1="30" y1="46" x2="45" y2="12" stroke="#5a3815" stroke-width="0.6"/>
-    <line x1="90" y1="46" x2="75" y2="12" stroke="#5a3815" stroke-width="0.6"/>
-    <line x1="60" y1="10" x2="60" y2="46" stroke="#5a3815" stroke-width="0.6"/>
-    <!-- Lodge body (wood) -->
-    <rect x="12" y="48" width="96" height="82" fill="#8b5a2b" stroke="#ffd447" stroke-width="1.5" rx="2"/>
-    <!-- Wood plank lines -->
-    <line x1="12" y1="62" x2="108" y2="62" stroke="#5a3815" stroke-width="0.5"/>
-    <line x1="12" y1="78" x2="108" y2="78" stroke="#5a3815" stroke-width="0.5"/>
-    <line x1="12" y1="94" x2="108" y2="94" stroke="#5a3815" stroke-width="0.5"/>
-    <line x1="12" y1="110" x2="108" y2="110" stroke="#5a3815" stroke-width="0.5"/>
-    <!-- Animal slots (6 windows where animals appear) -->
-    <rect class="lodge-slot" id="ls0" x="20"  y="54" width="20" height="18" rx="2" stroke="#ffd447" stroke-width="0.8"/>
-    <rect class="lodge-slot" id="ls1" x="50"  y="54" width="20" height="18" rx="2" stroke="#ffd447" stroke-width="0.8"/>
-    <rect class="lodge-slot" id="ls2" x="80"  y="54" width="20" height="18" rx="2" stroke="#ffd447" stroke-width="0.8"/>
-    <rect class="lodge-slot" id="ls3" x="20"  y="82" width="20" height="18" rx="2" stroke="#ffd447" stroke-width="0.8"/>
-    <rect class="lodge-slot" id="ls4" x="50"  y="82" width="20" height="18" rx="2" stroke="#ffd447" stroke-width="0.8"/>
-    <rect class="lodge-slot" id="ls5" x="80"  y="82" width="20" height="18" rx="2" stroke="#ffd447" stroke-width="0.8"/>
-    <!-- Animal emojis inside slots -->
-    <text class="lodge-animal" id="la0" x="30"  y="69" text-anchor="middle" font-size="14">🦁</text>
-    <text class="lodge-animal" id="la1" x="60"  y="69" text-anchor="middle" font-size="14">🐘</text>
-    <text class="lodge-animal" id="la2" x="90"  y="69" text-anchor="middle" font-size="14">🦒</text>
-    <text class="lodge-animal" id="la3" x="30"  y="97" text-anchor="middle" font-size="14">🦓</text>
-    <text class="lodge-animal" id="la4" x="60"  y="97" text-anchor="middle" font-size="14">🐆</text>
-    <text class="lodge-animal" id="la5" x="90"  y="97" text-anchor="middle" font-size="14">🦏</text>
-    <!-- Door -->
-    <rect x="50" y="108" width="20" height="22" fill="#0b2a1a" stroke="#ffd447" stroke-width="1" rx="10" ry="0"/>
-    <circle cx="65" cy="120" r="2" fill="#ffd447"/>
-    <!-- Grass at base -->
-    <path d="M 6 130 Q 12 125 18 130 T 30 130 T 42 130 T 54 130 T 66 130 T 78 130 T 90 130 T 102 130 T 114 130" stroke="#1eaa5a" stroke-width="2" fill="none"/>
-  </svg>
+  <div class="char-emoji" id="charEmoji">🐉</div>
 </div>
 
 <!-- Progress bar -->
@@ -432,37 +436,42 @@ body {
 <!-- ═══ TITLE SCREEN ═══ -->
 <div class="screen screen-title active" id="scrTitle">
   <div class="icon-row">
-    <span>🦁</span>
-    <span>🧑‍🦱</span>
-    <span>🐘</span>
+    <span>🐉</span>
+    <span>🥚</span>
+    <span>🔥</span>
   </div>
-  <h1>Safari Memory 🦁</h1>
-  <p>The animals have scrambled Zara's safari map! Flip the jungle leaves and find the matching pairs!<br>🏡 Fill up the safari lodge! 🏡</p>
-  <button class="btn btn-start" id="btnStart">Let's Explore! 🌿</button>
+  <h1>Dragon Lair 🐉</h1>
+  <p>Sparky the baby dragon found strange number treasures in the jungle! Flip the eggs and match the numbers — 60, 70, 80, 90, 100!<br>🐲 Can you help Sparky collect them all? 💎</p>
+  <button class="btn btn-start" id="btnStart">Let's Play! 🔥</button>
 </div>
 
 <!-- ═══ CELEBRATION SCREEN ═══ -->
 <div class="screen screen-celeb" id="scrCeleb">
   <div class="celeb-icon-row">
-    <span>🧑‍🦱</span>
-    <span>🏡</span>
+    <span>🐉</span>
+    <span>🐲</span>
   </div>
-  <h2 id="celebTitle">🌟 Safari Complete! 🌟</h2>
-  <p id="celebMsg">You brought all the animals back to the lodge!</p>
+  <h2 id="celebTitle">🔥 Dragon-mazing! 🔥</h2>
+  <p id="celebMsg">Sparky collected all the treasures!</p>
   <div class="celeb-stars" id="celebStars"></div>
-  <button class="btn btn-again" id="btnAgain">Play Again! 🌿</button>
+  <div class="treasure-gallery" id="treasureGallery">
+    <div class="treasure-gallery-title">🏛️ Sparky's Dragon Hoard 🏛️</div>
+    <div class="treasure-grid" id="treasureGrid"></div>
+  </div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🐉</button>
 </div>
 
 <script>
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  Aha! — Safari Memory (Tens 10-100)  🦁                         ║
-// ║  Cross-representation memory matching — numerals, animal-dots,  ║
-// ║  word cards. Voice A (en-US-AnaNeural) · Jungle Safari theme    ║
+// ║  Aha! — Dragon Memory Pairs (60-100)  🐉                      ║
+// ║  Cross-representation memory matching — big numerals and words  ║
+// ║  Voice A (en-US-AnaNeural) · Mystic theme                     ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const AUDIO_BASE = '../../audio';
 
-const NUMBER_WORDS = {10:'ten',20:'twenty',30:'thirty',40:'forty',50:'fifty',60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
+const NUMBERS = [60,70,80,90,100];
+const NUMBER_WORDS = {60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
 
 // ── Voice A clip pools ──
 const VOICE_A = {
@@ -494,20 +503,20 @@ class GameAudio {
   unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
   startMusic() {
     this._init(); if (this.playing) return; this.playing = true;
-    // Jungle-y pentatonic — warm, tropical feel
-    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    // Enchanted mountains — deep, mysterious
+    const notes = [174.61, 196.00, 220.00, 261.63, 293.66, 349.23];
     const go = () => {
       if (!this.playing) return;
       const f = notes[Math.floor(Math.random() * notes.length)];
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = Math.random() > 0.6 ? 'triangle' : 'sine';
+      o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
       o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
       g.gain.setValueAtTime(0, this.ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.2);
-      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.5);
-      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
       o.onended = () => { o.disconnect(); g.disconnect(); };
-      this._mt = setTimeout(go, 1000 + Math.random() * 1500);
+      this._mt = setTimeout(go, 1100 + Math.random() * 1700);
     }; go();
   }
   stopMusic() { this.playing = false; clearTimeout(this._mt); }
@@ -537,6 +546,7 @@ class GameAudio {
       o.onended=()=>{o.disconnect();g.disconnect()};
     }
     else if (type==='pop')      { p(880,t,0.05,0.2); p(1100,t+0.04,0.06,0.15); }
+    else if (type==='treasure')   { p(392,t,0.08,0.25); p(523.25,t+0.06,0.1,0.3); }
   }
   speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
   async _next() {
@@ -596,43 +606,18 @@ function onTap(el, fn) {
   el.addEventListener('click',      e => { if(t)return; fn(e); });
 }
 
-// Animal-dot patterns — for tens, we use compact rows (always with small numeral).
-// Tens visualised as leaf clusters: each leaf = 10. So 20 = 🌿🌿, 50 = 5 leaves, etc.
-function makeAnimalDots(n) {
-  const tens = n / 10;
-  if (tens <= 5) {
-    // Single row
-    return '🌿'.repeat(tens);
-  } else if (tens === 6) {
-    return '🌿🌿🌿\n🌿🌿🌿';
-  } else if (tens === 7) {
-    return '🌿🌿🌿🌿\n🌿🌿🌿';
-  } else if (tens === 8) {
-    return '🌿🌿🌿🌿\n🌿🌿🌿🌿';
-  } else if (tens === 9) {
-    return '🌿🌿🌿🌿🌿\n🌿🌿🌿🌿';
-  } else if (tens === 10) {
-    return '🌿🌿🌿🌿🌿\n🌿🌿🌿🌿🌿';
-  }
-  return '🌿'.repeat(tens);
-}
+const BUBBLE_CORRECT = ['A match! 🐉','Flame-tastic! 🐲','That\'s it! 💎','Well done! 🥚','Treasure found! 💎','Mystic! 🔥'];
+const BUBBLE_WRONG   = ['Not a match!','Try again! 🐉','Almost! 🐲','Keep going! 🥚','Remember! 🌿'];
 
-// Animal-count card — shows an animal emoji plus count, and big number
-const ANIMALS_CYCLE = ['🦁','🐘','🦒','🦓','🐆','🦏','🦛','🐊','🐒','🦜'];
-function makeAnimalRow(n, pairIdx) {
-  // Use pairIdx-based animal for variety; n/10 indicates tens shown via leaves above
-  const a = ANIMALS_CYCLE[pairIdx % ANIMALS_CYCLE.length];
-  return a + ' ' + makeAnimalDots(n);
-}
-
-const BUBBLE_CORRECT = ['A match! 🌿','Found it! 🦁','That\'s it! ✨','Well done! 🐘','Amazing! 🌟','Safari! 🦒'];
-const BUBBLE_WRONG   = ['Not a match!','Try again! 🌿','Almost! 🦁','Keep going! 🐘','Look again! 🦒'];
+// Decorative emojis (small, corner only)
+const DECOS = ['💎','🌿','🥚','🦶','🔥','💎'];
+const WORD_DECOS = ['🐉','🐲','💎','🌿'];
 
 // ══════════════════════════════════════════════════════════════════
 // VISUAL EFFECTS
 // ══════════════════════════════════════════════════════════════════
 function confetti(count = 40, extra = []) {
-  const all = ['🌿','🍃','🦁','🐘','🦒','🦓','🐆','🌴','✨','⭐','🌟','🦜', ...extra];
+  const all = ['🐉','🐲','💎','🥚','🌿','🔥','✨','💫','⭐','🦶', ...extra];
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
     el.className = 'confetti'; el.textContent = pick(all);
@@ -652,7 +637,7 @@ function starBurst(el) {
   for (let i = 0; i < 7; i++) {
     const s = document.createElement('div');
     s.className = 'starburst';
-    s.textContent = pick(['🌿','✨','💫','🦁','🌟','🦜']);
+    s.textContent = pick(['💎','✨','💫','🌿','🌟','🐉']);
     s.style.left = (cx + (Math.random()-0.5)*120) + 'px';
     s.style.top  = (cy + (Math.random()-0.5)*120) + 'px';
     s.style.animationDelay = (Math.random()*0.2) + 's';
@@ -678,95 +663,88 @@ function jumpChar() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// SCENERY — leaves and toucans float upward
+// SCENERY — wyverns, leaves, fire mountains floating
 // ══════════════════════════════════════════════════════════════════
 function buildScenery() {
-  const emojis = ['🌿','🍃','🦜','🌴','🦋','✨','🌺','🪴'];
-  for (let i = 0; i < 16; i++) {
+  const emojis = ['💎','🌿','🍃','🐉','🥚','🔥','🐲','🪶'];
+  for (let i = 0; i < 18; i++) {
     const el = document.createElement('div');
     el.className = 'bg-sparkle';
     el.textContent = pick(emojis);
     el.style.left              = (Math.random()*100) + 'vw';
-    el.style.animationDelay    = (-Math.random()*20) + 's';
-    el.style.animationDuration = (10 + Math.random()*14) + 's';
+    el.style.animationDelay    = (-Math.random()*22) + 's';
+    el.style.animationDuration = (11 + Math.random()*15) + 's';
     document.body.appendChild(el);
   }
 }
 
 // ══════════════════════════════════════════════════════════════════
-// SAFARI LODGE — slots fill with animals as pairs are matched
+// DRAGON HOARD — each matched pair adds a treasure
 // ══════════════════════════════════════════════════════════════════
-let lodgeSlotIdx = 0;
-function resetLodge() {
-  lodgeSlotIdx = 0;
-  for (let i = 0; i < 6; i++) {
-    const slot = $('ls' + i);
-    const animal = $('la' + i);
-    if (slot) slot.classList.remove('filled');
-    if (animal) animal.classList.remove('show');
-  }
-  const svg = document.querySelector('.lodge-svg');
-  if (svg) svg.classList.remove('lodge-complete');
+let treasuresCollected = [];
+function addTreasure(num) {
+  treasuresCollected.push(num);
+  $('treasureNum').textContent = treasuresCollected.length;
+  audio.tone('treasure');
 }
-function fillLodgeSlot() {
-  if (lodgeSlotIdx < 6) {
-    const slot = $('ls' + lodgeSlotIdx);
-    const animal = $('la' + lodgeSlotIdx);
-    if (slot) { slot.classList.add('filled'); audio.tone('pop'); }
-    if (animal) animal.classList.add('show');
-    lodgeSlotIdx++;
-  }
-  if (lodgeSlotIdx >= 6) {
-    const svg = document.querySelector('.lodge-svg');
-    if (svg) svg.classList.add('lodge-complete');
-  }
+function resetTreasures() {
+  treasuresCollected = [];
+  $('treasureNum').textContent = '0';
+}
+function renderTreasureGallery() {
+  const grid = $('treasureGrid');
+  grid.innerHTML = '';
+  // Each treasure = a bone emoji with the number below
+  treasuresCollected.forEach((n, i) => {
+    const item = document.createElement('div');
+    item.className = 'treasure-item';
+    item.style.animationDelay = (i * 0.08) + 's';
+    item.textContent = '💎';
+    item.title = n;
+    grid.appendChild(item);
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ROUND CONFIG — 4 rounds, progressive difficulty with cross-rep
+// ROUND CONFIG — 4 rounds, progressive difficulty
 //
-// Card types:
-//   'numeral'  — big digit (e.g. "50")
-//   'animals'  — animal emoji + leaf count (tens visualised) + small numeral
-//   'word'     — word (e.g. "fifty") + small numeral
-//
-// Each pair = two cards with the same number but different representation
+// All cards show BIG numeral or BIG word as the HERO. Tiny corner decoration only.
 // ══════════════════════════════════════════════════════════════════
 
 function buildRoundPairs(roundIdx) {
   let pairs = [];
   if (roundIdx === 0) {
-    // 3 pairs: numeral ↔ animals for 10, 20, 30
-    [10,20,30].forEach(n => {
-      pairs.push({ num: n, typeA: 'numeral', typeB: 'animals' });
+    // 3 pairs: numeral ↔ word for 60, 70, 80
+    [60,70,80].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
     });
   } else if (roundIdx === 1) {
-    // 4 pairs: numeral ↔ animals for 20, 40, 60, 80
-    [20,40,60,80].forEach(n => {
-      pairs.push({ num: n, typeA: 'numeral', typeB: 'animals' });
+    // 4 pairs: numeral ↔ word for 60, 70, 80, 90
+    [60,70,80,90].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
     });
   } else if (roundIdx === 2) {
-    // 5 pairs: numeral ↔ word for 10, 30, 50, 70, 90
-    [10,30,50,70,90].forEach(n => {
+    // 5 pairs: numeral ↔ word for 60-100
+    [60,70,80,90,100].forEach(n => {
       pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
     });
   } else {
-    // 6 pairs: mix — cross-representations across 50-100
-    pairs.push({ num: 50,  typeA: 'numeral', typeB: 'animals' });
+    // 6 pairs: all 5 numbers, one repeat (70) with reversed order
     pairs.push({ num: 60,  typeA: 'numeral', typeB: 'word' });
-    pairs.push({ num: 70,  typeA: 'animals', typeB: 'word' });
-    pairs.push({ num: 80,  typeA: 'numeral', typeB: 'animals' });
+    pairs.push({ num: 70,  typeA: 'numeral', typeB: 'word' });
+    pairs.push({ num: 80,  typeA: 'word',    typeB: 'numeral' });
     pairs.push({ num: 90,  typeA: 'numeral', typeB: 'word' });
-    pairs.push({ num: 100, typeA: 'animals', typeB: 'word' });
+    pairs.push({ num: 100, typeA: 'word',    typeB: 'numeral' });
+    pairs.push({ num: 70,  typeA: 'word',    typeB: 'numeral' }); // second 70 — reversed rep
   }
   return pairs;
 }
 
 const ROUND_META = [
-  { label: 'Round 1 — The Safari Begins! 🦁', sub: '3 pairs — peek first!', cols: 3, peek: true },
-  { label: 'Round 2 — Into the Jungle! 🐘', sub: '4 pairs — no peeking!', cols: 4, peek: false },
-  { label: 'Round 3 — Animal Words! 🦒', sub: '5 pairs — numbers meet words!', cols: 5, peek: false },
-  { label: 'Round 4 — The Grand Safari! 🏡', sub: '6 pairs — up to one hundred!', cols: 4, peek: false },
+  { label: 'Round 1 — Mystic Jungle! 🐉', sub: '3 pairs — peek first!', cols: 3, peek: true },
+  { label: 'Round 2 — Deeper Into the Valley! 🐲', sub: '4 pairs — no peeking!', cols: 4, peek: false },
+  { label: 'Round 3 — Fire Peak Trail! 🔥', sub: '5 pairs — the big hunt!', cols: 5, peek: false },
+  { label: 'Round 4 — Treasure Hunters! 💎', sub: '6 pairs — the grand dig!', cols: 4, peek: false },
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -824,38 +802,39 @@ function resetHints() {
 function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
 
 // ══════════════════════════════════════════════════════════════════
-// BUILD CARD CONTENT
+// BUILD CARD CONTENT — BIG NUMERAL / BIG WORD as hero
 // ══════════════════════════════════════════════════════════════════
-function buildCardFront(num, type, pairIdx) {
+function buildCardFront(num, type) {
   const front = document.createElement('div');
   front.className = 'card-front';
 
   if (type === 'numeral') {
     const numEl = document.createElement('div');
     numEl.className = 'card-numeral';
+    if (num >= 100) numEl.classList.add('three-digit');
     numEl.textContent = num;
     front.appendChild(numEl);
-  } else if (type === 'animals') {
-    const animEl = document.createElement('div');
-    animEl.className = 'card-animals';
-    animEl.textContent = makeAnimalRow(num, pairIdx);
-    animEl.style.whiteSpace = 'pre-line';
-    front.appendChild(animEl);
-    // Small numeral always visible
-    const smallNum = document.createElement('div');
-    smallNum.className = 'card-small-num';
-    smallNum.textContent = num;
-    front.appendChild(smallNum);
+
+    // Tiny corner decoration — never competes with numeral
+    const deco = document.createElement('div');
+    deco.className = 'card-deco';
+    deco.textContent = pick(DECOS);
+    front.appendChild(deco);
   } else if (type === 'word') {
     const wordEl = document.createElement('div');
     wordEl.className = 'card-word';
-    wordEl.textContent = NUMBER_WORDS[num] || num;
+    const word = NUMBER_WORDS[num] || String(num);
+    // Adjust size class based on word length
+    if (word.length >= 10) wordEl.classList.add('xlong');
+    else if (word.length >= 7) wordEl.classList.add('long');
+    wordEl.textContent = word;
     front.appendChild(wordEl);
-    // Small numeral always visible
-    const smallNum = document.createElement('div');
-    smallNum.className = 'card-small-num';
-    smallNum.textContent = num;
-    front.appendChild(smallNum);
+
+    // Tiny corner decoration
+    const deco = document.createElement('div');
+    deco.className = 'card-deco';
+    deco.textContent = pick(WORD_DECOS);
+    front.appendChild(deco);
   }
 
   return front;
@@ -896,13 +875,13 @@ function buildGrid() {
     const inner = document.createElement('div');
     inner.className = 'card-inner';
 
-    // Back (face down — jungle leaf)
+    // Back (face down — dragon egg on teal)
     const back = document.createElement('div');
     back.className = 'card-back';
-    back.innerHTML = '<div class="card-back-icon">🌿</div><div class="card-back-sparkle">✦ ✦ ✦</div>';
+    back.innerHTML = '<div class="card-back-icon">🥚</div><div class="card-back-sparkle">💎💎💎</div>';
 
-    // Front (face up — number content)
-    const front = buildCardFront(cardData.num, cardData.type, cardData.pairIdx);
+    // Front (face up — BIG number or BIG word)
+    const front = buildCardFront(cardData.num, cardData.type);
 
     inner.appendChild(back);
     inner.appendChild(front);
@@ -937,7 +916,7 @@ function flipCard(card) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// CHECK MATCH — cross-representation: same pairIdx = match
+// CHECK MATCH — snappy 600ms lock
 // ══════════════════════════════════════════════════════════════════
 async function checkMatch() {
   const [a, b] = flippedCards;
@@ -951,10 +930,9 @@ async function checkMatch() {
     a.classList.add('matched');
     b.classList.add('matched');
 
-    // Animal wander-away animation
     a.classList.add('match-anim');
     b.classList.add('match-anim');
-    setTimeout(() => { a.classList.remove('match-anim'); b.classList.remove('match-anim'); }, 1400);
+    setTimeout(() => { a.classList.remove('match-anim'); b.classList.remove('match-anim'); }, 1300);
 
     matches++;
     score++;
@@ -965,20 +943,18 @@ async function checkMatch() {
     starBurst(a);
     starBurst(b);
 
-    // Find the pair index in currentPairs to mark progress
     const progIdx = parseInt(pairA);
     markProg(progIdx);
 
-    // Fill a slot on the safari lodge
-    fillLodgeSlot();
+    // Add to Sparky's treasure collection
+    addTreasure(parseInt(a.dataset.num));
 
     showCharBubble(pick(BUBBLE_CORRECT), 1600);
-    audio.play('correct'); // don't block — child can flip next card
+    audio.play('correct'); // non-blocking
 
     flippedCards = [];
     lockBoard = false;
 
-    // Check round complete
     if (matches >= totalPairs) {
       await delay(650);
       advanceRound();
@@ -991,11 +967,10 @@ async function checkMatch() {
     audio.tone('wrong');
     showCharBubble(pick(BUBBLE_WRONG), 1500);
 
-    // Shake animation
     a.style.animation = 'wrongShake 0.4s ease-in-out';
     b.style.animation = 'wrongShake 0.4s ease-in-out';
 
-    audio.play('wrong'); // don't block
+    audio.play('wrong'); // non-blocking
     await delay(650);
 
     a.style.animation = '';
@@ -1023,21 +998,18 @@ async function advanceRound() {
 
   // Round complete celebration
   audio.tone('roundDone');
-  confetti(30, ['🦁','🐘','🌿','✨']);
-  showCharBubble('Animals found! 🎉', 2500);
+  confetti(30, ['🐉','🐲','💎']);
+  showCharBubble('Treasures collected! 💎', 2500);
 
-  $('roundTitle').textContent = '🌿 Round Complete! 🌿';
+  $('roundTitle').textContent = '💎 Round Complete! 💎';
   $('roundSub').textContent   = '';
   $('roundBanner').classList.add('show');
-  audio.play('round-complete'); // don't await
+  audio.play('round-complete'); // non-blocking
   await delay(1400);
   $('roundBanner').classList.remove('show');
   await delay(180);
 
-  // Reset lodge for next round
-  resetLodge();
-
-  // Next round banner (snappy)
+  // Next round banner — snappy ~3s total transition
   const cfg = ROUND_META[round];
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
@@ -1049,7 +1021,6 @@ async function advanceRound() {
 
   $('hudRound').textContent = `${round + 1}/4`;
 
-  // Build new grid
   buildGrid();
   const pairs = currentPairs;
   buildProg(pairs);
@@ -1057,7 +1028,7 @@ async function advanceRound() {
   lockBoard = false;
   gameActive = true;
 
-  // Peek in Round 1 only (already past R1 here, so no peek)
+  // Peek only in Round 1
   if (cfg.peek) {
     const allCards = document.querySelectorAll('.card');
     allCards.forEach(c => c.classList.add('flipped'));
@@ -1076,28 +1047,30 @@ async function celebrateFinish() {
   gameActive = false;
   stopHints();
   audio.stopMusic();
-  $('hud').style.display       = 'none';
-  $('progBar').style.display    = 'none';
-  $('charArea').style.display   = 'none';
-  $('safariLodge').style.display = 'none';
-  $('cardGrid').innerHTML       = '';
+  $('hud').style.display      = 'none';
+  $('progBar').style.display   = 'none';
+  $('charArea').style.display  = 'none';
+  $('cardGrid').innerHTML      = '';
   $('roundBanner').classList.remove('show');
 
   audio.tone('celeb');
   await delay(400);
-  confetti(60, ['🦁','🐘','🦒','🦓','🐆','🦏','🌿','🌴','✨','🌟']);
+  confetti(60, ['🐉','🐲','💎','🥚','🔥','🌿']);
 
   const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 4)));
   $('celebStars').textContent = '⭐'.repeat(stars);
-  $('celebTitle').textContent = '🌟 Safari Complete! 🌟';
-  $('celebMsg').textContent   = `You brought every animal back to Zara's lodge!`;
+  $('celebTitle').textContent = '🔥 Dragon-mazing! 🔥';
+  $('celebMsg').textContent   = `Sparky collected ${treasuresCollected.length} treasures!`;
+
+  renderTreasureGallery();
+
   showScreen('scrCeleb');
 
   await audio.play('game-complete');
   await delay(280);
   await audio.play('game-complete');
 
-  setTimeout(() => confetti(35, ['🦁','🐘','🌿','🌟']), 2000);
+  setTimeout(() => confetti(35, ['🐉','🐲','💎']), 2000);
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1112,14 +1085,13 @@ async function startGame() {
   round = 0; score = 0; matches = 0;
   flippedCards = []; lockBoard = false;
   stopHints();
-  resetLodge();
+  resetTreasures();
 
   $('hudScore').textContent   = '0';
   $('hudRound').textContent   = '1/4';
   $('hudPairs').textContent   = 'Find the matching pairs!';
-  $('hud').style.display       = '';
-  $('charArea').style.display  = '';
-  $('safariLodge').style.display = '';
+  $('hud').style.display      = '';
+  $('charArea').style.display = '';
   $('roundBanner').classList.remove('show');
 
   audio.startMusic();
@@ -1139,7 +1111,7 @@ async function startGame() {
   buildProg(currentPairs);
   gameActive = true;
 
-  // Round 1 peek — show all cards briefly for 1.5s
+  // Round 1 peek — 1.5s
   if (cfg.peek) {
     lockBoard = true;
     const allCards = document.querySelectorAll('.card');

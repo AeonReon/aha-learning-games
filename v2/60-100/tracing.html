@@ -3,19 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Trace the Animal Tracks — Jungle Safari</title>
+<title>Carve Treasure Numbers — Sparky's Dragon Lair</title>
 <style>
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
   --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
-  --jungle-deep: #0d2818;
-  --jungle-mid: #1a4d2e;
-  --jungle-light: #2e7d4f;
-  --gold: #fbbf24;
-  --warm-yellow: #fde047;
-  --earth-brown: #6b4423;
-  --cream: #fef3c7;
+  --jungle-deep: #0a2420; --teal: #0f766e; --amber: #f59e0b; --fire peak: #dc2626;
+  --bone: #f5efd8; --stone: #4a3f36;
   --white85: rgba(255,255,255,0.85);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -30,46 +25,62 @@ body {
   background: var(--jungle-deep);
 }
 
-/* ── Background: forest canopy with dappled sunlight ── */
+/* ── Background ── */
 .bg {
   position: fixed; inset: 0; z-index: var(--z-bg);
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(251,191,36,0.25) 0%, transparent 40%),
-    radial-gradient(ellipse at 80% 20%, rgba(253,224,71,0.18) 0%, transparent 45%),
-    radial-gradient(ellipse at 50% 90%, rgba(107,68,35,0.4) 0%, transparent 50%),
-    linear-gradient(180deg, #1a4d2e 0%, #0d2818 50%, #1a3a24 100%);
+    radial-gradient(ellipse at 20% 95%, rgba(220,38,38,0.35) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 90%, rgba(245,158,11,0.3) 0%, transparent 45%),
+    linear-gradient(170deg, #0a2420 0%, #0f3028 35%, #1a1a10 70%, #2a1208 100%);
 }
-.bg-leaf {
+.bg-fern {
   position: fixed; pointer-events: none; z-index: 1;
-  font-size: clamp(18px, 3.5vw, 28px);
-  opacity: 0.5;
-  animation: leafSway ease-in-out infinite;
+  font-size: clamp(30px, 8vw, 60px);
+  opacity: 0.35;
+  animation: fernSway ease-in-out infinite;
+  transform-origin: bottom center;
 }
-@keyframes leafSway {
-  0%,100% { transform: translateY(0) rotate(-8deg); }
-  50%     { transform: translateY(-6px) rotate(8deg); }
+@keyframes fernSway {
+  0%,100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
 }
-.bg-ray {
+.bg-fire peak {
   position: fixed; pointer-events: none; z-index: 1;
-  width: 4px; height: 40vh;
-  background: linear-gradient(180deg, rgba(253,224,71,0.35), transparent);
-  transform-origin: top;
-  animation: rayFade ease-in-out infinite;
+  bottom: 56px;
+  font-size: clamp(60px, 18vw, 120px);
+  opacity: 0.45;
+  filter: drop-shadow(0 0 20px rgba(220,38,38,0.5));
 }
-@keyframes rayFade {
-  0%,100% { opacity: 0.2; }
-  50%     { opacity: 0.5; }
+.bg-treasure {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(20px, 4vw, 32px);
+  opacity: 0.22;
+  animation: treasureGlow 4s ease-in-out infinite;
 }
-.bg-vine {
-  position: fixed; top: 0; pointer-events: none; z-index: 1;
-  width: 6px; height: 28vh;
-  background: linear-gradient(180deg, #2e7d4f, #1a4d2e);
-  border-radius: 0 0 20px 20px;
-  opacity: 0.7;
+@keyframes treasureGlow {
+  0%,100% { opacity: 0.18; }
+  50% { opacity: 0.38; }
 }
-.bg-vine::after {
-  content: '🍃'; position: absolute; bottom: -10px; left: -10px;
-  font-size: 22px;
+.bg-ember {
+  position: fixed; pointer-events: none; z-index: 2;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245,158,11,0.9);
+  animation: emberRise linear infinite;
+}
+@keyframes emberRise {
+  0% { transform: translateY(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-110vh) scale(0.3); opacity: 0; }
+}
+.bg-dragon {
+  position: fixed; pointer-events: none; z-index: 2;
+  font-size: clamp(20px, 4vw, 32px);
+  opacity: 0.4;
+  animation: dragonWalk linear infinite;
+}
+@keyframes dragonWalk {
+  0%   { transform: translateX(110vw) scaleX(-1); }
+  100% { transform: translateX(-80px) scaleX(-1); }
 }
 
 /* ── Screen system ── */
@@ -87,8 +98,8 @@ body {
 /* ── Title screen ── */
 .screen-title h1 {
   font-size: clamp(28px, 7vw, 50px);
-  color: var(--gold);
-  text-shadow: 0 0 30px rgba(251,191,36,0.6), 2px 2px 0 rgba(0,0,0,0.45);
+  color: var(--amber);
+  text-shadow: 0 0 30px rgba(245,158,11,0.6), 2px 2px 0 rgba(0,0,0,0.5);
   margin: 6px 0 8px;
 }
 .screen-title .icon-row {
@@ -100,7 +111,7 @@ body {
 .screen-title p {
   font-size: clamp(14px, 3.5vw, 20px);
   color: var(--white85);
-  max-width: 380px; line-height: 1.45;
+  max-width: 360px; line-height: 1.45;
 }
 
 /* ── Buttons ── */
@@ -109,19 +120,19 @@ body {
   padding: 14px 44px;
   font-size: clamp(18px, 4.5vw, 26px);
   font-family: var(--font); font-weight: bold;
-  color: #1a0a0a; border: none; border-radius: 32px;
+  color: #fff; border: none; border-radius: 32px;
   cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
   transition: transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active { transform: scale(0.93); }
 .btn-start {
-  background: linear-gradient(135deg, var(--gold), var(--warm-yellow));
+  background: linear-gradient(135deg, #f59e0b, #dc2626);
   margin-top: 18px;
   animation: glow 2.4s ease-in-out infinite;
 }
-.btn-again { background: linear-gradient(135deg, var(--gold), var(--warm-yellow)); margin-top: 16px; }
-@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+.btn-again { background: linear-gradient(135deg, #f59e0b, #dc2626); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.22)} }
 
 /* ── HUD ── */
 .hud {
@@ -129,8 +140,8 @@ body {
   z-index: var(--z-ui);
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 8px 14px;
-  background: rgba(13,40,24,0.92); backdrop-filter: blur(6px);
-  border-bottom: 2px solid rgba(251,191,36,0.3);
+  background: rgba(10,36,32,0.94); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(245,158,11,0.25);
   pointer-events: none;
 }
 .hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
@@ -138,22 +149,22 @@ body {
   position: absolute; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center;
 }
-.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.5); font-weight: bold; letter-spacing: 0.05em; }
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
 .hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
-.hud-round .hud-val { color: var(--warm-yellow); }
-.hud-score .hud-val { color: var(--gold); }
-.hud-center .hud-val { color: var(--gold); font-size: clamp(14px,3vw,20px); }
+.hud-round .hud-val { color: var(--amber); }
+.hud-score .hud-val { color: var(--bone); }
+.hud-center .hud-val { color: var(--amber); font-size: clamp(14px,3vw,20px); }
 
-/* ── Character (Zara the Explorer) ── */
+/* ── Character ── */
 .char-area {
   position: fixed; bottom: 58px; left: 10px;
   z-index: var(--z-char); pointer-events: none;
 }
-.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); }
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
 .char-bubble {
   position: absolute; bottom: 100%; left: 50%;
   transform: translateX(-50%);
-  background: rgba(254,243,199,0.98); color: #3d2410;
+  background: rgba(245,239,216,0.98); color: #7c2d12;
   padding: 6px 14px; border-radius: 20px;
   font-size: clamp(12px,2.6vw,16px); font-weight: bold;
   white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.3);
@@ -165,7 +176,7 @@ body {
   content: ''; position: absolute; bottom: -7px; left: 50%;
   transform: translateX(-50%);
   border-left: 7px solid transparent; border-right: 7px solid transparent;
-  border-top: 8px solid rgba(254,243,199,0.98);
+  border-top: 8px solid rgba(245,239,216,0.98);
 }
 @keyframes charJump {
   0%   { transform: translateY(0); }
@@ -184,93 +195,96 @@ body {
 }
 .canvas-area canvas {
   border-radius: 18px;
-  box-shadow: 0 0 40px rgba(251,191,36,0.2), 0 6px 30px rgba(0,0,0,0.6);
-  background: rgba(13,40,24,0.7);
-  border: 2px solid rgba(251,191,36,0.15);
+  box-shadow: 0 0 40px rgba(245,158,11,0.2), 0 6px 30px rgba(0,0,0,0.6);
+  background:
+    radial-gradient(ellipse at center, rgba(74,63,54,0.7) 0%, rgba(26,14,8,0.85) 100%);
+  border: 3px solid rgba(245,158,11,0.3);
 }
 
 /* ── Number display ── */
 .number-display {
   position: fixed;
-  top: 60px; right: 12px;
+  top: 56px; right: 12px;
   z-index: var(--z-ui);
   pointer-events: none;
-  text-align: center;
+  text-align: right;
 }
 .number-display .big-num {
-  font-size: clamp(36px,9vw,60px);
+  font-size: clamp(40px,10vw,70px);
   font-weight: 900;
-  color: var(--gold);
-  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  color: var(--amber);
+  text-shadow: 0 0 20px rgba(245,158,11,0.6), 2px 2px 0 rgba(0,0,0,0.5);
   line-height: 1;
 }
 .number-display .sub-label {
-  font-size: clamp(9px,1.9vw,13px);
+  font-size: clamp(10px,2vw,14px);
   color: rgba(255,255,255,0.6);
   text-align: center;
-  max-width: 90px;
-  line-height: 1.1;
-  margin-top: 2px;
 }
 
 /* ── Progress bar ── */
 .prog-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
   z-index: var(--z-ui); height: 56px;
-  background: rgba(13,40,24,0.92); backdrop-filter: blur(6px);
-  border-top: 2px solid rgba(251,191,36,0.3);
-  display: flex; align-items: center; justify-content: center; gap: clamp(4px,1.6vw,10px);
-  padding: 0 10px;
-  overflow-x: auto;
+  background: rgba(10,36,32,0.94); backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(245,158,11,0.25);
+  display: flex; align-items: center; justify-content: center; gap: clamp(6px,2vw,14px);
+  padding: 0 12px;
 }
 .prog-dot {
-  width: clamp(28px,7vw,40px); height: clamp(28px,7vw,40px);
+  width: clamp(36px,9vw,50px); height: clamp(36px,9vw,50px);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: clamp(11px,2.4vw,15px); font-weight: 900;
+  font-size: clamp(12px,2.8vw,18px); font-weight: 900;
   background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35);
   border: 2px solid rgba(255,255,255,0.08);
   transition: all 0.4s;
-  flex-shrink: 0;
 }
 .prog-dot.active {
-  background: rgba(253,224,71,0.2); color: var(--warm-yellow);
-  border-color: var(--warm-yellow);
-  box-shadow: 0 0 12px rgba(253,224,71,0.4);
+  background: rgba(245,158,11,0.25); color: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 12px rgba(245,158,11,0.4);
 }
 .prog-dot.done {
-  background: linear-gradient(135deg, var(--gold), var(--warm-yellow));
-  color: #0d2818; border-color: var(--gold);
-  box-shadow: 0 0 16px rgba(251,191,36,0.5);
+  background: linear-gradient(135deg, #f59e0b, #dc2626);
+  color: var(--bone); border-color: var(--bone);
+  box-shadow: 0 0 16px rgba(245,158,11,0.5);
 }
 
-/* ── Safari Album ── */
-.safari-album {
+/* ── Dragon Hoard Badge (HUD) ── */
+.treasure-museum {
   position: fixed; top: 60px; left: 8px;
   z-index: var(--z-char);
   pointer-events: none;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-.safari-album-icon {
-  font-size: clamp(24px,5.5vw,36px);
-  filter: drop-shadow(0 0 8px rgba(251,191,36,0.4));
+.treasure-museum-icon {
+  font-size: clamp(26px,5.5vw,36px);
+  filter: drop-shadow(0 0 8px rgba(245,158,11,0.5));
 }
-.safari-album-slots {
-  display: flex; gap: 2px; flex-wrap: wrap; max-width: 68px; justify-content: center;
+.treasure-museum-count {
+  font-size: clamp(10px,2.2vw,13px);
+  color: var(--amber);
+  font-weight: 900;
+  background: rgba(10,36,32,0.8);
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(245,158,11,0.4);
 }
-.album-slot {
-  width: 14px; height: 14px; border-radius: 3px;
-  background: rgba(255,255,255,0.08);
+.treasure-slots {
+  display: flex; gap: 2px; flex-wrap: wrap; max-width: 56px; justify-content: center;
+}
+.treasure-slot {
+  width: 8px; height: 10px; border-radius: 2px;
+  background: rgba(255,255,255,0.1);
   transition: all 0.5s;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px;
 }
-.album-slot.filled {
-  background: linear-gradient(135deg, var(--gold), var(--warm-yellow));
-  box-shadow: 0 0 6px rgba(251,191,36,0.6);
-  animation: slotPop 0.5s ease-out;
+.treasure-slot.lit {
+  background: linear-gradient(135deg, #f59e0b, #dc2626);
+  box-shadow: 0 0 6px rgba(245,158,11,0.7);
+  animation: treasurePop 0.5s ease-out;
 }
-@keyframes slotPop {
+@keyframes treasurePop {
   0% { transform: scale(0); } 50% { transform: scale(1.5); } 100% { transform: scale(1); }
 }
 
@@ -280,15 +294,15 @@ body {
   z-index: var(--z-celeb);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  background: rgba(13,40,24,0.94);
+  background: rgba(10,36,32,0.94);
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity 0.4s;
 }
 .level-banner.show { opacity: 1; visibility: visible; pointer-events: auto; }
 .level-banner h2 {
   font-size: clamp(24px,6vw,42px);
-  color: var(--gold);
-  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  color: var(--amber);
+  text-shadow: 0 0 20px rgba(245,158,11,0.6);
   margin-bottom: 6px;
 }
 .level-banner p {
@@ -317,55 +331,53 @@ body {
   100% { transform: scale(0.5) rotate(360deg) translateY(-40px); opacity: 0; }
 }
 
-/* ── Animal reveal ── */
-.animal-reveal {
-  position: fixed; pointer-events: none; z-index: var(--z-celeb);
-  font-size: clamp(80px, 20vw, 140px);
-  animation: animalAppear 1.8s ease-out forwards;
-  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.6));
-}
-@keyframes animalAppear {
-  0%   { transform: translate(-50%,-50%) scale(0) rotate(-30deg); opacity: 0; }
-  40%  { transform: translate(-50%,-50%) scale(1.3) rotate(10deg); opacity: 1; }
-  70%  { transform: translate(-50%,-50%) scale(1) rotate(-5deg); opacity: 1; }
-  100% { transform: translate(-50%,-50%) scale(0.9) rotate(0); opacity: 0; }
-}
-
 /* ── Celebration screen ── */
+.screen-celeb {
+  background: radial-gradient(ellipse at center, rgba(15,48,40,0.95) 0%, rgba(10,36,32,0.98) 100%);
+}
 .screen-celeb h1 {
   font-size: clamp(26px,6.5vw,46px);
-  color: var(--gold);
-  text-shadow: 0 0 30px rgba(251,191,36,0.6), 2px 2px 0 rgba(0,0,0,0.45);
+  color: var(--amber);
+  text-shadow: 0 0 30px rgba(245,158,11,0.7), 2px 2px 0 rgba(0,0,0,0.5);
   margin-bottom: 12px;
 }
 .screen-celeb p {
   font-size: clamp(16px,4vw,22px);
   color: var(--white85); line-height: 1.5;
 }
-.screen-celeb .final-album {
+.screen-celeb .final-treasure {
   font-size: clamp(60px,15vw,100px);
   margin: 16px 0;
-  animation: albumPulse 1.5s ease-in-out infinite;
+  animation: treasurePulse 1.5s ease-in-out infinite;
 }
-@keyframes albumPulse {
+@keyframes treasurePulse {
   0%,100% { transform: scale(1) rotate(0); }
   25% { transform: scale(1.05) rotate(-2deg); }
   50% { transform: scale(1.1) rotate(0); }
   75% { transform: scale(1.05) rotate(2deg); }
 }
+.dragon-parade {
+  display: flex; gap: 8px; margin: 10px 0;
+  font-size: clamp(34px,8vw,52px);
+  flex-wrap: wrap; justify-content: center;
+}
+.dragon-parade span {
+  animation: paradeBob 1.2s ease-in-out infinite;
+  display: inline-block;
+}
+.dragon-parade span:nth-child(1) { animation-delay: 0s; }
+.dragon-parade span:nth-child(2) { animation-delay: 0.15s; }
+.dragon-parade span:nth-child(3) { animation-delay: 0.3s; }
+.dragon-parade span:nth-child(4) { animation-delay: 0.45s; }
+.dragon-parade span:nth-child(5) { animation-delay: 0.6s; }
+@keyframes paradeBob {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
 .final-score {
   font-size: clamp(18px,4.5vw,28px);
-  color: var(--gold); font-weight: 900;
+  color: var(--amber); font-weight: 900;
   margin-top: 8px;
-}
-.album-showcase {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  justify-content: center; max-width: 360px;
-  margin: 12px auto;
-}
-.album-showcase span {
-  font-size: clamp(26px, 6vw, 38px);
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
 }
 </style>
 </head>
@@ -376,10 +388,10 @@ body {
 
 <!-- Title Screen -->
 <div class="screen screen-title active" id="screenTitle">
-  <div class="icon-row"><span>🧑‍🦱</span><span>🌴</span><span>🦁</span></div>
-  <h1>Trace the Animal Tracks</h1>
-  <p>Help Zara the Explorer trace the tens! Follow the tracks left by jungle animals — trace each number to summon the animal!</p>
-  <button class="btn btn-start" id="btnStart">Start Safari!</button>
+  <div class="icon-row"><span>🐉</span><span>💎</span><span>🔥</span></div>
+  <h1>Carve Treasure Numbers</h1>
+  <p>Sparky the baby dragon teaches you to carve numbers into ancient stone tablets! Trace each number to reveal a treasure!</p>
+  <button class="btn btn-start" id="btnStart">Start Carving!</button>
 </div>
 
 <!-- Game Screen (HUD + Canvas + Progress) -->
@@ -389,24 +401,25 @@ body {
     <div class="hud-val" id="hudLevel">1</div>
   </div>
   <div class="hud-center">
-    <div class="hud-val" id="hudNumber">10</div>
+    <div class="hud-val" id="hudNumber">60</div>
   </div>
   <div class="hud-right hud-score">
-    <div class="hud-label">ANIMALS</div>
+    <div class="hud-label">TREASURES</div>
     <div class="hud-val" id="hudScore">0</div>
   </div>
 </div>
 
 <!-- Number display -->
 <div class="number-display" id="numDisplay" style="display:none">
-  <div class="big-num" id="bigNum">10</div>
+  <div class="big-num" id="bigNum">60</div>
   <div class="sub-label" id="numSubLabel"></div>
 </div>
 
-<!-- Safari Album -->
-<div class="safari-album" id="safariAlbum" style="display:none">
-  <div class="safari-album-icon">📔</div>
-  <div class="safari-album-slots" id="albumSlots"></div>
+<!-- Dragon Hoard -->
+<div class="treasure-museum" id="treasureHoard" style="display:none">
+  <div class="treasure-museum-icon">💎</div>
+  <div class="treasure-museum-count" id="treasureCount">0/20</div>
+  <div class="treasure-slots" id="treasureSlots"></div>
 </div>
 
 <!-- Canvas -->
@@ -419,24 +432,26 @@ body {
 
 <!-- Character -->
 <div class="char-area" id="charArea" style="display:none">
-  <span class="char-emoji" id="charEmoji">🧑‍🦱</span>
+  <span class="char-emoji" id="charEmoji">🐉</span>
   <div class="char-bubble" id="charBubble"></div>
 </div>
 
 <!-- Level Banner -->
 <div class="level-banner" id="levelBanner">
   <h2 id="bannerTitle">Level 1</h2>
-  <p id="bannerSub">Follow the tracks!</p>
+  <p id="bannerSub">Follow the glowing treasure guide!</p>
 </div>
 
 <!-- Celebration Screen -->
 <div class="screen screen-celeb" id="screenCeleb">
-  <h1>Safari Complete!</h1>
-  <div class="final-album">📔🌴</div>
-  <p>Zara's safari album is full of jungle friends!<br>What an explorer you are!</p>
-  <div class="album-showcase" id="albumShowcase"></div>
-  <div class="final-score" id="finalScore">20 Animals Found!</div>
-  <button class="btn btn-again" id="btnAgain">Explore Again!</button>
+  <h1>Dragon Hoard Complete!</h1>
+  <div class="final-treasure">💎🐉</div>
+  <div class="dragon-parade">
+    <span>🐉</span><span>🐲</span><span>🐉</span><span>🐲</span><span>🐉</span>
+  </div>
+  <p>Sparky is dragon-mite proud of you!<br>You carved every number!</p>
+  <div class="final-score" id="finalScore">20 Treasures Carved!</div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
 </div>
 
 <script>
@@ -446,15 +461,57 @@ body {
 const AUDIO_BASE = '../../audio';
 
 const VOICE_A = {
-  greetings: ['voice-a/greetings/here-we-go.mp3','voice-a/greetings/lets-go.mp3','voice-a/greetings/come-on-lets-play.mp3','voice-a/greetings/are-you-ready.mp3','voice-a/greetings/this-is-going-to-be-fun.mp3'],
-  correct: ['voice-a/correct/amazing.mp3','voice-a/correct/brilliant.mp3','voice-a/correct/fantastic.mp3','voice-a/correct/i-knew-you-could-do-it.mp3','voice-a/correct/incredible.mp3','voice-a/correct/perfect.mp3','voice-a/correct/superstar.mp3','voice-a/correct/thats-right.mp3','voice-a/correct/well-done.mp3','voice-a/correct/wow-look-at-you-go.mp3','voice-a/correct/yes-youre-so-clever.mp3','voice-a/correct/you-got-it.mp3','voice-a/correct/youre-on-fire.mp3'],
-  wrong: ['voice-a/wrong/almost-have-another-go.mp3','voice-a/wrong/dont-worry-try-again.mp3','voice-a/wrong/keep-trying-youre-so-close.mp3','voice-a/wrong/nearly-give-it-another-go.mp3','voice-a/wrong/not-quite-you-can-do-it.mp3','voice-a/wrong/oops-not-that-one.mp3'],
-  thinking: ['voice-a/thinking/have-a-good-look.mp3','voice-a/thinking/i-believe-in-you.mp3','voice-a/thinking/take-your-time.mp3','voice-a/thinking/which-one-could-it-be.mp3','voice-a/thinking/you-can-do-it-keep-looking.mp3'],
-  'round-complete': ['voice-a/round-complete/brilliant-round-keep-going.mp3','voice-a/round-complete/round-complete-amazing.mp3','voice-a/round-complete/round-done-youre-doing-so-well.mp3','voice-a/round-complete/you-did-it-on-to-the-next.mp3'],
-  'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
 };
-
-const NUMBER_WORDS = {10:'ten',20:'twenty',30:'thirty',40:'forty',50:'fifty',60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
 
 class GameAudio {
   constructor() {
@@ -473,20 +530,20 @@ class GameAudio {
   unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
   startMusic() {
     this._init(); if (this.playing) return; this.playing = true;
-    // Warm jungle pentatonic
-    const notes = [174.61, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00];
+    // Mystic pentatonic-ish — low, earthy, primal
+    const notes = [130.81, 155.56, 174.61, 196.00, 233.08, 261.63, 311.13];
     const go = () => {
       if (!this.playing) return;
       const f = notes[Math.floor(Math.random() * notes.length)];
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = Math.random() > 0.6 ? 'sine' : 'triangle';
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
       o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
       g.gain.setValueAtTime(0, this.ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0.13, this.ctx.currentTime + 0.2);
       g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
       o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
       o.onended = () => { o.disconnect(); g.disconnect(); };
-      this._mt = setTimeout(go, 1100 + Math.random() * 1500);
+      this._mt = setTimeout(go, 1100 + Math.random() * 1600);
     }; go();
   }
   stopMusic() { this.playing = false; clearTimeout(this._mt); }
@@ -505,17 +562,19 @@ class GameAudio {
     else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
     else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
     else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
-    else if (type==='reveal')    { p(440,t,0.12,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='reveal')    { p(330,t,0.12,0.2,'triangle'); p(440,t+0.08,0.12,0.25,'triangle'); p(554.37,t+0.16,0.15,0.3,'triangle'); }
     else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
-    else if (type==='roar')      {
+    else if (type==='whoosh')    {
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type='sawtooth'; o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(90,t+0.5);
-      g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.6);
-      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.65);
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
       o.onended=()=>{o.disconnect();g.disconnect()};
     }
     else if (type==='checkpoint') {
-      p(600 + Math.random()*200, t, 0.08, 0.15, 'triangle');
+      // Stone carve click
+      p(500 + Math.random()*200, t, 0.06, 0.18, 'square');
+      p(200 + Math.random()*100, t+0.02, 0.08, 0.12, 'triangle');
     }
   }
   speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
@@ -575,19 +634,9 @@ function onTap(el, fn) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// CHECKPOINT DATA
+// CHECKPOINT DATA — multi-part digits
 // ══════════════════════════════════════════════════════════════════
 const CHECKPOINTS = {
-  '10_first':  [{x:0.28,y:0.15},{x:0.30,y:0.88}],
-  '10_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
-  '20_first':  [{x:0.15,y:0.25},{x:0.18,y:0.15},{x:0.32,y:0.12},{x:0.40,y:0.18},{x:0.40,y:0.32},{x:0.15,y:0.88},{x:0.42,y:0.88}],
-  '20_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
-  '30_first':  [{x:0.15,y:0.22},{x:0.30,y:0.14},{x:0.42,y:0.24},{x:0.32,y:0.42},{x:0.18,y:0.48},{x:0.32,y:0.52},{x:0.42,y:0.72},{x:0.28,y:0.88},{x:0.15,y:0.80}],
-  '30_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
-  '40_first':  [{x:0.15,y:0.15},{x:0.12,y:0.52},{x:0.42,y:0.52},{x:0.38,y:0.15},{x:0.38,y:0.88}],
-  '40_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
-  '50_first':  [{x:0.42,y:0.15},{x:0.12,y:0.15},{x:0.10,y:0.45},{x:0.28,y:0.45},{x:0.42,y:0.55},{x:0.42,y:0.75},{x:0.25,y:0.88},{x:0.10,y:0.80}],
-  '50_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
   '60_first':  [{x:0.35,y:0.12},{x:0.18,y:0.15},{x:0.10,y:0.42},{x:0.12,y:0.68},{x:0.25,y:0.85},{x:0.42,y:0.80},{x:0.45,y:0.60},{x:0.28,y:0.48},{x:0.14,y:0.50}],
   '60_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
   '70_first':  [{x:0.10,y:0.12},{x:0.42,y:0.12},{x:0.42,y:0.18},{x:0.18,y:0.88}],
@@ -596,35 +645,40 @@ const CHECKPOINTS = {
   '80_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
   '90_first':  [{x:0.28,y:0.88},{x:0.42,y:0.60},{x:0.45,y:0.32},{x:0.32,y:0.12},{x:0.15,y:0.18},{x:0.10,y:0.40},{x:0.25,y:0.52},{x:0.42,y:0.48}],
   '90_second': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
+  // 100 is 3 parts:
   '100_first':  [{x:0.18,y:0.15},{x:0.20,y:0.88}],
   '100_second': [{x:0.45,y:0.15},{x:0.58,y:0.30},{x:0.58,y:0.65},{x:0.45,y:0.85},{x:0.35,y:0.85},{x:0.25,y:0.65},{x:0.25,y:0.30},{x:0.35,y:0.15},{x:0.45,y:0.15}],
   '100_third':  [{x:0.78,y:0.15},{x:0.88,y:0.30},{x:0.88,y:0.65},{x:0.78,y:0.85},{x:0.65,y:0.85},{x:0.55,y:0.65},{x:0.55,y:0.30},{x:0.65,y:0.15},{x:0.78,y:0.15}],
 };
 
-// Animal for each ten
-const ANIMALS = {
-  10: '🐒', // monkey
-  20: '🦜', // parrot
-  30: '🐆', // leopard
-  40: '🐘', // elephant
-  50: '🦓', // zebra
-  60: '🐅', // tiger
-  70: '🦒', // giraffe
-  80: '🦏', // rhino
-  90: '🦛', // hippo
-  100: '🦁', // lion (king!)
-};
+const NUMBERS = [60, 70, 80, 90, 100];
 
-// Level configs — 5 numbers per level
-const LEVELS = [
-  { label: 'Level 1 — Follow the Tracks!', sub: 'Watch Zara, then trace!', outlineOpacity: 1.0, showGuide: true, numbers: [10, 20, 30, 40, 50] },
-  { label: 'Level 2 — Trace on Your Own!', sub: 'No guide this time!', outlineOpacity: 1.0, showGuide: false, numbers: [60, 70, 80, 90, 100] },
-  { label: 'Level 3 — Fading Tracks!', sub: 'The tracks are fading...', outlineOpacity: 0.5, showGuide: false, numbers: [10, 30, 50, 70, 90] },
-  { label: 'Level 4 — Jungle Master!', sub: 'Nearly from memory!', outlineOpacity: 0.15, showGuide: false, numbers: [40, 60, 80, 90, 100] },
+// Build trace sequence: each number decomposed into its parts
+const TRACE_SEQUENCE = [
+  { key: '60_first',  num: 60, part: 1, total: 2 },
+  { key: '60_second', num: 60, part: 2, total: 2 },
+  { key: '70_first',  num: 70, part: 1, total: 2 },
+  { key: '70_second', num: 70, part: 2, total: 2 },
+  { key: '80_first',  num: 80, part: 1, total: 2 },
+  { key: '80_second', num: 80, part: 2, total: 2 },
+  { key: '90_first',  num: 90, part: 1, total: 2 },
+  { key: '90_second', num: 90, part: 2, total: 2 },
+  { key: '100_first',  num: 100, part: 1, total: 3 },
+  { key: '100_second', num: 100, part: 2, total: 3 },
+  { key: '100_third',  num: 100, part: 3, total: 3 },
 ];
 
-const BUBBLE_CORRECT = ['Animal found! 🌴','Track traced! ✨','Wonderful! 🌿','The jungle sings! 🎵','Beautiful! 🌟'];
-const BUBBLE_START   = ['Your turn! Trace it! ✨','Trace the tracks! 🐾','Follow the path! 🌿'];
+// Level configs
+const LEVELS = [
+  { label: 'Level 1 — Follow the Lava!', sub: 'Watch the spark, then carve!', outlineOpacity: 1.0, showGuide: true },
+  { label: 'Level 2 — Carve the Stone!', sub: 'No more spark guide!', outlineOpacity: 1.0, showGuide: false },
+  { label: 'Level 3 — Fading Treasure!', sub: 'The outline is fading...', outlineOpacity: 0.5, showGuide: false },
+  { label: 'Level 4 — Dragon Memory!', sub: 'Can you carve from memory?', outlineOpacity: 0.15, showGuide: false },
+];
+
+const BUBBLE_CORRECT = ['Flametastic! 🐉','Dragon-mite! 💥','Treasure carved! 💎','Flap-tastic! 👣','Mystic! 🔥'];
+const BUBBLE_WRONG   = ['Keep carving! 💎','Follow the lava! 🔥','Almost there! 💥','Trace the stone! 🗿'];
+const BUBBLE_START   = ['Roar! Carve it! 🐉','Your turn! 💎','Carve the stone! 🗿','Trace the treasure! 💥'];
 
 // ══════════════════════════════════════════════════════════════════
 // GAME STATE
@@ -632,12 +686,10 @@ const BUBBLE_START   = ['Your turn! Trace it! ✨','Trace the tracks! 🐾','Fol
 const audio = new GameAudio();
 let gameActive = false;
 let currentLevel = 0;
-let currentNumIndex = 0;      // index in LEVELS[currentLevel].numbers
-let currentPartIndex = 0;     // which part of multi-digit number
+let currentTraceIndex = 0;
 let score = 0;
-let animalsFound = []; // collected animal emojis
-let albumSlotCount = 0;
-const TOTAL_NUMBERS = 20; // 4 levels * 5 numbers
+let totalTreasures = 0;
+let treasureSlotCount = 0;
 
 // Tracing state
 let traceCheckpoints = [];
@@ -651,47 +703,62 @@ let guideAnimating = false;
 let hintTimer = null;
 
 // ══════════════════════════════════════════════════════════════════
-// HELPERS: parts for a given number
-// ══════════════════════════════════════════════════════════════════
-function partsFor(num) {
-  if (num === 100) return ['100_first', '100_second', '100_third'];
-  return [`${num}_first`, `${num}_second`];
-}
-
-// ══════════════════════════════════════════════════════════════════
 // SCENERY
 // ══════════════════════════════════════════════════════════════════
 function buildScenery() {
-  // Leaves scattered
-  const leafEmojis = ['🍃','🌿','🍀'];
-  for (let i = 0; i < 18; i++) {
+  const bg = $('bg');
+  // Ferns (enchanted mountains)
+  const ferns = ['🌿','🌱','🪴','🌴'];
+  for (let i = 0; i < 14; i++) {
     const el = document.createElement('div');
-    el.className = 'bg-leaf';
-    el.textContent = pick(leafEmojis);
+    el.className = 'bg-fern';
+    el.textContent = pick(ferns);
     el.style.left = (Math.random() * 100) + 'vw';
-    el.style.top  = (Math.random() * 100) + 'vh';
-    el.style.animationDuration = (3 + Math.random() * 4) + 's';
-    el.style.animationDelay    = (-Math.random() * 5) + 's';
-    $('bg').appendChild(el);
+    el.style.bottom = (56 + Math.random() * 10) + 'px';
+    el.style.animationDuration = (3 + Math.random() * 3) + 's';
+    el.style.animationDelay = (-Math.random() * 4) + 's';
+    bg.appendChild(el);
   }
-  // Sunlight rays
-  for (let i = 0; i < 5; i++) {
+  // Fire Peaks
+  const fire peakPositions = [{left: '5vw'}, {left: '85vw'}, {left: '50vw'}];
+  fire peakPositions.forEach(pos => {
     const el = document.createElement('div');
-    el.className = 'bg-ray';
-    el.style.left = (15 + Math.random() * 70) + 'vw';
-    el.style.top  = '0';
-    el.style.animationDuration = (4 + Math.random() * 4) + 's';
-    el.style.animationDelay    = (-Math.random() * 3) + 's';
-    el.style.transform = `rotate(${-10 + Math.random() * 20}deg)`;
-    $('bg').appendChild(el);
+    el.className = 'bg-fire peak';
+    el.textContent = '🔥';
+    el.style.left = pos.left;
+    bg.appendChild(el);
+  });
+  // Treasures & bones scattered
+  const treasures = ['💎','🪨','🥚'];
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-treasure';
+    el.textContent = pick(treasures);
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 100) + 'vh';
+    el.style.animationDelay = (-Math.random() * 4) + 's';
+    bg.appendChild(el);
   }
-  // Hanging vines
+  // Embers rising from fire peaks
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-ember';
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.bottom = (Math.random() * 40) + 'vh';
+    el.style.animationDuration = (4 + Math.random() * 6) + 's';
+    el.style.animationDelay = (-Math.random() * 10) + 's';
+    document.body.appendChild(el);
+  }
+  // Background dragons walking
+  const dragons = ['🐲','🐉'];
   for (let i = 0; i < 3; i++) {
     const el = document.createElement('div');
-    el.className = 'bg-vine';
-    el.style.left = (10 + Math.random() * 80) + 'vw';
-    el.style.height = (18 + Math.random() * 18) + 'vh';
-    $('bg').appendChild(el);
+    el.className = 'bg-dragon';
+    el.textContent = pick(dragons);
+    el.style.top = (15 + Math.random() * 35) + 'vh';
+    el.style.animationDuration = (18 + Math.random() * 12) + 's';
+    el.style.animationDelay = (-Math.random() * 20) + 's';
+    document.body.appendChild(el);
   }
 }
 
@@ -699,13 +766,13 @@ function buildScenery() {
 // VISUAL EFFECTS
 // ══════════════════════════════════════════════════════════════════
 function confetti(count = 40) {
-  const all = ['🌿','🍃','✨','🌟','🐾','🌴','🍀','💛','🐒','🦜'];
+  const all = ['🐉','🐲','💎','🔥','🪨','🥚','🌿','💥','⭐','🔥'];
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
     el.className = 'confetti'; el.textContent = pick(all);
     el.style.left = (Math.random()*100) + 'vw';
     el.style.top  = '-30px';
-    el.style.fontSize = (16 + Math.random()*16) + 'px';
+    el.style.fontSize = (18 + Math.random()*18) + 'px';
     el.style.animationDelay    = (Math.random()*1.8) + 's';
     el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
     document.body.appendChild(el);
@@ -714,26 +781,17 @@ function confetti(count = 40) {
 }
 
 function starBurstAt(x, y) {
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 10; i++) {
     const s = document.createElement('div');
     s.className = 'starburst';
-    s.textContent = pick(['✨','💫','⭐','🌟','🌿','🍃']);
-    s.style.left = (x + (Math.random()-0.5)*120) + 'px';
-    s.style.top  = (y + (Math.random()-0.5)*120) + 'px';
+    s.textContent = pick(['💥','🔥','⭐','💎','🔥','✨']);
+    s.style.left = (x + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*140) + 'px';
+    s.style.fontSize = (16 + Math.random()*16) + 'px';
     s.style.animationDelay = (Math.random()*0.2) + 's';
     document.body.appendChild(s);
     setTimeout(() => s.remove(), 900);
   }
-}
-
-function summonAnimal(emoji) {
-  const el = document.createElement('div');
-  el.className = 'animal-reveal';
-  el.textContent = emoji;
-  el.style.left = '50%';
-  el.style.top = '50%';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1900);
 }
 
 function showCharBubble(text, dur = 2200) {
@@ -765,40 +823,41 @@ function showGameUI(show) {
   $('canvasArea').style.display = show ? '' : 'none';
   $('progBar').style.display = show ? '' : 'none';
   $('charArea').style.display = show ? '' : 'none';
-  $('safariAlbum').style.display = show ? '' : 'none';
+  $('treasureHoard').style.display = show ? '' : 'none';
   $('numDisplay').style.display = show ? '' : 'none';
 }
 
 // ══════════════════════════════════════════════════════════════════
-// SAFARI ALBUM
+// DRAGON HOARD
 // ══════════════════════════════════════════════════════════════════
-function buildAlbum() {
-  const slots = $('albumSlots');
+function buildTreasureHoard() {
+  const slots = $('treasureSlots');
   slots.innerHTML = '';
-  for (let i = 0; i < TOTAL_NUMBERS; i++) {
-    const s = document.createElement('div');
-    s.className = 'album-slot';
-    s.id = 'slot' + i;
-    slots.appendChild(s);
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'treasure-slot';
+    p.id = 'treasureSlot' + i;
+    slots.appendChild(p);
   }
+  $('treasureCount').textContent = '0/20';
 }
 
-function fillAlbumSlot() {
-  const s = $('slot' + albumSlotCount);
-  if (s) {
-    s.classList.add('filled');
-    albumSlotCount++;
+function lightTreasureSlot() {
+  const p = $('treasureSlot' + treasureSlotCount);
+  if (p) {
+    p.classList.add('lit');
+    treasureSlotCount++;
+    $('treasureCount').textContent = treasureSlotCount + '/20';
   }
 }
 
 // ══════════════════════════════════════════════════════════════════
-// PROGRESS BAR
+// PROGRESS BAR (5 dots: 60, 70, 80, 90, 100)
 // ══════════════════════════════════════════════════════════════════
 function buildProg() {
   const bar = $('progBar');
   bar.innerHTML = '';
-  const nums = LEVELS[currentLevel].numbers;
-  nums.forEach((n, i) => {
+  NUMBERS.forEach((n, i) => {
     const d = document.createElement('div');
     d.className = 'prog-dot';
     d.id = 'prog' + i;
@@ -808,17 +867,27 @@ function buildProg() {
 }
 
 function updateProg() {
-  for (let i = 0; i < LEVELS[currentLevel].numbers.length; i++) {
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) return;
+  const currentNum = TRACE_SEQUENCE[currentTraceIndex].num;
+  const dotIndex = NUMBERS.indexOf(currentNum);
+
+  for (let i = 0; i < NUMBERS.length; i++) {
     const d = $('prog' + i);
     if (!d) continue;
     d.classList.remove('active', 'done');
-    if (i < currentNumIndex) d.classList.add('done');
-    else if (i === currentNumIndex) d.classList.add('active');
+    if (i < dotIndex) d.classList.add('done');
+    else if (i === dotIndex) d.classList.add('active');
   }
 }
 
+function markProgDone(num) {
+  const idx = NUMBERS.indexOf(num);
+  const d = $('prog' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+}
+
 // ══════════════════════════════════════════════════════════════════
-// CANVAS SETUP
+// CANVAS SETUP — wider aspect for 100's 3 digits
 // ══════════════════════════════════════════════════════════════════
 function setupCanvas() {
   canvas = $('traceCanvas');
@@ -827,12 +896,21 @@ function setupCanvas() {
   const pad = 16;
   const w = rect.width - pad * 2;
   const h = rect.height - pad * 2;
-  // Wider canvas (1.4:1) to fit 3-digit "100"
-  const maxW = Math.min(w, 560);
-  const maxH = Math.min(h, 400);
-  let cw = maxW;
-  let ch = cw / 1.4;
-  if (ch > maxH) { ch = maxH; cw = ch * 1.4; }
+
+  // Wider aspect (1.6:1) so 100's 3 digits fit nicely
+  const targetRatio = 1.6;
+  let cw, ch;
+  if (w / h > targetRatio) {
+    ch = Math.min(h, 400);
+    cw = ch * targetRatio;
+    if (cw > w) { cw = w; ch = cw / targetRatio; }
+  } else {
+    cw = w;
+    ch = cw / targetRatio;
+    if (ch > h) { ch = h; cw = ch * targetRatio; }
+  }
+  cw = Math.min(cw, 640);
+  ch = Math.min(ch, 400);
 
   dpr = window.devicePixelRatio || 1;
   canvas.width = cw * dpr;
@@ -845,7 +923,17 @@ function setupCanvas() {
 
   canvasW = cw;
   canvasH = ch;
-  hitRadius = canvasW * 0.15;
+  hitRadius = Math.min(canvasW, canvasH) * 0.18;
+
+  // Remove previous listeners (if setupCanvas called on replay)
+  canvas.replaceWith(canvas.cloneNode(false));
+  canvas = $('traceCanvas');
+  canvas.width = cw * dpr;
+  canvas.height = ch * dpr;
+  canvas.style.width = cw + 'px';
+  canvas.style.height = ch + 'px';
+  ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Touch/mouse events
   canvas.addEventListener('mousedown', onPointerDown);
@@ -900,101 +988,131 @@ function onPointerUp() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// DRAWING — supports both single-digit and multi-digit layout
-// For a given part key, we map local 0-1 coords into the correct
-// "digit slot" on the canvas.
+// DRAWING — multi-part: draws ALL parts of current number,
+// with the CURRENT part highlighted, others dimmed
 // ══════════════════════════════════════════════════════════════════
-function getDigitSlot(key) {
-  // For two-digit tens (10-90), there are 2 slots. For 100, 3 slots.
-  // We scale each digit into a horizontal slot on the canvas.
-  // Each checkpoint's x is already in "local 0-1 per slot" space,
-  // which we simply remap to an absolute canvas-X range.
-  //
-  // For 10-90: first part's own x is already its slot (0-0.5), second part's x (0.38-0.82) is its slot.
-  // Looking at the data: "first" digits use x range roughly 0.10-0.45 and "second" '0' uses 0.38-0.82.
-  // The data is already pre-laid-out for a single canvas — so we DON'T remap two-digit numbers.
-  //
-  // For 100 (three digits): coordinates already fit 0-0.88 horizontally — use as-is.
-  //
-  // Effectively: treat the pre-supplied coords as full-canvas coordinates.
-  return null;
+function getCurrentNumberParts() {
+  // Returns array of part keys for the current number
+  const cur = TRACE_SEQUENCE[currentTraceIndex];
+  if (!cur) return [];
+  return TRACE_SEQUENCE
+    .filter(t => t.num === cur.num)
+    .map(t => t.key);
 }
 
-function mapCheckpoint(key, cp) {
-  // The provided coordinates are already laid out for full canvas.
-  // For 100 the three parts cover 0.18 to 0.88 — fits nicely.
-  // For 10-90 the two parts cover 0.10 to 0.82 — fits nicely.
-  return { x: cp.x * canvasW, y: cp.y * canvasH };
+function getCurrentPartIndex() {
+  const cur = TRACE_SEQUENCE[currentTraceIndex];
+  return cur.part - 1;
 }
 
 function clearCanvas() {
   ctx.clearRect(0, 0, canvasW, canvasH);
+  drawStoneTablet();
 }
 
-// Draw all parts' outlines for the current number at given opacity
-function drawAllOutlines(num, currentPart, opacity) {
-  const parts = partsFor(num);
-  parts.forEach((k, i) => {
-    // Current/upcoming parts at full chosen opacity;
-    // already-traced parts get a more visible gold outline to show progress
-    const isDone = i < currentPart;
-    const isCurrent = i === currentPart;
-    drawNumberOutline(k, isDone ? 0.9 : opacity, isDone);
-  });
-}
-
-function drawNumberOutline(key, opacity, doneStyle = false) {
-  const cps = CHECKPOINTS[key];
-  if (!cps || cps.length < 2) return;
-
+function drawStoneTablet() {
+  // Soft stone texture behind tracing area
   ctx.save();
-  ctx.globalAlpha = opacity;
-  if (doneStyle) {
-    // Completed digit: gold outline
-    ctx.strokeStyle = '#fbbf24';
-    ctx.shadowColor = 'rgba(251,191,36,0.7)';
-    ctx.shadowBlur = 18;
-  } else {
-    // Outline for remaining digits: warm cream
-    ctx.strokeStyle = '#fef3c7';
-    ctx.shadowColor = 'rgba(253,224,71,0.45)';
-    ctx.shadowBlur = 14;
+  const grad = ctx.createRadialGradient(canvasW/2, canvasH/2, canvasW*0.1, canvasW/2, canvasH/2, canvasW*0.7);
+  grad.addColorStop(0, 'rgba(74,63,54,0.25)');
+  grad.addColorStop(1, 'rgba(26,14,8,0.05)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+  // Subtle speckle
+  for (let i = 0; i < 14; i++) {
+    ctx.fillStyle = `rgba(245,239,216,${0.02 + Math.random()*0.04})`;
+    const x = Math.random() * canvasW;
+    const y = Math.random() * canvasH;
+    const r = 2 + Math.random() * 4;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.lineWidth = 14;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  ctx.beginPath();
-  const pts = cps.map(p => mapCheckpoint(key, p));
-
-  ctx.moveTo(pts[0].x, pts[0].y);
-
-  if (pts.length === 2) {
-    ctx.lineTo(pts[1].x, pts[1].y);
-  } else {
-    for (let i = 1; i < pts.length - 1; i++) {
-      const mx = (pts[i].x + pts[i+1].x) / 2;
-      const my = (pts[i].y + pts[i+1].y) / 2;
-      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
-    }
-    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-  }
-
-  ctx.stroke();
   ctx.restore();
+}
+
+// Map a part's 0..1 coordinates to its slot in the multi-part canvas
+function mapPartCoord(partIndex, partCount, p) {
+  // Layout: each digit gets equal horizontal slot
+  const slotW = 1 / partCount;
+  const slotStart = partIndex * slotW;
+  return {
+    x: (slotStart + p.x * slotW) * canvasW,
+    y: p.y * canvasH
+  };
+}
+
+function drawAllPartsOutline(currentNumberParts, currentPartIdx, outlineOpacity) {
+  const partCount = currentNumberParts.length;
+  for (let i = 0; i < partCount; i++) {
+    const key = currentNumberParts[i];
+    const cps = CHECKPOINTS[key];
+    if (!cps || cps.length < 2) continue;
+
+    const isCurrent = (i === currentPartIdx);
+    const isDone = (i < currentPartIdx);
+
+    ctx.save();
+    if (isDone) {
+      // Completed parts: golden amber, carved in
+      ctx.globalAlpha = outlineOpacity * 0.85;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 11;
+      ctx.shadowColor = 'rgba(245,158,11,0.6)';
+      ctx.shadowBlur = 12;
+    } else if (isCurrent) {
+      // Active part: bone/cream outline
+      ctx.globalAlpha = outlineOpacity;
+      ctx.strokeStyle = '#f5efd8';
+      ctx.lineWidth = 12;
+      ctx.shadowColor = 'rgba(245,239,216,0.4)';
+      ctx.shadowBlur = 12;
+    } else {
+      // Upcoming parts: dim
+      ctx.globalAlpha = outlineOpacity * 0.35;
+      ctx.strokeStyle = '#f5efd8';
+      ctx.lineWidth = 10;
+      ctx.shadowColor = 'rgba(245,239,216,0.2)';
+      ctx.shadowBlur = 6;
+    }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    const pts = cps.map(p => mapPartCoord(i, partCount, p));
+
+    ctx.moveTo(pts[0].x, pts[0].y);
+
+    if (pts.length === 2) {
+      ctx.lineTo(pts[1].x, pts[1].y);
+    } else {
+      for (let j = 1; j < pts.length - 1; j++) {
+        const mx = (pts[j].x + pts[j+1].x) / 2;
+        const my = (pts[j].y + pts[j+1].y) / 2;
+        ctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function drawCheckpointDots() {
   const cps = traceCheckpoints;
+  const partCount = getCurrentNumberParts().length;
+  const partIdx = getCurrentPartIndex();
   for (let i = 0; i < cps.length; i++) {
-    const mapped = mapCheckpoint(currentKey(), cps[i]);
+    const cp = cps[i];
+    const mapped = mapPartCoord(partIdx, partCount, cp);
 
     if (i < nextCheckpoint) {
-      // Hit - glowing gold dot
+      // Hit - glowing amber treasure dot
       ctx.save();
-      ctx.shadowColor = 'rgba(251,191,36,0.9)';
+      ctx.shadowColor = 'rgba(245,158,11,0.9)';
       ctx.shadowBlur = 14;
-      ctx.fillStyle = '#fde047';
+      ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
       ctx.arc(mapped.x, mapped.y, 6, 0, Math.PI * 2);
       ctx.fill();
@@ -1003,23 +1121,17 @@ function drawCheckpointDots() {
   }
 }
 
-function drawTraceLine() {
+function drawLavaCarveLine() {
   if (drawPoints.length < 2) return;
 
-  // Redraw everything
-  clearCanvas();
-  const lvl = LEVELS[currentLevel];
-  const num = lvl.numbers[currentNumIndex];
-  drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
-
-  // Outer gold glow
+  // Outer glow — amber orange
   ctx.save();
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 12;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 11;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.shadowColor = 'rgba(251,191,36,0.9)';
-  ctx.shadowBlur = 18;
+  ctx.shadowColor = 'rgba(245,158,11,0.9)';
+  ctx.shadowBlur = 14;
 
   ctx.beginPath();
   ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
@@ -1028,11 +1140,11 @@ function drawTraceLine() {
   }
   ctx.stroke();
 
-  // Middle warm yellow
-  ctx.strokeStyle = '#fde047';
-  ctx.lineWidth = 7;
-  ctx.shadowColor = 'rgba(253,224,71,0.7)';
-  ctx.shadowBlur = 10;
+  // Middle layer — fire peak red
+  ctx.strokeStyle = '#dc2626';
+  ctx.lineWidth = 6;
+  ctx.shadowColor = 'rgba(220,38,38,0.8)';
+  ctx.shadowBlur = 9;
   ctx.beginPath();
   ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
   for (let i = 1; i < drawPoints.length; i++) {
@@ -1040,10 +1152,10 @@ function drawTraceLine() {
   }
   ctx.stroke();
 
-  // Core white
+  // Core — white hot
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 3;
-  ctx.shadowColor = 'rgba(255,255,255,0.8)';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = 'rgba(255,255,255,0.9)';
   ctx.shadowBlur = 6;
   ctx.beginPath();
   ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
@@ -1052,13 +1164,16 @@ function drawTraceLine() {
   }
   ctx.stroke();
   ctx.restore();
-
-  drawCheckpointDots();
 }
 
-function currentKey() {
-  const num = LEVELS[currentLevel].numbers[currentNumIndex];
-  return partsFor(num)[currentPartIndex];
+function drawTraceLine() {
+  clearCanvas();
+  const currentNumberParts = getCurrentNumberParts();
+  const partIdx = getCurrentPartIndex();
+  const level = LEVELS[currentLevel];
+  drawAllPartsOutline(currentNumberParts, partIdx, level.outlineOpacity);
+  drawLavaCarveLine();
+  drawCheckpointDots();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1068,7 +1183,9 @@ function checkCheckpoint(pos) {
   if (nextCheckpoint >= traceCheckpoints.length) return;
 
   const cp = traceCheckpoints[nextCheckpoint];
-  const mapped = mapCheckpoint(currentKey(), cp);
+  const partCount = getCurrentNumberParts().length;
+  const partIdx = getCurrentPartIndex();
+  const mapped = mapPartCoord(partIdx, partCount, cp);
   const dx = pos.x - mapped.x;
   const dy = pos.y - mapped.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1078,22 +1195,16 @@ function checkCheckpoint(pos) {
     audio.tone('checkpoint');
     resetHints();
 
-    // Redraw to show hit dot
-    const lvl = LEVELS[currentLevel];
-    const num = lvl.numbers[currentNumIndex];
-    clearCanvas();
-    drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
     drawTraceLine();
-    drawCheckpointDots();
 
     if (nextCheckpoint >= traceCheckpoints.length) {
-      onPartComplete();
+      onTraceComplete();
     }
   }
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ANIMATED GUIDE (Level 1)
+// ANIMATED GUIDE (Level 1) — shows carving path for current part
 // ══════════════════════════════════════════════════════════════════
 function animateGuide(key) {
   return new Promise(resolve => {
@@ -1101,7 +1212,10 @@ function animateGuide(key) {
     if (!cps || cps.length < 2) { resolve(); return; }
 
     guideAnimating = true;
-    const pts = cps.map(p => mapCheckpoint(key, p));
+    const partCount = getCurrentNumberParts().length;
+    const partIdx = getCurrentPartIndex();
+    const pts = cps.map(p => mapPartCoord(partIdx, partCount, p));
+
     const totalDuration = 1800;
     const start = performance.now();
 
@@ -1129,37 +1243,34 @@ function animateGuide(key) {
       }
     }
 
-    const lvl = LEVELS[currentLevel];
-    const num = lvl.numbers[currentNumIndex];
-
     const animate = (now) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / totalDuration, 1);
       const idx = Math.floor(progress * (densePoints.length - 1));
 
       clearCanvas();
-      drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
+      drawAllPartsOutline(getCurrentNumberParts(), partIdx, LEVELS[currentLevel].outlineOpacity);
 
-      // Sparkle trail (warm sunlight)
+      // Lava spark trail
       ctx.save();
-      const trailLen = 9;
+      const trailLen = 10;
       for (let j = Math.max(0, idx - trailLen); j <= idx; j++) {
         const p = densePoints[j];
         const alpha = 1 - (idx - j) / trailLen;
-        ctx.fillStyle = `rgba(253,224,71,${alpha * 0.75})`;
-        ctx.shadowColor = `rgba(251,191,36,${alpha})`;
+        ctx.fillStyle = `rgba(245,158,11,${alpha * 0.8})`;
+        ctx.shadowColor = `rgba(220,38,38,${alpha})`;
         ctx.shadowBlur = 18;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 5 + alpha * 4, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 5 + alpha * 5, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Sparkle head
+      // Spark head - white hot
       if (idx < densePoints.length) {
         const p = densePoints[idx];
         ctx.fillStyle = '#fff';
-        ctx.shadowColor = 'rgba(251,191,36,1)';
-        ctx.shadowBlur = 22;
+        ctx.shadowColor = 'rgba(245,158,11,1)';
+        ctx.shadowBlur = 25;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
         ctx.fill();
@@ -1171,7 +1282,7 @@ function animateGuide(key) {
       } else {
         guideAnimating = false;
         clearCanvas();
-        drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
+        drawAllPartsOutline(getCurrentNumberParts(), partIdx, LEVELS[currentLevel].outlineOpacity);
         resolve();
       }
     };
@@ -1190,17 +1301,17 @@ function resetHints() {
     if (!gameActive || guideAnimating) return;
     if (nextCheckpoint < traceCheckpoints.length) {
       const cp = traceCheckpoints[nextCheckpoint];
-      const mapped = mapCheckpoint(currentKey(), cp);
+      const partCount = getCurrentNumberParts().length;
+      const partIdx = getCurrentPartIndex();
+      const mapped = mapPartCoord(partIdx, partCount, cp);
 
-      const lvl = LEVELS[currentLevel];
-      const num = lvl.numbers[currentNumIndex];
       clearCanvas();
-      drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
+      drawAllPartsOutline(getCurrentNumberParts(), partIdx, LEVELS[currentLevel].outlineOpacity);
       drawCheckpointDots();
 
       ctx.save();
-      ctx.fillStyle = 'rgba(251,191,36,0.35)';
-      ctx.shadowColor = 'rgba(251,191,36,0.9)';
+      ctx.fillStyle = 'rgba(245,158,11,0.35)';
+      ctx.shadowColor = 'rgba(220,38,38,0.9)';
       ctx.shadowBlur = 28;
       ctx.beginPath();
       ctx.arc(mapped.x, mapped.y, hitRadius * 0.6, 0, Math.PI * 2);
@@ -1208,84 +1319,64 @@ function resetHints() {
       ctx.restore();
 
       audio.tone('hint');
-      showCharBubble('Trace here! 🐾', 1800);
+      showCharBubble('Carve here! 💎', 2000);
     }
   }, 5000);
 }
 
 // ══════════════════════════════════════════════════════════════════
-// PART COMPLETE
+// TRACE COMPLETE
 // ══════════════════════════════════════════════════════════════════
-async function onPartComplete() {
+async function onTraceComplete() {
   gameActive = false;
   isDrawing = false;
   clearTimeout(hintTimer);
 
-  const lvl = LEVELS[currentLevel];
-  const num = lvl.numbers[currentNumIndex];
-  const parts = partsFor(num);
+  const cur = TRACE_SEQUENCE[currentTraceIndex];
+  const isLastPart = (cur.part === cur.total);
 
-  audio.tone('checkpoint');
-
-  // Advance part
-  currentPartIndex++;
-
-  if (currentPartIndex >= parts.length) {
-    // Entire number complete!
-    await onNumberComplete();
-  } else {
-    // Move to next part — redraw with this part now shown as "done"
-    clearCanvas();
-    drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
-    showCharBubble('Next part! 🐾', 1400);
-    await delay(500);
-    await startPart();
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════
-// NUMBER COMPLETE
-// ══════════════════════════════════════════════════════════════════
-async function onNumberComplete() {
-  const lvl = LEVELS[currentLevel];
-  const num = lvl.numbers[currentNumIndex];
-
-  score++;
-  $('hudScore').textContent = score;
-
-  // Animal reveal!
-  const animal = ANIMALS[num];
-  animalsFound.push(animal);
-  summonAnimal(animal);
-
-  // Sparkle burst
+  // Sparkle burst on canvas
   const rect = canvas.getBoundingClientRect();
   starBurstAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
-  // Fill album slot
-  fillAlbumSlot();
+  if (isLastPart) {
+    // Full number carved — big celebration
+    score++;
+    totalTreasures++;
+    $('hudScore').textContent = score;
 
-  audio.tone('correct');
-  audio.tone('roar');
-  jumpChar();
+    // Ember shower
+    for (let i = 0; i < 5; i++) {
+      const e = document.createElement('div');
+      e.className = 'bg-ember';
+      e.style.left = (40 + Math.random() * 20) + 'vw';
+      e.style.bottom = '40vh';
+      e.style.animationDuration = '2.5s';
+      document.body.appendChild(e);
+      setTimeout(() => e.remove(), 2700);
+    }
 
-  showCharBubble(pick(BUBBLE_CORRECT), 1600);
-  // NO repeated number speech — snappy pacing
-  await audio.play('correct');
-  await delay(700);
+    lightTreasureSlot();
+    audio.tone('correct');
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT), 2000);
+    await audio.play('correct');
+    markProgDone(cur.num);
+    await delay(500);
+  } else {
+    // Part complete but number continues — smaller celebration
+    audio.tone('correct');
+    jumpChar();
+    showCharBubble('Part done! 💥', 1400);
+    await delay(600);
+  }
 
-  // Mark progress dot done
-  const d = $('prog' + currentNumIndex);
-  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+  currentTraceIndex++;
 
-  // Advance to next number
-  currentNumIndex++;
-  currentPartIndex = 0;
-
-  if (currentNumIndex >= lvl.numbers.length) {
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) {
     // Level complete
+    currentTraceIndex = 0;
     currentLevel++;
-    currentNumIndex = 0;
 
     if (currentLevel >= LEVELS.length) {
       await onGameComplete();
@@ -1293,7 +1384,7 @@ async function onNumberComplete() {
       await onLevelComplete();
     }
   } else {
-    await startNumber();
+    await startTrace();
   }
 }
 
@@ -1302,8 +1393,8 @@ async function onNumberComplete() {
 // ══════════════════════════════════════════════════════════════════
 async function onLevelComplete() {
   audio.tone('roundDone');
-  confetti(30);
-  showCharBubble('Level complete! 🌴', 2000);
+  confetti(32);
+  showCharBubble('Level carved! 🔥', 2500);
 
   await audio.play('round-complete');
   await delay(800);
@@ -1318,10 +1409,8 @@ async function showLevelBanner() {
   $('levelBanner').classList.add('show');
 
   audio.tone('reveal');
-  if (currentLevel === 0) {
-    await audio.play('greetings');
-  }
-  await delay(1600);
+  await audio.play('greetings');
+  await delay(1500);
 
   $('levelBanner').classList.remove('show');
   await delay(400);
@@ -1335,93 +1424,79 @@ async function showLevelBanner() {
 async function onGameComplete() {
   showGameUI(false);
 
-  // Flash
-  document.body.style.background = '#fef3c7';
+  document.body.style.background = '#fff';
   await delay(100);
   document.body.style.background = '';
 
   audio.tone('celeb');
-  audio.tone('roar');
-  confetti(60);
+  confetti(70);
 
-  $('finalScore').textContent = score + ' Animals Found!';
-
-  // Fill showcase with all collected animals
-  const showcase = $('albumShowcase');
-  showcase.innerHTML = '';
-  animalsFound.forEach(a => {
-    const s = document.createElement('span');
-    s.textContent = a;
-    showcase.appendChild(s);
-  });
-
+  $('finalScore').textContent = score + ' Treasures Carved!';
   showScreen('screenCeleb');
 
   await delay(500);
   confetti(40);
 
   await audio.play('game-complete');
-  await delay(1400);
+  await delay(1500);
   confetti(40);
+  await audio.play('game-complete');
 }
 
 // ══════════════════════════════════════════════════════════════════
-// START PART / NUMBER / LEVEL
+// START TRACE
 // ══════════════════════════════════════════════════════════════════
-async function startPart() {
-  const lvl = LEVELS[currentLevel];
-  const num = lvl.numbers[currentNumIndex];
-  const parts = partsFor(num);
-  const key = parts[currentPartIndex];
-
-  traceCheckpoints = CHECKPOINTS[key];
+async function startTrace() {
+  const cur = TRACE_SEQUENCE[currentTraceIndex];
+  const cps = CHECKPOINTS[cur.key];
+  traceCheckpoints = cps;
   nextCheckpoint = 0;
   isDrawing = false;
   drawPoints = [];
   gameActive = true;
 
-  // Sub-label: "30: part 1/2"
-  $('numSubLabel').textContent = `part ${currentPartIndex + 1}/${parts.length}`;
+  const level = LEVELS[currentLevel];
+  $('hudLevel').textContent = currentLevel + 1;
 
-  // Draw all outlines with current part's highlight
+  // Display number
+  const dispNum = cur.num;
+  let subLabel = '';
+  if (cur.total > 1) {
+    subLabel = `part ${cur.part}/${cur.total}`;
+  }
+
+  $('bigNum').textContent = dispNum;
+  $('numSubLabel').textContent = subLabel;
+  $('hudNumber').textContent = dispNum;
+
+  updateProg();
+
   clearCanvas();
-  drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
+  drawAllPartsOutline(getCurrentNumberParts(), getCurrentPartIndex(), level.outlineOpacity);
 
-  // Level 1: animated guide on each part
-  if (lvl.showGuide) {
-    await delay(250);
-    await animateGuide(key);
-    showCharBubble(pick(BUBBLE_START), 1800);
+  // Speak number ONCE at start of part 1, silent on subsequent
+  if (cur.part === 1) {
+    audio.speakNumber(cur.num);
+  }
+
+  if (level.showGuide) {
+    await delay(300);
+    await animateGuide(cur.key);
+    showCharBubble(pick(BUBBLE_START), 2000);
   } else {
-    showCharBubble(pick(BUBBLE_START), 1800);
+    showCharBubble(pick(BUBBLE_START), 2000);
   }
 
   resetHints();
 }
 
-async function startNumber() {
-  const lvl = LEVELS[currentLevel];
-  const num = lvl.numbers[currentNumIndex];
-  currentPartIndex = 0;
-
-  $('hudLevel').textContent = currentLevel + 1;
-  $('hudNumber').textContent = num;
-  $('bigNum').textContent = num;
-
-  updateProg();
-
-  // Speak number ONCE at start
-  audio.speakNumber(num);
-
-  await delay(300);
-  await startPart();
-}
-
+// ══════════════════════════════════════════════════════════════════
+// START LEVEL
+// ══════════════════════════════════════════════════════════════════
 async function startLevel() {
-  currentNumIndex = 0;
-  currentPartIndex = 0;
+  currentTraceIndex = 0;
   buildProg();
-  await startNumber();
+  await startTrace();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1431,15 +1506,14 @@ async function startGame() {
   audio.unlock();
   showScreen(null);
   currentLevel = 0;
-  currentNumIndex = 0;
-  currentPartIndex = 0;
+  currentTraceIndex = 0;
   score = 0;
-  animalsFound = [];
-  albumSlotCount = 0;
+  totalTreasures = 0;
+  treasureSlotCount = 0;
 
   $('hudScore').textContent = '0';
   showGameUI(true);
-  buildAlbum();
+  buildTreasureHoard();
   setupCanvas();
 
   audio.startMusic();
@@ -1452,10 +1526,7 @@ async function startGame() {
 // ══════════════════════════════════════════════════════════════════
 buildScenery();
 
-onTap($('btnStart'), () => {
-  audio.unlock();
-  startGame();
-});
+onTap($('btnStart'), () => startGame());
 onTap($('btnAgain'), () => {
   showScreen(null);
   startGame();
@@ -1465,16 +1536,18 @@ onTap($('btnAgain'), () => {
 document.addEventListener('touchstart', () => audio.unlock(), { once: true, passive: true });
 document.addEventListener('click', () => audio.unlock(), { once: true });
 
-// Resize handling
+// Handle resize for canvas (keeps tracing functional on rotate)
+let resizeTimer;
 window.addEventListener('resize', () => {
-  if (canvas && gameActive) {
-    setupCanvas();
-    const lvl = LEVELS[currentLevel];
-    const num = lvl.numbers[currentNumIndex];
-    clearCanvas();
-    drawAllOutlines(num, currentPartIndex, lvl.outlineOpacity);
-    drawCheckpointDots();
-  }
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if ($('canvasArea').style.display !== 'none') {
+      setupCanvas();
+      if (gameActive) {
+        drawTraceLine();
+      }
+    }
+  }, 200);
 });
 </script>
 </body>

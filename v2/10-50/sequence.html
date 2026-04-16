@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Feed the Animals! — Zara's Jungle Safari 🐘</title>
+<title>Feed the Elephant! — Zara's Jungle Safari 10-50 🐘</title>
 <style>
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
   --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
-  --jungle-dark: #0a2a14; --jungle-mid: #1c5028; --jungle-leaf: #2f7a3b;
+  --jungle-dark: #0a2a14; --jungle-mid: #1c5028; --jungle-leaf: #2f7a3b; --jungle-emerald: #0f6b3a;
+  --earth-brown: #6b4423; --earth-light: #8d6e43;
   --sunshine: #ffcc33; --mango: #ff8c2a; --berry: #e94f6d;
   --sky-top: #7fc3e0; --sky-warm: #ffd98a;
   --white85: rgba(255,255,255,0.9);
@@ -30,7 +31,7 @@ body {
   position: fixed; inset: 0; z-index: var(--z-bg);
   background:
     radial-gradient(ellipse at 80% 10%, rgba(255,217,138,0.35) 0%, transparent 50%),
-    linear-gradient(180deg, #7fc3e0 0%, #a9dbb0 30%, #2f7a3b 62%, #1c5028 85%, #0a2a14 100%);
+    linear-gradient(180deg, #7fc3e0 0%, #a9dbb0 28%, #0f6b3a 58%, #1c5028 80%, #0a2a14 100%);
 }
 .bg-element {
   position: fixed; pointer-events: none; z-index: 1;
@@ -74,7 +75,7 @@ body {
 
 /* ── Title screen ── */
 .screen-title {
-  background: radial-gradient(ellipse at 50% 40%, rgba(47,122,59,0.6) 0%, rgba(10,42,20,0.85) 70%);
+  background: radial-gradient(ellipse at 50% 40%, rgba(15,107,58,0.65) 0%, rgba(10,42,20,0.88) 70%);
 }
 .screen-title .icon-row {
   display: flex; gap: 14px;
@@ -172,10 +173,10 @@ body {
   100% { background: rgba(233,79,109,0.08); }
 }
 
-/* ── Treat Items (fruits/bottles labeled with tens) ── */
+/* ── Treat Items (jungle-leaf bundles with tens labels) ── */
 .treat {
   position: absolute;
-  width: clamp(72px, 18vw, 104px);
+  width: clamp(78px, 19vw, 112px);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   cursor: pointer;
@@ -186,51 +187,52 @@ body {
   user-select: none;
   z-index: 2;
   opacity: 0; transform: scale(0.5);
-  padding: 10px 4px 12px;
-  border-radius: 18px 18px 24px 24px;
+  padding: 12px 4px 14px;
+  border-radius: 22px 22px 28px 28px;
 }
 /* Treat stem / leaf on top */
 .treat::before {
   content: '';
   position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
-  width: 30%; height: 12px;
+  width: 32%; height: 12px;
   background: var(--jungle-leaf);
-  border: 2px solid rgba(0,0,0,0.2);
+  border: 2px solid rgba(0,0,0,0.25);
   border-bottom: none;
   border-radius: 6px 6px 0 0;
 }
 .treat::after {
   content: '🌿';
-  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-  font-size: clamp(14px, 3vw, 20px);
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  font-size: clamp(15px, 3.2vw, 22px);
   line-height: 1;
 }
 .treat.show { opacity: 1; transform: scale(1); }
 .treat:active { transform: scale(0.93) !important; }
 .treat.r4-size {
-  width: clamp(62px, 15vw, 88px);
+  width: clamp(64px, 16vw, 92px);
+  padding: 9px 4px 11px;
 }
 .treat.r4-size .treat-numeral { font-size: clamp(22px, 5.5vw, 34px); }
 
 .treat-numeral {
   font-weight: 900; color: #fff;
-  text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
-  font-size: clamp(26px, 6.5vw, 40px);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.45);
+  font-size: clamp(28px, 7vw, 44px);
   line-height: 1;
 }
 .treat-emoji {
-  font-size: clamp(18px, 4vw, 26px);
+  font-size: clamp(20px, 4.4vw, 30px);
   line-height: 1; margin-top: 3px;
 }
 .treat-word {
-  font-size: clamp(9px, 2vw, 12px);
-  font-weight: bold; color: rgba(255,255,255,0.85);
+  font-size: clamp(10px, 2.1vw, 13px);
+  font-weight: bold; color: rgba(255,255,255,0.88);
   text-transform: lowercase; line-height: 1;
   margin-top: 3px;
 }
 .treat-dots {
-  font-size: clamp(10px, 2.5vw, 15px);
-  line-height: 1.1; white-space: pre;
+  font-size: clamp(11px, 2.6vw, 16px);
+  line-height: 1.15; white-space: pre;
   text-align: center; letter-spacing: 1px;
   margin-top: 3px;
 }
@@ -351,7 +353,7 @@ body {
   100% { transform: translateY(-60px) scale(1.3); opacity: 0; }
 }
 
-/* Chew particles (munching crumbs) */
+/* Chew particles */
 .chew-crumb {
   position: absolute;
   font-size: 14px;
@@ -399,7 +401,7 @@ body {
   50%     { opacity: 1; }
 }
 
-/* Feedings counter (4 pips = full animals fed) */
+/* Feedings counter (4 pips = full elephants fed) */
 .feedings-counter {
   display: flex; gap: 6px; justify-content: center;
   margin-top: 6px;
@@ -432,7 +434,7 @@ body {
   pointer-events: none;
 }
 .prog-dot {
-  min-width: clamp(36px,8vw,52px);
+  min-width: clamp(38px,8.5vw,56px);
   height: clamp(28px,5.5vw,38px);
   padding: 0 8px;
   border-radius: 20px;
@@ -476,7 +478,7 @@ body {
 
 /* ── Celebration screen ── */
 .screen-celeb {
-  background: radial-gradient(ellipse at 50% 40%, rgba(47,122,59,0.7) 0%, rgba(10,42,20,0.95) 80%);
+  background: radial-gradient(ellipse at 50% 40%, rgba(15,107,58,0.75) 0%, rgba(10,42,20,0.95) 80%);
   backdrop-filter: blur(12px);
   z-index: var(--z-celeb);
 }
@@ -589,7 +591,7 @@ body {
   <div class="char-emoji" id="charEmoji">🧑‍🦱</div>
 </div>
 
-<!-- Progress bar (5 treats per sequence) -->
+<!-- Progress bar (5 treats per sequence: 10,20,30,40,50) -->
 <div class="prog-bar" id="progBar" style="display:none"></div>
 
 <!-- Round transition banner -->
@@ -605,8 +607,8 @@ body {
     <span>🐘</span>
     <span>🍌</span>
   </div>
-  <h1>Feed the Animals! 🐘</h1>
-  <p>Zara the Explorer needs you!<br>Tap the jungle treats in order<br>to feed the friendly elephant!</p>
+  <h1>Feed the Elephant! 🐘</h1>
+  <p>Zara the Explorer needs you!<br>Tap the jungle treats 10 → 20 → 30 → 40 → 50<br>to feed the hungry elephant!</p>
   <button class="btn btn-start" id="btnStart">Let's Explore! 🌴</button>
 </div>
 
@@ -616,16 +618,16 @@ body {
   <div class="celeb-dragon-text">"Thank you for feeding me!"</div>
   <div class="celeb-baby">🐘</div>
   <h2 id="celebTitle">Baby Elephant Says Hi!</h2>
-  <p  id="celebMsg">You fed all the jungle animals!</p>
+  <p  id="celebMsg">You fed the elephant again and again!</p>
   <div class="celeb-stars" id="celebStars"></div>
   <button class="btn btn-again" id="btnAgain">Play Again! 🌴</button>
 </div>
 
 <script>
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  Aha! — Sequence Tens: Feed the Animals!  🐘                    ║
-// ║  Tap tens in ascending order to feed the friendly elephant.      ║
-// ║  Voice A (en-US-AnaNeural) · Jungle Safari theme                ║
+// ║  Aha! — Sequence 10-50: Feed the Elephant!  🐘                   ║
+// ║  Tap 10 → 20 → 30 → 40 → 50 in order. 4 feedings = 4 rounds.     ║
+// ║  Voice A (en-US-AnaNeural) · Jungle Safari theme                 ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const AUDIO_BASE = '../../audio';
@@ -639,7 +641,9 @@ const VOICE_A = {
   'round-complete': ['voice-a/round-complete/brilliant-round-keep-going.mp3','voice-a/round-complete/round-complete-amazing.mp3','voice-a/round-complete/round-done-youre-doing-so-well.mp3','voice-a/round-complete/you-did-it-on-to-the-next.mp3'],
   'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
 };
-const NUMBER_WORDS = {10:'ten',20:'twenty',30:'thirty',40:'forty',50:'fifty',60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
+const NUMBERS = [10,20,30,40,50];
+const NUMBER_WORDS = {10:'ten',20:'twenty',30:'thirty',40:'forty',50:'fifty'};
+const EMOJI = {10:'🐵',20:'🦁',30:'🐘',40:'🦜',50:'🦒'};
 
 // ══════════════════════════════════════════════════════════════════
 // AUDIO CLASS (AudioContext-first with iOS fallback)
@@ -703,7 +707,6 @@ class GameAudio {
       o.onended=()=>{o.disconnect();g.disconnect()};
     }
     else if (type==='chomp') {
-      // Munch / eat sound
       p(180, t, 0.08, 0.25, 'sawtooth');
       p(120, t+0.06, 0.1, 0.2, 'sawtooth');
       p(90, t+0.13, 0.12, 0.15, 'triangle');
@@ -715,7 +718,6 @@ class GameAudio {
       p(180, t+0.1, 0.15, 0.1);
     }
     else if (type==='trumpet') {
-      // Elephant trumpet — blaring brass sweep
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
       o.type='sawtooth';
       o.frequency.setValueAtTime(220, t);
@@ -804,33 +806,28 @@ function onTap(el, fn) {
   el.addEventListener('click', e => { if(t)return; fn(e); });
 }
 
-// Tens treat assets — emoji fruits + colour themes
-const TEN_EMOJI = { 10:'🥥', 20:'🍌', 30:'🍍', 40:'🥭', 50:'🍉', 60:'🥝', 70:'🌰', 80:'🍓', 90:'🍇', 100:'🍋' };
-const TEN_NAME  = { 10:'coconut', 20:'banana', 30:'pineapple', 40:'mango', 50:'melon', 60:'kiwi', 70:'nut', 80:'berry', 90:'grape', 100:'lemon' };
+// Treat colour themes — jungle green/emerald/earth-brown/yellow spectrum
 const TREAT_COLORS = {
-  10:  'linear-gradient(135deg,#5d4037,#8d6e63)',   // coconut brown
-  20:  'linear-gradient(135deg,#c9a227,#ffd447)',   // banana yellow
-  30:  'linear-gradient(135deg,#b5750d,#f2a03d)',   // pineapple amber
-  40:  'linear-gradient(135deg,#c44d00,#ff8c2a)',   // mango orange
-  50:  'linear-gradient(135deg,#a41e2a,#e94f6d)',   // melon red
-  60:  'linear-gradient(135deg,#426b1f,#86c23a)',   // kiwi green
-  70:  'linear-gradient(135deg,#4a2f14,#8a5a2a)',   // nut brown
-  80:  'linear-gradient(135deg,#7a1530,#d63656)',   // berry
-  90:  'linear-gradient(135deg,#4a2670,#8e4bbf)',   // grape purple
-  100: 'linear-gradient(135deg,#b39200,#ffe066)',   // lemon gold
+  10: 'linear-gradient(135deg,#2f7a3b,#5cb867)',   // jungle green
+  20: 'linear-gradient(135deg,#0f6b3a,#1c9e55)',   // emerald
+  30: 'linear-gradient(135deg,#6b4423,#a0733f)',   // earth brown
+  40: 'linear-gradient(135deg,#c9a227,#ffd447)',   // sunshine yellow
+  50: 'linear-gradient(135deg,#b5750d,#f2a03d)',   // amber/mango
 };
+const NAME = { 10:'ten', 20:'twenty', 30:'thirty', 40:'forty', 50:'fifty' };
 
+// Leaf-count patterns — show tens as groups of leaves (rows of 5)
 function makeDots(n) {
-  const tens = n / 10; // 1..10 groups of 🌿
+  const tens = n / 10; // 1..5
   const leaf = '🌿';
-  // Group as rows of 5 for easy counting
   if (tens <= 5) return leaf.repeat(tens);
+  // (never hit in 10-50, but safe)
   return leaf.repeat(5) + '\n' + leaf.repeat(tens - 5);
 }
 
-const BUBBLE_CORRECT = ['Into the belly! 🐘','Yum! 🍌','Good feed! 🥭','Munch munch! ✨','Zara approves! 🧑‍🦱','Perfect treat! 🌟'];
+const BUBBLE_CORRECT = ['Into the belly! 🐘','Yum! 🌿','Good feed! 🥭','Munch munch! ✨','Zara approves! 🧑‍🦱','Perfect treat! 🌟'];
 const BUBBLE_WRONG   = ['Not that one! 🐘','Try another! ✨','Check the order! 💫','Almost! 🌟'];
-const BUBBLE_FED     = ['Full belly! 🐘','All fed up! ✨','Happy elephant! 💛','Yummy feast! 🍌'];
+const BUBBLE_FED     = ['Full belly! 🐘','All fed up! ✨','Happy elephant! 💛','Yummy feast! 🌿'];
 
 // ══════════════════════════════════════════════════════════════════
 // VISUAL EFFECTS
@@ -881,7 +878,7 @@ function jumpChar() {
   setTimeout(() => { el.style.animation = ''; }, 700);
 }
 
-// Sparkle trail effect during fly animation
+// Sparkle trail during fly animation
 function spawnTrail(x, y) {
   const t = document.createElement('div');
   t.className = 'sparkle-trail';
@@ -892,14 +889,13 @@ function spawnTrail(x, y) {
   setTimeout(() => t.remove(), 500);
 }
 
-// Chew crumbs + hearts when treat is eaten
+// Chew crumbs + hearts
 function elephantChompEffect() {
   const el = $('elephant');
   const r = el.getBoundingClientRect();
   const cx = r.left + r.width/2;
   const cy = r.top + r.height*0.55;
 
-  // Crumbs fall
   for (let i = 0; i < 5; i++) {
     const c = document.createElement('div');
     c.className = 'chew-crumb';
@@ -909,7 +905,6 @@ function elephantChompEffect() {
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 700);
   }
-  // Hearts float up
   for (let i = 0; i < 3; i++) {
     const h = document.createElement('div');
     h.className = 'heart-puff';
@@ -919,12 +914,10 @@ function elephantChompEffect() {
     document.body.appendChild(h);
     setTimeout(() => h.remove(), 1200);
   }
-  // Mouth open
   const mouth = $('elephantMouth');
   mouth.classList.add('open');
   setTimeout(() => mouth.classList.remove('open'), 280);
 
-  // Trunk swing
   const trunk = document.createElement('div');
   trunk.className = 'trunk-swing';
   trunk.textContent = '🌿';
@@ -932,7 +925,7 @@ function elephantChompEffect() {
   setTimeout(() => trunk.remove(), 800);
 }
 
-// Trumpet eruption for final celebration
+// Trumpet eruption — final celebration
 function elephantErupt() {
   const el = $('elephant');
   const r = el.getBoundingClientRect();
@@ -957,7 +950,7 @@ function elephantErupt() {
 // ELEPHANT MANAGEMENT
 // ══════════════════════════════════════════════════════════════════
 let treatsFed = 0;     // 0-5 per sequence
-let animalsFed = 0;    // 0-4 total
+let animalsFed = 0;    // 0-4 total (feedings)
 
 function resetElephant() {
   treatsFed = 0;
@@ -968,11 +961,9 @@ function updateElephantState() {
   const el = $('elephant');
   const aura = $('elephantAura');
 
-  // Remove all mood classes
   el.classList.remove('hungry','chewing','happy','veryHappy','ecstatic');
   aura.classList.remove('active','a1','a2','a3','a4','a5');
 
-  // Progressive mood by treatsFed: 0=hungry, 1-2=chewing/happy, 3-4=veryHappy, 5=ecstatic
   if (treatsFed === 0) {
     el.classList.add('hungry');
   } else if (treatsFed === 1) {
@@ -1002,7 +993,7 @@ function markFeeding(idx) {
 // SCENERY — floating jungle critters
 // ══════════════════════════════════════════════════════════════════
 function buildScenery() {
-  const emojis = ['🦜','🦋','🐛','🌿','🍃','🌺','☀️','🦎','🐵','🌴'];
+  const emojis = ['🦜','🦋','🐛','🌿','🍃','🌺','☀️','🦎','🐵','🌴','🦒','🦁'];
   for (let i = 0; i < 14; i++) {
     const el = document.createElement('div');
     el.className = 'bg-element';
@@ -1015,13 +1006,13 @@ function buildScenery() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ROUND CONFIG — each uses a DIFFERENT set of 5 tens
+// ROUND CONFIG — ALL rounds use the same 10→20→30→40→50 sequence
 // ══════════════════════════════════════════════════════════════════
 const ROUNDS = [
-  { label:'Round 1 — Feed the Elephant! 🐘',  sub:'Tap 10, 20, 30, 40, 50 in order! Hints will help.', numbers:[10,20,30,40,50],  display:'full',  hintMode:'strong' },
-  { label:'Round 2 — Skip Counting! 🦜',      sub:'Tap the even tens: 20, 40, 60, 80, 100!',           numbers:[20,40,60,80,100], display:'full',  hintMode:'none'   },
-  { label:'Round 3 — Count the Leaves! 🌿',   sub:'Count the jungle leaves to find the order!',         numbers:[50,60,70,80,90],  display:'dots',  hintMode:'none'   },
-  { label:'Round 4 — Speed Safari! 🏆',       sub:'Quick! The elephant is hungry again!',               numbers:[10,30,50,70,90],  display:'full',  hintMode:'none', timer:true, smaller:true },
+  { label:'Round 1 — Feed the Elephant! 🐘',  sub:'Tap 10, 20, 30, 40, 50 in order! Hints will help.', display:'full',  hintMode:'strong' },
+  { label:'Round 2 — Again! 🦜',              sub:'No hints this time! You know the way.',             display:'full',  hintMode:'none'   },
+  { label:'Round 3 — Count the Leaves! 🌿',    sub:'Count the leaf patterns to find the order!',         display:'dots',  hintMode:'none'   },
+  { label:'Round 4 — Speed Safari! 🏆',       sub:'Quick! The elephant is hungry again!',               display:'full',  hintMode:'none', timer:true, smaller:true },
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -1030,8 +1021,8 @@ const ROUNDS = [
 const audio = new GameAudio();
 let gameActive = false;
 let round = 0, score = 0;
-let nextTapIdx = 0;     // index into current round numbers (0-4)
-let currentNumbers = []; // this round's 5 tens
+let nextTapIdx = 0;     // index into NUMBERS (0-4)
+let currentNumbers = NUMBERS.slice(); // always [10,20,30,40,50]
 let treatEls = {};      // keyed by number
 let hintTimer = null, hintVoiceTimer = null;
 
@@ -1044,7 +1035,7 @@ function showScreen(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// PROGRESS BAR — 5 treats per sequence
+// PROGRESS BAR — 5 treats per sequence (10,20,30,40,50)
 // ══════════════════════════════════════════════════════════════════
 function buildProg() {
   const bar = $('progBar');
@@ -1059,7 +1050,7 @@ function buildProg() {
 function markProg(idx) {
   const d = $('pdot' + idx);
   if (d) {
-    d.textContent = TEN_EMOJI[currentNumbers[idx]];
+    d.textContent = EMOJI[currentNumbers[idx]];
     d.classList.add('done');
   }
 }
@@ -1104,7 +1095,7 @@ function generatePositions(count, smaller) {
   const area = $('playArea');
   const areaW = area.clientWidth;
   const areaH = area.clientHeight;
-  const treatW = smaller ? Math.min(Math.max(62, areaW * 0.15), 88) : Math.min(Math.max(72, areaW * 0.18), 104);
+  const treatW = smaller ? Math.min(Math.max(64, areaW * 0.16), 92) : Math.min(Math.max(78, areaW * 0.19), 112);
   const treatH = treatW * 1.3;
   const margin = treatW * 0.5;
   const minDist = treatW * 1.4;
@@ -1153,11 +1144,11 @@ function renderTreats() {
     let inner = '';
     if (cfg.display === 'full') {
       inner = `<div class="treat-numeral">${num}</div>
-               <div class="treat-emoji">${TEN_EMOJI[num]}</div>
-               <div class="treat-word">${TEN_NAME[num]}</div>`;
+               <div class="treat-emoji">${EMOJI[num]}</div>
+               <div class="treat-word">${NAME[num]}</div>`;
     } else if (cfg.display === 'dots') {
-      // Dots + small numeral always visible
-      inner = `<div class="treat-numeral" style="font-size:clamp(13px,3vw,18px);opacity:0.75">${num}</div>
+      // Leaf count pattern + small numeral
+      inner = `<div class="treat-numeral" style="font-size:clamp(13px,3vw,18px);opacity:0.8">${num}</div>
                <div class="treat-dots">${makeDots(num)}</div>`;
     }
     treat.innerHTML = inner;
@@ -1191,7 +1182,6 @@ function flyToElephant(treat) {
 
     const startX = treatRect.left;
     const startY = treatRect.top;
-    // Aim for the elephant's mouth area (about 55% down the emoji)
     const endX = elephantRect.left + elephantRect.width/2 - treatRect.width/2;
     const endY = elephantRect.top + elephantRect.height*0.5 - treatRect.height/2;
 
@@ -1292,7 +1282,7 @@ async function handleTreatTap(treatEl, num) {
     jumpChar();
     showCharBubble(pick(BUBBLE_CORRECT), 1800);
 
-    // Voice: speak the number ONCE per correct tap
+    // Voice: speak the number ONCE per correct tap (fire-and-forget)
     audio.speakNumber(num);
 
     // Mark progress
@@ -1388,7 +1378,7 @@ async function finishRound() {
   }
 
   // ── Round complete banner (snappy) ──
-  $('roundTitle').textContent = '🐘 Animal Fed! 🐘';
+  $('roundTitle').textContent = '🐘 Elephant Fed! 🐘';
   $('roundSub').textContent   = 'Zara is delighted!';
   $('roundBanner').classList.add('show');
   audio.play('round-complete'); // don't await — banner shows while voice plays
@@ -1411,7 +1401,7 @@ async function finishRound() {
 
 function startRound() {
   const cfg = ROUNDS[round];
-  currentNumbers = cfg.numbers.slice();
+  currentNumbers = NUMBERS.slice(); // always 10→20→30→40→50
   $('hudRound').textContent = `${round + 1}/4`;
   resetElephant();
   buildProg();
@@ -1429,7 +1419,7 @@ async function startAttempt() {
   gameActive = true;
 
   audio.tone('reveal');
-  // Speak the first target (but don't await — keep pacing snappy)
+  // Speak the first target (fire-and-forget — keep pacing snappy)
   audio.speakNumber(currentNumbers[0]);
 
   resetHints();
@@ -1442,7 +1432,7 @@ async function startAttempt() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// FINAL CELEBRATION — BABY ELEPHANT WAVES!
+// FINAL CELEBRATION — TRUMPET + BABY ELEPHANT!
 // ══════════════════════════════════════════════════════════════════
 async function celebrateFinish() {
   gameActive = false;

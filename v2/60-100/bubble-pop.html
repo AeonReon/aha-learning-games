@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catch the Dragon Eggs!</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --jungle-dark: #0a2a1f; --jungle: #15463a; --teal: #1a8b7a; --teal-bright: #2dd4bf;
+  --amber: #f59e0b; --amber-bright: #fbbf24; --fire peak: #dc2626; --lava: #fb923c;
+  --cream: #fef3c7; --white85: rgba(255,255,255,0.85); --glow-amber: rgba(245,158,11,0.6);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(180deg, #1a4a3a 0%, #15463a 30%, #0a2a1f 70%, #1a1a2e 100%);
+}
+
+/* Fire Mountains in background */
+.fire peak {
+  position: fixed; bottom: 40px; pointer-events: none; z-index: var(--z-bg);
+  width: 0; height: 0;
+  border-left: 80px solid transparent;
+  border-right: 80px solid transparent;
+  border-bottom: 120px solid #3d2818;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 20px rgba(220,38,38,0.3));
+}
+.fire peak::before {
+  content: '';
+  position: absolute;
+  top: -8px; left: -25px;
+  width: 50px; height: 20px;
+  background: radial-gradient(ellipse, var(--lava), var(--fire peak), transparent);
+  border-radius: 50%;
+  animation: fire peakPuff 4s ease-in-out infinite;
+}
+@keyframes fire peakPuff {
+  0%,100% { transform: translateY(0) scale(0.8); opacity: 0.5; }
+  50% { transform: translateY(-30px) scale(1.2); opacity: 0.9; }
+}
+.fire peak-1 { left: 5vw; transform: scale(0.8); }
+.fire peak-2 { right: 8vw; transform: scale(1); }
+.fire peak-3 { left: 40vw; transform: scale(0.6); bottom: 60px; }
+
+/* Ferns */
+.bg-fern {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(30px, 7vw, 50px);
+  opacity: 0.4;
+  animation: fernSway 4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes fernSway {
+  0%,100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* Wyverns flying */
+.bg-ptero {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(20px, 3.5vw, 28px);
+  opacity: 0.5;
+  animation: pteroFly linear infinite;
+}
+@keyframes pteroFly {
+  0%   { transform: translateX(-60px) translateY(0) scaleX(1); }
+  25%  { transform: translateX(25vw) translateY(-25px) scaleX(1); }
+  50%  { transform: translateX(50vw) translateY(15px) scaleX(1); }
+  75%  { transform: translateX(75vw) translateY(-20px) scaleX(1); }
+  100% { transform: translateX(110vw) translateY(0) scaleX(1); }
+}
+
+/* Twinkling stars in jungle sky */
+.bg-star {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(8px, 1.5vw, 14px);
+  opacity: 0.3;
+  animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(0.8)} 50%{opacity:0.6;transform:scale(1.1)} }
+
+/* Screen system */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* Title screen */
+.screen-title {
+  background: linear-gradient(180deg, rgba(26,74,58,0.95), rgba(10,42,31,0.98));
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 68px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--amber-bright);
+  text-shadow: 0 0 30px var(--glow-amber), 2px 2px 0 rgba(0,0,0,0.5);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 380px; line-height: 1.45;
+}
+
+/* Buttons */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start { background: linear-gradient(135deg, var(--amber), var(--fire peak)); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again { background: linear-gradient(135deg, var(--amber), var(--fire peak)); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* HUD */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(10,42,31,0.94); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(45,212,191,0.2);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--teal-bright); }
+.hud-score .hud-val { color: var(--amber-bright); }
+.hud-target {
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-target-label { font-size: clamp(10px,2.2vw,12px); color: rgba(255,255,255,0.55); font-weight: bold; }
+.hud-target-num {
+  font-size: clamp(36px,8vw,54px); font-weight: 900;
+  color: var(--amber-bright);
+  text-shadow: 0 0 20px var(--glow-amber), 0 0 40px var(--glow-amber);
+  line-height: 1;
+}
+.hud-target-word {
+  font-size: clamp(12px,2.5vw,16px); font-weight: bold;
+  color: var(--teal-bright); opacity: 0.9;
+}
+
+/* Sparky's nest area (bottom right) */
+.nest-area {
+  position: fixed; bottom: 60px; right: 10px;
+  z-index: var(--z-char);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.nest-container {
+  position: relative;
+  width: clamp(60px, 14vw, 85px);
+  height: clamp(45px, 10vw, 60px);
+  background: radial-gradient(ellipse at 50% 100%, #8b5a2b 0%, #5a3a1b 80%);
+  border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4), inset 0 -4px 8px rgba(0,0,0,0.3);
+  overflow: hidden;
+  transition: filter 0.5s;
+}
+.nest-container::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: 5%; right: 5%;
+  height: 8px;
+  background:
+    radial-gradient(ellipse at 20% 50%, #8b5a2b 45%, transparent 48%),
+    radial-gradient(ellipse at 50% 50%, #8b5a2b 45%, transparent 48%),
+    radial-gradient(ellipse at 80% 50%, #8b5a2b 45%, transparent 48%);
+  background-size: 33% 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0, 33% 0, 66% 0;
+}
+.nest-eggs {
+  position: absolute;
+  bottom: 8px; left: 0; right: 0;
+  display: flex; justify-content: center; align-items: flex-end;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: 0 6px;
+}
+.nest-egg {
+  width: clamp(10px, 2.5vw, 14px);
+  height: clamp(13px, 3.2vw, 18px);
+  background: linear-gradient(145deg, var(--cream), #e0c97a);
+  border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  animation: eggPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes eggPop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.nest-container.glow-1 { filter: drop-shadow(0 0 8px rgba(245,158,11,0.4)); }
+.nest-container.glow-2 { filter: drop-shadow(0 0 14px rgba(245,158,11,0.6)); }
+.nest-container.glow-3 { filter: drop-shadow(0 0 20px rgba(245,158,11,0.8)); }
+.nest-container.glow-4 { filter: drop-shadow(0 0 28px rgba(251,191,36,1)); }
+.nest-container.glow-full {
+  filter: drop-shadow(0 0 38px rgba(251,191,36,1));
+  animation: nestPulse 0.8s ease-in-out infinite;
+}
+@keyframes nestPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.nest-count {
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: var(--amber-bright); margin-top: 4px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+}
+
+/* Sparky the baby dragon (bottom left) */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(48px, 11vw, 72px);
+  display: inline-block;
+  animation: rexIdle 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.4));
+}
+@keyframes rexIdle {
+  0%,100% { transform: translateY(0) scaleX(1); }
+  50% { transform: translateY(-4px) scaleX(1); }
+}
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.98); color: var(--jungle-dark);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.98);
+}
+
+/* Sparky happy flap */
+.char-flap {
+  animation: rexStomp 1s ease-in-out infinite !important;
+}
+@keyframes rexStomp {
+  0%,100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-18px) rotate(-6deg) scale(1.1); }
+  50% { transform: translateY(0) rotate(6deg) scale(1.05); }
+  75% { transform: translateY(-10px) rotate(-3deg) scale(1.08); }
+}
+
+/* Play area */
+.play-area {
+  position: fixed;
+  top: 75px; left: 0; right: 0; bottom: 50px;
+  z-index: var(--z-game);
+  overflow: hidden;
+}
+
+/* Egg */
+.egg {
+  position: absolute;
+  width: clamp(72px, 18vw, 100px);
+  height: clamp(90px, 22vw, 125px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: var(--z-game);
+  transition: transform 0.1s;
+}
+.egg:active { transform: scale(0.92); }
+.egg-body {
+  position: relative;
+  width: 100%; height: 100%;
+  background: linear-gradient(145deg, var(--cream) 0%, #e0c97a 60%, #c9a850 100%);
+  border-radius: 50% 50% 45% 45% / 58% 58% 42% 42%;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.3),
+    inset 4px 4px 10px rgba(255,255,255,0.5),
+    inset -3px -6px 10px rgba(139,90,30,0.3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+/* Egg spots */
+.egg-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 35%, rgba(139,90,30,0.3) 4%, transparent 5%),
+    radial-gradient(circle at 70% 25%, rgba(139,90,30,0.25) 3%, transparent 4%),
+    radial-gradient(circle at 40% 70%, rgba(139,90,30,0.3) 5%, transparent 6%),
+    radial-gradient(circle at 78% 65%, rgba(139,90,30,0.25) 3%, transparent 4%),
+    radial-gradient(circle at 20% 80%, rgba(139,90,30,0.3) 4%, transparent 5%);
+  pointer-events: none;
+}
+/* Egg number */
+.egg-number {
+  font-size: clamp(24px, 6vw, 36px);
+  font-weight: 900;
+  color: var(--jungle-dark);
+  line-height: 1;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+  position: relative;
+  z-index: 1;
+}
+.egg-word {
+  font-size: clamp(9px, 2vw, 12px);
+  font-weight: bold;
+  color: #5a3a1b;
+  line-height: 1;
+  margin-top: 2px;
+  position: relative;
+  z-index: 1;
+}
+.egg-leaves {
+  font-size: clamp(8px, 1.8vw, 11px);
+  line-height: 1.1;
+  text-align: center;
+  max-width: 85%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Egg float animation - rising from jungle */
+.egg-floating {
+  animation: eggFloat linear forwards;
+}
+@keyframes eggFloat {
+  0%   { transform: translateY(0) rotate(-3deg); opacity: 0; }
+  3%   { opacity: 1; }
+  50%  { transform: translateY(-50vh) rotate(3deg); }
+  92%  { opacity: 1; }
+  100% { transform: translateY(calc(-100vh - 140px)) rotate(-5deg); opacity: 0; }
+}
+
+/* Egg wiggle on wrong tap */
+.egg-wrong {
+  animation: eggWiggle 0.5s ease-in-out;
+}
+@keyframes eggWiggle {
+  0%,100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-12deg) scale(1.05); }
+  40% { transform: rotate(10deg) scale(1.05); }
+  60% { transform: rotate(-8deg) scale(1.02); }
+  80% { transform: rotate(6deg) scale(1.02); }
+}
+
+/* Egg captured - fly to nest */
+.egg-captured {
+  transition: all 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  opacity: 0 !important;
+  transform: scale(0.4) !important;
+}
+
+/* ROAR text */
+.roar-text {
+  position: absolute;
+  font-size: clamp(18px,4.5vw,28px);
+  font-weight: 900;
+  color: var(--fire peak);
+  text-shadow: 0 0 10px rgba(251,146,60,0.8), 2px 2px 0 rgba(0,0,0,0.4);
+  pointer-events: none;
+  animation: roarFloat 0.8s ease-out forwards;
+  z-index: calc(var(--z-game) + 5);
+}
+@keyframes roarFloat {
+  0% { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+}
+
+/* Progress bar */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(10,42,31,0.94); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,2.8vw,18px);
+  color: rgba(255,255,255,0.3);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--amber), var(--fire peak));
+  border-color: var(--amber-bright); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* Round banner */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(10,42,31,0.96); backdrop-filter: blur(12px);
+  border: 2px solid rgba(251,191,36,0.4); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(22px,5.5vw,36px); font-weight: 900;
+  color: var(--amber-bright); text-shadow: 0 0 15px var(--glow-amber);
+}
+.round-banner .banner-target {
+  font-size: clamp(44px,11vw,72px); font-weight: 900;
+  color: var(--teal-bright); line-height: 1;
+  text-shadow: 0 0 20px rgba(45,212,191,0.7), 2px 2px 0 rgba(0,0,0,0.4);
+  margin: 10px 0 5px;
+}
+.round-banner p {
+  font-size: clamp(13px,3vw,18px);
+  color: rgba(255,255,255,0.7); margin-top: 5px;
+}
+
+/* Celebration screen */
+.screen-celeb {
+  background: linear-gradient(180deg, rgba(26,74,58,0.96), rgba(10,42,31,0.98));
+  backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--amber-bright);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.95); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-sparky-dance { animation: dance 1s ease-in-out infinite; display: inline-block; }
+.celeb-baby-hatch { animation: hatch 1.2s ease-in-out infinite; display: inline-block; }
+@keyframes hatch {
+  0%,100% { transform: translateY(0) rotate(0) scale(1); }
+  25% { transform: translateY(-14px) rotate(-10deg) scale(1.1); }
+  75% { transform: translateY(-8px) rotate(10deg) scale(1.08); }
+}
+
+/* Particles */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* Keyframes */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.1)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Fire Mountains -->
+<div class="fire peak fire peak-1"></div>
+<div class="fire peak fire peak-2"></div>
+<div class="fire peak fire peak-3"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center hud-target">
+    <span class="hud-target-label">CATCH THE</span>
+    <span class="hud-target-num" id="hudTargetNum">60</span>
+    <span class="hud-target-word" id="hudTargetWord">sixty</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">EGGS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Sparky character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">&#x1F996;</div>
+</div>
+
+<!-- Sparky's nest -->
+<div class="nest-area" id="nestArea" style="display:none">
+  <div class="nest-container" id="nestContainer">
+    <div class="nest-eggs" id="nestEggs"></div>
+  </div>
+  <div class="nest-count" id="nestCount">0/5</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <div class="banner-target" id="bannerTarget"></div>
+  <p id="roundSub"></p>
+</div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>&#x1F95A;</span>
+    <span>&#x1F996;</span>
+    <span>&#x1F95A;</span>
+  </div>
+  <h1>Catch the Dragon Eggs!</h1>
+  <p>Dragon eggs are floating up from the jungle! Tap the right numbers to catch them in Sparky's nest!</p>
+  <button class="btn btn-start" id="btnStart">Let's Play!</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span class="celeb-sparky-dance">&#x1F996;</span>
+    <span class="celeb-baby-hatch">&#x1F995;</span>
+    <span>&#x1F95A;</span>
+  </div>
+  <h2 id="celebTitle">Baby Dragon Hatched!</h2>
+  <p id="celebMsg">Sparky is doing a happy flap!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ====================================================================
+//  Aha! -- Dragon Lair (60-100)
+//  Catch dragon eggs in Sparky's nest!
+//  Voice A (en-US-AnaNeural) -- Mystic jungle theme
+// ====================================================================
+
+const AUDIO_BASE = '../../audio';
+
+const VOICE_A = {
+  greetings: ['voice-a/greetings/here-we-go.mp3','voice-a/greetings/lets-go.mp3','voice-a/greetings/come-on-lets-play.mp3','voice-a/greetings/are-you-ready.mp3','voice-a/greetings/this-is-going-to-be-fun.mp3'],
+  correct: ['voice-a/correct/amazing.mp3','voice-a/correct/brilliant.mp3','voice-a/correct/fantastic.mp3','voice-a/correct/i-knew-you-could-do-it.mp3','voice-a/correct/incredible.mp3','voice-a/correct/perfect.mp3','voice-a/correct/superstar.mp3','voice-a/correct/thats-right.mp3','voice-a/correct/well-done.mp3','voice-a/correct/wow-look-at-you-go.mp3','voice-a/correct/yes-youre-so-clever.mp3','voice-a/correct/you-got-it.mp3','voice-a/correct/youre-on-fire.mp3'],
+  wrong: ['voice-a/wrong/almost-have-another-go.mp3','voice-a/wrong/dont-worry-try-again.mp3','voice-a/wrong/keep-trying-youre-so-close.mp3','voice-a/wrong/nearly-give-it-another-go.mp3','voice-a/wrong/not-quite-you-can-do-it.mp3','voice-a/wrong/oops-not-that-one.mp3'],
+  thinking: ['voice-a/thinking/have-a-good-look.mp3','voice-a/thinking/i-believe-in-you.mp3','voice-a/thinking/take-your-time.mp3','voice-a/thinking/which-one-could-it-be.mp3','voice-a/thinking/you-can-do-it-keep-looking.mp3'],
+  'round-complete': ['voice-a/round-complete/brilliant-round-keep-going.mp3','voice-a/round-complete/round-complete-amazing.mp3','voice-a/round-complete/round-done-youre-doing-so-well.mp3','voice-a/round-complete/you-did-it-on-to-the-next.mp3'],
+  'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
+};
+
+const NUMBERS = [60,70,80,90,100];
+const NUMBER_WORDS = {60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
+
+// ====================================================================
+// AUDIO CLASS (AudioContext-first for iOS)
+// ====================================================================
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+    this._lastVoiceTime = 0;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Mystic tribal feel - low mystical tones
+    const notes = [146.83, 174.61, 196.00, 220.00, 261.63, 293.66];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+      o.frequency.value = f * (Math.random() > 0.6 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 700 + Math.random() * 1500);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(220,t,0.12,0.15); p(180,t+0.1,0.15,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='pop')       { p(700,t,0.08,0.25); p(900,t+0.04,0.1,0.2); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='reveal')    { p(440,t,0.1,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='roar')      {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sawtooth'; o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(80,t+0.4);
+      g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.5);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.55);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  // Throttled play - won't stack too many voices
+  play(category, minGapMs = 0) {
+    if (minGapMs > 0) {
+      const now = Date.now();
+      if (now - this._lastVoiceTime < minGapMs) return Promise.resolve();
+      this._lastVoiceTime = now;
+    }
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ====================================================================
+// UTILITIES
+// ====================================================================
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['Yum!','Got it!','In the nest!','Sparky loves it!','Egg-cellent!','Amazing!'];
+const BUBBLE_WRONG   = ['Roar no!','Not that one!','Try again!','Wrong egg!','Keep looking!'];
+
+// ====================================================================
+// VISUAL EFFECTS
+// ====================================================================
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🐉','🥚','🌿','🍃','💎', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🌟','🍃','🌿']);
+    s.style.left = (x + (Math.random()-0.5)*100) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*100) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'charJump 0.5s ease-out';
+  setTimeout(() => { el.style.animation = 'rexIdle 2.5s ease-in-out infinite'; }, 520);
+}
+
+// Make leaf pattern for a number (group of 10s)
+function makeLeaves(n) {
+  // For 60-100, show n/10 leaves
+  const count = n / 10;
+  return '🍃'.repeat(count);
+}
+
+// ====================================================================
+// BACKGROUND
+// ====================================================================
+function createBackground() {
+  // Stars in the sky
+  for (let i = 0; i < 25; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-star';
+    s.textContent = pick(['✨','⭐','💫']);
+    s.style.left = (Math.random()*100)+'vw';
+    s.style.top  = (Math.random()*40)+'vh';
+    s.style.animationDelay = (Math.random()*4)+'s';
+    s.style.animationDuration = (2+Math.random()*3)+'s';
+    document.body.appendChild(s);
+  }
+  // Wyverns flying
+  for (let i = 0; i < 4; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-ptero';
+    p.textContent = '🦅';
+    p.style.top = (10+Math.random()*35)+'vh';
+    p.style.animationDuration = (14+Math.random()*10)+'s';
+    p.style.animationDelay = (Math.random()*8)+'s';
+    document.body.appendChild(p);
+  }
+  // Ferns swaying (at the bottom edges)
+  const fernSpots = [
+    {left: '2vw', bottom: '50px'},
+    {left: '15vw', bottom: '45px'},
+    {right: '20vw', bottom: '48px'},
+    {right: '3vw', bottom: '52px'},
+    {left: '30vw', bottom: '46px'},
+    {right: '35vw', bottom: '50px'},
+  ];
+  fernSpots.forEach((spot, i) => {
+    const f = document.createElement('div');
+    f.className = 'bg-fern';
+    f.textContent = pick(['🌿','🌴','🍃']);
+    if (spot.left) f.style.left = spot.left;
+    if (spot.right) f.style.right = spot.right;
+    f.style.bottom = spot.bottom;
+    f.style.animationDelay = (i * 0.6) + 's';
+    f.style.animationDuration = (3.5 + Math.random() * 2) + 's';
+    document.body.appendChild(f);
+  });
+}
+
+// ====================================================================
+// PROGRESS BAR
+// ====================================================================
+function buildProgBar() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'progDot'+i;
+    d.textContent = (i+1);
+    bar.appendChild(d);
+  }
+}
+
+function markProgDone(round) {
+  const d = $('progDot'+round);
+  if (d) d.classList.add('done');
+}
+
+// ====================================================================
+// SPARKY'S NEST
+// ====================================================================
+function updateNest(caught, needed) {
+  $('nestCount').textContent = caught + '/' + needed;
+  const nest = $('nestContainer');
+  const nestEggs = $('nestEggs');
+
+  // Add egg to nest
+  while (nestEggs.children.length < caught) {
+    const egg = document.createElement('div');
+    egg.className = 'nest-egg';
+    nestEggs.appendChild(egg);
+  }
+  // Clear if reset
+  while (nestEggs.children.length > caught) {
+    nestEggs.removeChild(nestEggs.lastChild);
+  }
+
+  const ratio = caught / needed;
+  nest.className = 'nest-container';
+  if (ratio >= 1)        nest.classList.add('glow-full');
+  else if (ratio >= 0.8) nest.classList.add('glow-4');
+  else if (ratio >= 0.6) nest.classList.add('glow-3');
+  else if (ratio >= 0.4) nest.classList.add('glow-2');
+  else if (ratio >= 0.2) nest.classList.add('glow-1');
+}
+
+// ====================================================================
+// EGG CREATION
+// ====================================================================
+function createEgg(number, displayMode, floatDuration) {
+  const egg = document.createElement('div');
+  egg.className = 'egg';
+  egg.dataset.number = number;
+
+  const body = document.createElement('div');
+  body.className = 'egg-body';
+
+  // Number display based on mode
+  if (displayMode === 'numeral-word') {
+    // Round 1: big numeral + small word
+    const numEl = document.createElement('div');
+    numEl.className = 'egg-number';
+    numEl.textContent = number;
+    body.appendChild(numEl);
+    const wordEl = document.createElement('div');
+    wordEl.className = 'egg-word';
+    wordEl.textContent = NUMBER_WORDS[number];
+    body.appendChild(wordEl);
+  } else if (displayMode === 'numeral') {
+    // Round 2: numeral only
+    const numEl = document.createElement('div');
+    numEl.className = 'egg-number';
+    numEl.textContent = number;
+    body.appendChild(numEl);
+  } else if (displayMode === 'leaves') {
+    // Round 3: leaf-count patterns + small numeral
+    const leavesEl = document.createElement('div');
+    leavesEl.className = 'egg-leaves';
+    leavesEl.textContent = makeLeaves(number);
+    body.appendChild(leavesEl);
+    const numEl = document.createElement('div');
+    numEl.className = 'egg-number';
+    numEl.style.fontSize = 'clamp(16px,3.5vw,22px)';
+    numEl.textContent = number;
+    body.appendChild(numEl);
+  } else if (displayMode === 'mixed') {
+    // Round 4: random mix, always show numeral somewhere
+    const style = pick(['numeral', 'leaves-num', 'word-num']);
+    if (style === 'numeral') {
+      const numEl = document.createElement('div');
+      numEl.className = 'egg-number';
+      numEl.textContent = number;
+      body.appendChild(numEl);
+    } else if (style === 'leaves-num') {
+      const leavesEl = document.createElement('div');
+      leavesEl.className = 'egg-leaves';
+      leavesEl.textContent = makeLeaves(number);
+      body.appendChild(leavesEl);
+      const numEl = document.createElement('div');
+      numEl.className = 'egg-number';
+      numEl.style.fontSize = 'clamp(16px,3.5vw,22px)';
+      numEl.textContent = number;
+      body.appendChild(numEl);
+    } else {
+      const wordEl = document.createElement('div');
+      wordEl.className = 'egg-word';
+      wordEl.style.fontSize = 'clamp(10px,2.3vw,13px)';
+      wordEl.textContent = NUMBER_WORDS[number];
+      body.appendChild(wordEl);
+      const numEl = document.createElement('div');
+      numEl.className = 'egg-number';
+      numEl.textContent = number;
+      body.appendChild(numEl);
+    }
+  }
+
+  egg.appendChild(body);
+
+  // Position at bottom, random x
+  const areaW = $('playArea').clientWidth;
+  const eggW = 100;
+  const maxX = areaW - eggW - 10;
+  const x = 10 + Math.random() * maxX;
+
+  egg.style.left = x + 'px';
+  egg.style.bottom = '-140px';
+  egg.style.animationDuration = floatDuration + 's';
+  egg.classList.add('egg-floating');
+
+  return egg;
+}
+
+// ====================================================================
+// GAME STATE
+// ====================================================================
+const audio = new GameAudio();
+let currentRound = 0;
+let totalScore = 0;
+let roundCaught = 0;
+const NEEDED_PER_ROUND = 5;
+let targetNumber = 0;
+let roundActive = false;
+let spawnTimer = null;
+let thinkTimer = null;
+let eggsOnScreen = [];
+let spawnCount = 0;
+const MAX_SPAWNS = 30;
+
+// Round configs
+const ROUNDS = [
+  { display: 'numeral-word', speed: 15, targetDisplay: 'numeral-word', label: 'Slow & Easy' },
+  { display: 'numeral',      speed: 11, targetDisplay: 'numeral',      label: 'Speed Up!' },
+  { display: 'leaves',       speed: 15, targetDisplay: 'numeral-word', label: 'Count the Leaves' },
+  { display: 'mixed',        speed: 9,  targetDisplay: 'numeral',      label: 'Mixed Madness!' },
+];
+
+// ====================================================================
+// GAME FLOW
+// ====================================================================
+async function startGame() {
+  $('scrTitle').classList.remove('active');
+  $('hud').style.display = 'flex';
+  $('charArea').style.display = 'block';
+  $('nestArea').style.display = 'flex';
+  $('progBar').style.display = 'flex';
+  buildProgBar();
+  currentRound = 0;
+  totalScore = 0;
+  $('hudScore').textContent = '0';
+  audio.startMusic();
+  await audio.play('greetings');
+  await delay(400);
+  startRound();
+}
+
+async function startRound() {
+  roundCaught = 0;
+  spawnCount = 0;
+  eggsOnScreen = [];
+  $('playArea').innerHTML = '';
+  $('nestEggs').innerHTML = '';
+
+  // Pick target - avoid repeating last round's target
+  const available = NUMBERS.filter(n => n !== targetNumber || NUMBERS.length <= 1);
+  targetNumber = pick(available);
+
+  const cfg = ROUNDS[currentRound];
+
+  // Update HUD
+  $('hudRound').textContent = (currentRound+1)+'/4';
+  $('hudTargetNum').textContent = targetNumber;
+  if (cfg.targetDisplay === 'numeral-word') {
+    $('hudTargetWord').textContent = NUMBER_WORDS[targetNumber];
+    $('hudTargetWord').style.display = 'block';
+  } else {
+    $('hudTargetWord').style.display = 'none';
+  }
+
+  updateNest(0, NEEDED_PER_ROUND);
+
+  // Show round banner
+  const banner = $('roundBanner');
+  $('roundTitle').textContent = 'Round ' + (currentRound+1);
+  $('bannerTarget').textContent = targetNumber;
+  $('roundSub').textContent = 'Catch the ' + targetNumber + 's! ' + cfg.label;
+  banner.classList.add('show');
+  audio.tone('reveal');
+  await delay(600);
+
+  // Speak the target number
+  await audio.speakNumber(targetNumber);
+  await delay(1400);
+  banner.classList.remove('show');
+  await delay(300);
+
+  showCharBubble('Catch the ' + targetNumber + 's!', 3000);
+
+  roundActive = true;
+  startSpawning();
+  startThinkingPrompts();
+}
+
+function startSpawning() {
+  const cfg = ROUNDS[currentRound];
+  const spawnEgg = () => {
+    if (!roundActive) return;
+    if (spawnCount >= MAX_SPAWNS && roundCaught < NEEDED_PER_ROUND) {
+      spawnCount = 0;
+    }
+
+    // Decide if this egg is the target (~40%) or a distractor
+    const isTarget = Math.random() < 0.4;
+    let num;
+    if (isTarget) {
+      num = targetNumber;
+    } else {
+      const distractors = NUMBERS.filter(n => n !== targetNumber);
+      num = pick(distractors);
+    }
+
+    const egg = createEgg(num, cfg.display, cfg.speed);
+    $('playArea').appendChild(egg);
+    eggsOnScreen.push(egg);
+    spawnCount++;
+
+    // Tap handler
+    onTap(egg, (e) => {
+      e.stopPropagation();
+      if (!roundActive) return;
+      if (egg.dataset.tapped) return;
+      handleEggTap(egg, parseInt(egg.dataset.number));
+    });
+
+    // Remove egg when animation ends
+    egg.addEventListener('animationend', () => {
+      if (!egg.dataset.tapped) {
+        egg.remove();
+        eggsOnScreen = eggsOnScreen.filter(g => g !== egg);
+      }
+    });
+
+    // Schedule next spawn - pacing based on round speed
+    if (roundActive) {
+      const baseInterval = cfg.speed > 12 ? 1200 : 900;
+      const interval = baseInterval + Math.random() * 1000;
+      spawnTimer = setTimeout(spawnEgg, interval);
+    }
+  };
+
+  spawnEgg();
+}
+
+function startThinkingPrompts() {
+  const prompt = () => {
+    if (!roundActive) return;
+    // Re-announce target number
+    audio.speakNumber(targetNumber);
+    showCharBubble('Find the ' + targetNumber + '!', 2500);
+    // 5-6s between prompts
+    thinkTimer = setTimeout(prompt, 5000 + Math.random() * 1000);
+  };
+  thinkTimer = setTimeout(prompt, 5500);
+}
+
+function stopTimers() {
+  roundActive = false;
+  clearTimeout(spawnTimer);
+  clearTimeout(thinkTimer);
+}
+
+async function handleEggTap(egg, number) {
+  egg.dataset.tapped = 'true';
+
+  if (number === targetNumber) {
+    // CORRECT
+    roundCaught++;
+    totalScore += 10;
+    $('hudScore').textContent = totalScore;
+
+    audio.tone('pop');
+    const rect = egg.getBoundingClientRect();
+    starBurst(rect.left + rect.width/2, rect.top + rect.height/2);
+
+    // Animate to nest
+    const nestRect = $('nestContainer').getBoundingClientRect();
+    egg.style.position = 'fixed';
+    egg.style.left = rect.left + 'px';
+    egg.style.top = rect.top + 'px';
+    egg.style.bottom = 'auto';
+    egg.classList.remove('egg-floating');
+    egg.style.animation = 'none';
+
+    // Force reflow then animate to nest
+    egg.offsetHeight;
+    egg.classList.add('egg-captured');
+    egg.style.left = (nestRect.left + nestRect.width/2 - 30) + 'px';
+    egg.style.top = (nestRect.top + nestRect.height/2 - 30) + 'px';
+
+    updateNest(roundCaught, NEEDED_PER_ROUND);
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+    jumpChar();
+
+    // Speak number name - once per catch
+    audio.speakNumber(number);
+
+    // Voice praise throttled - minimum 2.5s between praises
+    audio.play('correct', 2500);
+
+    setTimeout(() => {
+      egg.remove();
+      eggsOnScreen = eggsOnScreen.filter(g => g !== egg);
+    }, 700);
+
+    // Check round complete
+    if (roundCaught >= NEEDED_PER_ROUND) {
+      await delay(500);
+      endRound();
+    }
+  } else {
+    // WRONG
+    audio.tone('wrong');
+
+    // ROAR NO! text
+    const roar = document.createElement('div');
+    roar.className = 'roar-text';
+    roar.textContent = 'Roar no!';
+    const rect = egg.getBoundingClientRect();
+    roar.style.left = (rect.left + rect.width/2 - 45) + 'px';
+    roar.style.top = (rect.top - 10) + 'px';
+    document.body.appendChild(roar);
+    setTimeout(() => roar.remove(), 900);
+
+    // Wiggle egg
+    egg.classList.remove('egg-floating');
+    egg.style.animation = 'none';
+    egg.offsetHeight;
+    egg.classList.add('egg-wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    // After wiggle, resume floating
+    setTimeout(() => {
+      egg.dataset.tapped = '';
+      egg.classList.remove('egg-wrong');
+      if (egg.parentNode) {
+        egg.classList.add('egg-floating');
+      }
+    }, 550);
+
+    // Throttle wrong voice too
+    audio.play('wrong', 2000);
+  }
+}
+
+async function endRound() {
+  stopTimers();
+
+  // Clear remaining eggs
+  $('playArea').innerHTML = '';
+  eggsOnScreen = [];
+
+  markProgDone(currentRound);
+  audio.tone('roundDone');
+  confetti(25, ['🐉','🥚','🌿']);
+
+  if (currentRound < 3) {
+    // More rounds
+    const banner = $('roundBanner');
+    $('roundTitle').textContent = 'Round Complete!';
+    $('bannerTarget').textContent = '';
+    $('bannerTarget').style.display = 'none';
+    $('roundSub').textContent = 'Great catching, dragon friend!';
+    banner.classList.add('show');
+    await audio.play('round-complete');
+    // Round transition ~3s
+    await delay(2000);
+    banner.classList.remove('show');
+    $('bannerTarget').style.display = 'block';
+    await delay(500);
+    currentRound++;
+    startRound();
+  } else {
+    // Game complete - baby dragon hatches!
+    await delay(600);
+    showCelebration();
+  }
+}
+
+async function showCelebration() {
+  audio.tone('celeb');
+  audio.tone('roar');
+
+  // Sparky does happy flap
+  $('charEmoji').classList.add('char-flap');
+
+  confetti(60, ['🐉','🥚','🌿','🍃','🐲']);
+
+  const stars = Math.min(5, Math.max(3, Math.floor(totalScore / 40)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = 'Baby Dragon Hatched!';
+  $('celebMsg').textContent = 'Sparky is doing a happy flap! Score: ' + totalScore;
+
+  $('scrCeleb').classList.add('active');
+
+  await audio.play('game-complete');
+  await delay(800);
+  await audio.play('game-complete');
+
+  // Second confetti wave
+  setTimeout(() => confetti(35, ['🐉','🥚','✨','🌟']), 2000);
+}
+
+function resetGame() {
+  $('scrCeleb').classList.remove('active');
+  $('hud').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('nestArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('playArea').innerHTML = '';
+  $('nestEggs').innerHTML = '';
+  $('charEmoji').classList.remove('char-flap');
+  audio.stopMusic();
+  audio.clearQueue();
+  $('scrTitle').classList.add('active');
+}
+
+// ====================================================================
+// INIT
+// ====================================================================
+createBackground();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.clearQueue();
+  resetGame();
+  setTimeout(() => {
+    audio.unlock();
+    startGame();
+  }, 300);
+});
+</script>
+</body>
+</html>

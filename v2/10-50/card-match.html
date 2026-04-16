@@ -3,21 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Zara's Jungle Safari — Match the Tens</title>
+<title>Jungle Safari Card Match</title>
 <style>
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
   --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
-  --jungle-deep: #0f3d2e;
-  --jungle-mid: #14532d;
-  --emerald: #10b981;
-  --earth: #8b4513;
-  --yellow: #fbbf24;
-  --orange: #f59e0b;
-  --sunset: #ea580c;
-  --cream: #fef3c7;
-  --white85: rgba(255,255,255,0.85);
+  --jungle-deep: #0f3d2e; --jungle-mid: #15523d; --emerald: #10b981;
+  --earth: #8b4513; --tropical: #fbbf24; --sunset: #f97316;
+  --gold: #fde047; --white85: rgba(255,255,255,0.88); --leaf: #2d7a4f;
   --glow-yellow: rgba(251,191,36,0.6);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,56 +23,51 @@ body {
   touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
   -webkit-tap-highlight-color: transparent;
-  background: linear-gradient(170deg, #052e1a 0%, #0f3d2e 25%, #14532d 55%, #166534 80%, #8b4513 100%);
-}
-
-/* Distant toucan silhouettes & vines baked into background */
-body::before {
-  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: var(--z-bg);
   background:
-    radial-gradient(ellipse 120px 40px at 10% 18%, rgba(0,0,0,0.25), transparent 60%),
-    radial-gradient(ellipse 90px 30px at 82% 12%, rgba(0,0,0,0.22), transparent 60%),
-    radial-gradient(ellipse 140px 50px at 48% 8%, rgba(0,0,0,0.15), transparent 60%),
-    linear-gradient(180deg, transparent 60%, rgba(139,69,19,0.18) 100%);
-  opacity: 0.55;
+    radial-gradient(ellipse at 20% 10%, rgba(251,191,36,0.15) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 90%, rgba(16,185,129,0.2) 0%, transparent 45%),
+    linear-gradient(170deg, #0a2e22 0%, #0f3d2e 30%, #15523d 60%, #0f3d2e 100%);
 }
 
-/* Vines hanging from top */
-.vine {
-  position: fixed; top: -10px; width: 8px;
-  background: linear-gradient(180deg, #3f6212, #14532d);
-  border-radius: 4px;
-  z-index: var(--z-bg);
-  pointer-events: none;
-  box-shadow: 2px 0 6px rgba(0,0,0,0.3);
-  animation: vineSway ease-in-out infinite;
-  transform-origin: top center;
-}
-.vine::after {
-  content: '🌿'; position: absolute; bottom: -18px; left: 50%;
-  transform: translateX(-50%); font-size: 22px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-}
-@keyframes vineSway {
-  0%,100% { transform: rotate(-3deg); }
-  50%     { transform: rotate(3deg); }
-}
-
-/* Fluttering leaves & jungle creatures */
+/* ── Background particles (leaves, toucans, vines) ── */
 .bg-particle {
   position: fixed; pointer-events: none; z-index: var(--z-bg);
   font-size: clamp(14px, 2.8vw, 24px);
-  opacity: 0.45;
-  animation: leafFloat linear infinite;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  opacity: 0.4;
+  animation: leafFall linear infinite;
 }
-@keyframes leafFloat {
-  0%   { transform: translateY(-60px) translateX(0) rotate(0deg); opacity: 0; }
-  8%   { opacity: 0.5; }
-  50%  { transform: translateY(50vh) translateX(40px) rotate(180deg); }
-  92%  { opacity: 0.5; }
-  100% { transform: translateY(105vh) translateX(-30px) rotate(360deg); opacity: 0; }
+@keyframes leafFall {
+  0%   { transform: translateY(-40px) translateX(0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.45; }
+  50%  { transform: translateY(50vh) translateX(40px) rotate(200deg); }
+  92%  { opacity: 0.4; }
+  100% { transform: translateY(105vh) translateX(-30px) rotate(420deg); opacity: 0; }
 }
+
+/* Distant toucan silhouettes — flying across */
+.bg-toucan {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(18px, 3vw, 28px);
+  opacity: 0.25;
+  animation: toucanFly linear infinite;
+}
+@keyframes toucanFly {
+  0%   { transform: translateX(-80px) translateY(0); }
+  100% { transform: translateX(110vw) translateY(-20px); }
+}
+
+/* Vines at edges */
+.vine {
+  position: fixed; top: 0; width: clamp(30px, 6vw, 50px);
+  height: 100vh; pointer-events: none; z-index: var(--z-bg);
+  opacity: 0.35;
+  font-size: clamp(22px, 5vw, 34px);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 4px 0;
+  overflow: hidden;
+}
+.vine-left { left: 0; }
+.vine-right { right: 0; }
 
 /* ── Screen system ── */
 .screen {
@@ -93,27 +82,31 @@ body::before {
 .screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
 
 /* ── Title screen ── */
-.screen-title .safari-icon {
+.screen-title {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(251,191,36,0.18) 0%, transparent 45%),
+    linear-gradient(160deg, #0a2e22 0%, #0f3d2e 40%, #15523d 100%);
+}
+.screen-title .leaf-icon {
   font-size: clamp(60px, 15vw, 100px);
-  animation: safariFloat 3s ease-in-out infinite;
+  animation: leafFloat 3s ease-in-out infinite;
   filter: drop-shadow(0 0 20px rgba(251,191,36,0.5));
 }
-@keyframes safariFloat { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-12px) rotate(3deg)} }
+@keyframes leafFloat { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-14px) rotate(5deg)} }
 .screen-title .animal-row {
   display: flex; gap: 14px; justify-content: center; align-items: center; margin-bottom: 8px;
-  flex-wrap: wrap;
 }
-.screen-title .animal-row span { font-size: clamp(40px, 10vw, 64px); }
+.screen-title .animal-row span { font-size: clamp(44px, 11vw, 70px); }
 .screen-title h1 {
   font-size: clamp(24px, 6vw, 44px);
-  color: var(--yellow);
+  color: var(--tropical);
   text-shadow: 0 0 30px var(--glow-yellow), 2px 2px 0 rgba(0,0,0,0.5);
   margin: 6px 0 6px;
 }
 .screen-title p {
   font-size: clamp(13px, 3.2vw, 18px);
   color: var(--white85);
-  max-width: 380px; line-height: 1.45;
+  max-width: 360px; line-height: 1.45;
 }
 
 /* ── Buttons ── */
@@ -129,15 +122,13 @@ body::before {
 }
 .btn:active { transform: scale(0.93); }
 .btn-start {
-  background: linear-gradient(135deg, var(--orange), var(--sunset));
+  background: linear-gradient(135deg, var(--tropical), var(--sunset));
+  color: #0f3d2e;
   margin-top: 18px;
   animation: glowBtn 2.4s ease-in-out infinite;
 }
-.btn-again { background: linear-gradient(135deg, var(--orange), var(--sunset)); margin-top: 16px; }
-@keyframes glowBtn {
-  0%,100%{filter:brightness(1); box-shadow:0 0 20px rgba(245,158,11,0.3)}
-  50%    {filter:brightness(1.2); box-shadow:0 0 40px rgba(245,158,11,0.6)}
-}
+.btn-again { background: linear-gradient(135deg, var(--tropical), var(--sunset)); color: #0f3d2e; margin-top: 16px; }
+@keyframes glowBtn { 0%,100%{filter:brightness(1); box-shadow:0 0 20px rgba(251,191,36,0.3)} 50%{filter:brightness(1.15); box-shadow:0 0 40px rgba(251,191,36,0.65)} }
 
 /* ── HUD ── */
 .hud {
@@ -145,49 +136,49 @@ body::before {
   z-index: var(--z-ui);
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 8px 14px;
-  background: rgba(15,61,46,0.94); backdrop-filter: blur(6px);
-  border-bottom: 2px solid rgba(251,191,36,0.25);
+  background: rgba(10,46,34,0.94); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(251,191,36,0.2);
   pointer-events: none;
 }
-.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .hud-center {
   position: absolute; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center;
+  max-width: 50vw;
 }
-.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.5); font-weight: bold; letter-spacing: 0.05em; }
 .hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
-.hud-round .hud-val { color: var(--yellow); }
-.hud-score .hud-val { color: var(--cream); }
-.hud-target-text { color: var(--yellow); font-size: clamp(13px,2.8vw,18px); font-weight: 900; }
+.hud-round .hud-val { color: var(--tropical); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-target-text { color: var(--gold); font-size: clamp(13px,2.8vw,18px); font-weight: 900; text-align: center; }
+.hud-sanctuary {
+  display: flex; align-items: center; gap: 4px;
+  color: var(--emerald); font-size: clamp(11px,2.4vw,14px); font-weight: 900;
+}
+.hud-sanctuary-icon { font-size: clamp(14px,3vw,18px); }
 
 /* ── Zara character ── */
 .char-area {
   position: fixed; bottom: 58px; left: 10px;
   z-index: var(--z-char); pointer-events: none;
 }
-.char-emoji { font-size: clamp(44px,10vw,64px); filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
-.char-hat {
-  position: absolute; top: -10px; left: 50%;
-  transform: translateX(-50%) rotate(-8deg);
-  font-size: clamp(30px,7vw,44px);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
+.char-emoji { font-size: clamp(40px,9vw,60px); }
 .char-bubble {
   position: absolute; bottom: 100%; left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,255,255,0.96); color: var(--jungle-deep);
+  background: rgba(255,255,255,0.97); color: var(--jungle-deep);
   padding: 6px 14px; border-radius: 20px;
   font-size: clamp(12px,2.6vw,16px); font-weight: bold;
   white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.4);
   opacity: 0; transition: opacity 0.28s; pointer-events: none;
-  margin-bottom: 14px;
+  margin-bottom: 7px;
 }
 .char-bubble.show { opacity: 1; }
 .char-bubble::after {
   content: ''; position: absolute; bottom: -7px; left: 50%;
   transform: translateX(-50%);
   border-left: 7px solid transparent; border-right: 7px solid transparent;
-  border-top: 8px solid rgba(255,255,255,0.96);
+  border-top: 8px solid rgba(255,255,255,0.97);
 }
 
 /* ── Game area ── */
@@ -206,38 +197,41 @@ body::before {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
 .target-label {
-  font-size: clamp(12px,2.8vw,16px); color: rgba(255,255,255,0.7);
+  font-size: clamp(12px,2.8vw,16px); color: rgba(255,255,255,0.65);
   font-weight: bold; letter-spacing: 0.05em;
 }
 .target-card {
-  background: linear-gradient(135deg, #14532d, #166534);
-  border: 3px solid var(--yellow);
+  background: linear-gradient(135deg, #15523d, #1d6b4e);
+  border: 3px solid var(--tropical);
   border-radius: 18px;
   padding: clamp(12px,3vw,20px) clamp(16px,4vw,28px);
-  min-width: clamp(130px,32vw,220px);
-  min-height: clamp(65px,13vw,95px);
+  min-width: clamp(120px,30vw,200px);
+  min-height: clamp(60px,12vw,90px);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4px;
-  box-shadow: 0 0 25px rgba(251,191,36,0.3), 0 4px 15px rgba(0,0,0,0.5);
+  box-shadow: 0 0 25px rgba(251,191,36,0.35), 0 4px 15px rgba(0,0,0,0.4);
   animation: targetGlow 2s ease-in-out infinite;
 }
-@keyframes targetGlow {
-  0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.3), 0 4px 15px rgba(0,0,0,0.5)}
-  50%    {box-shadow:0 0 35px rgba(251,191,36,0.55), 0 4px 15px rgba(0,0,0,0.5)}
-}
+@keyframes targetGlow { 0%,100%{box-shadow:0 0 20px rgba(251,191,36,0.3), 0 4px 15px rgba(0,0,0,0.4)} 50%{box-shadow:0 0 38px rgba(251,191,36,0.6), 0 4px 15px rgba(0,0,0,0.4)} }
 .target-numeral {
-  font-size: clamp(32px,8vw,52px); font-weight: 900; color: var(--yellow);
-  text-shadow: 0 0 15px rgba(251,191,36,0.5);
+  font-size: clamp(32px,8vw,52px); font-weight: 900; color: var(--gold);
+  text-shadow: 0 0 15px rgba(253,224,71,0.5);
 }
 .target-emoji {
-  font-size: clamp(22px,5.5vw,36px); line-height: 1.2;
+  font-size: clamp(20px,5vw,34px); line-height: 1.2; letter-spacing: 2px;
+}
+.target-emoji.pattern {
+  max-width: clamp(180px, 55vw, 320px);
+  text-align: center;
+  line-height: 1.1;
+  word-break: break-all;
 }
 .target-word {
-  font-size: clamp(14px,3.2vw,20px); color: var(--cream); font-weight: bold;
+  font-size: clamp(14px,3.2vw,20px); color: var(--tropical); font-weight: bold;
 }
 .target-small-num {
-  font-size: clamp(14px,3vw,18px); color: var(--yellow); font-weight: 900;
-  opacity: 0.9;
+  font-size: clamp(14px,3vw,18px); color: var(--gold); font-weight: 900;
+  opacity: 0.85;
 }
 
 /* ── Option cards ── */
@@ -245,10 +239,11 @@ body::before {
   display: flex; flex-wrap: wrap;
   justify-content: center; align-items: center;
   gap: clamp(8px,2vw,14px);
+  max-width: 100%;
 }
 .option-card {
-  background: linear-gradient(135deg, #8b4513, #a0522d);
-  border: 3px solid rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, #2d7a4f, #3d9b66);
+  border: 3px solid rgba(255,255,255,0.18);
   border-radius: 16px;
   padding: clamp(10px,2.5vw,18px) clamp(14px,3.5vw,24px);
   min-width: clamp(80px,22vw,130px);
@@ -256,7 +251,7 @@ body::before {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -267,17 +262,17 @@ body::before {
   text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
 }
 .option-emoji {
-  font-size: clamp(18px,4.5vw,28px); line-height: 1.2;
+  font-size: clamp(16px,4vw,26px); line-height: 1.2;
 }
 .option-word {
-  font-size: clamp(12px,2.8vw,17px); color: var(--cream); font-weight: bold;
+  font-size: clamp(12px,2.8vw,17px); color: var(--tropical); font-weight: bold;
 }
 
 /* ── Card correct/wrong states ── */
 .option-card.correct-flash {
-  border-color: var(--emerald) !important;
-  background: linear-gradient(135deg, #065f46, #10b981) !important;
-  box-shadow: 0 0 25px rgba(16,185,129,0.7) !important;
+  border-color: var(--gold) !important;
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  box-shadow: 0 0 30px rgba(251,191,36,0.75) !important;
   animation: correctPulse 0.5s ease-out;
 }
 .option-card.wrong-shake {
@@ -286,174 +281,94 @@ body::before {
   box-shadow: 0 0 20px rgba(239,68,68,0.55) !important;
 }
 @keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
-@keyframes shakeCard {
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-8px)}
-  40%{transform:translateX(8px)}
-  60%{transform:translateX(-6px)}
-  80%{transform:translateX(6px)}
-}
+@keyframes shakeCard { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
 
-/* ── Animal Sanctuary Achievement ── */
-.sanctuary {
-  position: fixed; top: 60px; right: 6px;
-  z-index: var(--z-ui);
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  pointer-events: none;
-}
-.sanctuary-icon {
-  font-size: clamp(28px,6vw,40px);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-.sanctuary-label {
-  font-size: clamp(8px,1.8vw,11px);
-  color: var(--cream); font-weight: bold;
-  text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
-  letter-spacing: 0.05em;
-}
-.sanctuary-pen {
-  background: linear-gradient(180deg, rgba(20,83,45,0.85), rgba(15,61,46,0.9));
-  border: 2px solid var(--earth);
-  border-radius: 10px;
-  padding: 4px;
-  min-width: clamp(55px,13vw,80px);
-  min-height: clamp(60px,14vw,85px);
-  display: flex; flex-wrap: wrap; gap: 2px;
-  justify-content: center; align-items: flex-start;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.4);
-}
-.sanctuary-slot {
-  width: clamp(14px,3vw,20px); height: clamp(14px,3vw,20px);
-  display: flex; align-items: center; justify-content: center;
-  font-size: clamp(11px,2.5vw,15px);
-  opacity: 0.18;
-  transition: opacity 0.4s, transform 0.5s;
-}
-.sanctuary-slot.released {
-  opacity: 1;
-  animation: animalArrive 0.7s cubic-bezier(0.34,1.56,0.64,1);
-}
-@keyframes animalArrive {
-  0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
-  60%  { transform: scale(1.4) rotate(10deg); }
-  100% { transform: scale(1) rotate(0); opacity: 1; }
-}
-.sanctuary.glow .sanctuary-icon {
-  animation: sanctGlow 1s ease-in-out 3;
-}
-@keyframes sanctGlow {
-  0%,100%{filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5))}
-  50%    {filter: drop-shadow(0 0 20px rgba(251,191,36,0.9)) drop-shadow(0 0 30px rgba(16,185,129,0.6))}
-}
-.sanctuary.grand-open .sanctuary-icon {
-  animation: sanctBurst 1.5s ease-in-out;
-}
-@keyframes sanctBurst {
-  0%   { transform: scale(1) rotate(0) }
-  30%  { transform: scale(1.5) rotate(-10deg) }
-  60%  { transform: scale(1.8) rotate(8deg) }
-  100% { transform: scale(1.3) rotate(0) }
-}
-
-/* ── Progress bar ── */
+/* ── Progress bar (bottom) with small sanctuary icons ── */
 .prog-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
   z-index: var(--z-ui);
   display: flex; justify-content: center; align-items: center;
-  gap: clamp(3px,1vw,6px); flex-wrap: wrap;
-  padding: 5px 8px 8px;
-  background: rgba(15,61,46,0.94); backdrop-filter: blur(5px);
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(10,46,34,0.94); backdrop-filter: blur(5px);
+  border-top: 2px solid rgba(251,191,36,0.15);
   pointer-events: none;
 }
 .prog-dot {
-  width: clamp(24px,5vw,34px);
-  height: clamp(24px,5vw,34px);
+  width: clamp(30px,5.8vw,42px);
+  height: clamp(30px,5.8vw,42px);
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.14);
   display: flex; align-items: center; justify-content: center;
-  font-size: clamp(9px,1.9vw,13px); font-weight: 900;
-  color: rgba(255,255,255,0.3);
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.28);
 }
 .prog-dot.done {
-  background: linear-gradient(135deg, var(--emerald), var(--yellow));
-  border-color: var(--yellow); color: var(--jungle-deep);
+  background: linear-gradient(135deg, var(--tropical), var(--sunset));
+  border-color: var(--gold); color: var(--jungle-deep);
   animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
 }
-@keyframes bloom {
-  0%{transform:scale(0.4);opacity:0.5}
-  70%{transform:scale(1.25)}
-  100%{transform:scale(1.15)}
-}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
 
 /* ── Round banner ── */
 .round-banner {
   position: fixed; top: 50%; left: 50%;
   transform: translate(-50%,-50%);
   z-index: var(--z-overlay); text-align: center;
-  background: rgba(15,61,46,0.95); backdrop-filter: blur(12px);
-  border: 2px solid rgba(251,191,36,0.35); border-radius: 26px;
+  background: rgba(10,46,34,0.96); backdrop-filter: blur(12px);
+  border: 2px solid rgba(251,191,36,0.3); border-radius: 26px;
   padding: 22px 40px; min-width: 280px;
   opacity: 0; pointer-events: none; transition: opacity 0.38s;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 0 40px rgba(251,191,36,0.2);
 }
 .round-banner.show { opacity: 1; }
 .round-banner h2 {
   font-size: clamp(20px,5vw,34px); font-weight: 900;
-  color: var(--yellow); text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  color: var(--tropical); text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
 }
 .round-banner p {
   font-size: clamp(12px,2.8vw,17px);
-  color: var(--white85); margin-top: 5px;
+  color: rgba(255,255,255,0.65); margin-top: 5px;
 }
 
 /* ── Celebration screen ── */
 .screen-celeb {
-  background: linear-gradient(170deg, #052e1a, #0f3d2e 40%, #166534 100%);
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(251,191,36,0.2) 0%, transparent 50%),
+    linear-gradient(160deg, #0a2e22 0%, #0f3d2e 50%, #15523d 100%);
+  backdrop-filter: blur(12px);
   z-index: var(--z-celeb);
 }
 .screen-celeb h2 {
-  font-size: clamp(26px,6.5vw,48px); color: var(--yellow);
-  text-shadow: 3px 3px 0 rgba(0,0,0,0.55);
+  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.5);
   animation: bounce 1.5s ease-in-out infinite;
 }
 .screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: var(--white85); margin: 6px 0; }
 .celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
-.celeb-zara    {
-  font-size: clamp(60px,15vw,100px);
-  animation: dance 1s ease-in-out infinite;
-  margin-bottom: 4px;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
-}
-
-/* Parade of animals on celeb */
+.celeb-zara    { font-size: clamp(60px,15vw,100px); animation: dance 1s ease-in-out infinite; margin-bottom: 10px; }
 .celeb-parade {
-  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-  margin: 10px 0 14px; max-width: 420px;
+  display: flex; gap: clamp(6px,1.8vw,14px); justify-content: center; flex-wrap: wrap;
+  margin: 14px 0; max-width: 92vw;
 }
 .celeb-parade span {
-  font-size: clamp(28px,6vw,40px);
-  animation: paradeWalk 1.2s ease-in-out infinite;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  font-size: clamp(28px,6.5vw,44px);
+  animation: paradeBob 1.4s ease-in-out infinite;
 }
-.celeb-parade span:nth-child(1) { animation-delay: 0s; }
-.celeb-parade span:nth-child(2) { animation-delay: 0.1s; }
-.celeb-parade span:nth-child(3) { animation-delay: 0.2s; }
-.celeb-parade span:nth-child(4) { animation-delay: 0.3s; }
-.celeb-parade span:nth-child(5) { animation-delay: 0.4s; }
-.celeb-parade span:nth-child(6) { animation-delay: 0.5s; }
-.celeb-parade span:nth-child(7) { animation-delay: 0.6s; }
-.celeb-parade span:nth-child(8) { animation-delay: 0.7s; }
-.celeb-parade span:nth-child(9) { animation-delay: 0.8s; }
-.celeb-parade span:nth-child(10){ animation-delay: 0.9s; }
-@keyframes paradeWalk {
-  0%,100% { transform: translateY(0) rotate(-4deg); }
-  50%     { transform: translateY(-8px) rotate(4deg); }
+.celeb-parade span:nth-child(2) { animation-delay: 0.15s; }
+.celeb-parade span:nth-child(3) { animation-delay: 0.3s; }
+.celeb-parade span:nth-child(4) { animation-delay: 0.45s; }
+.celeb-parade span:nth-child(5) { animation-delay: 0.6s; }
+@keyframes paradeBob { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-14px) rotate(4deg)} }
+.celeb-sanctuary {
+  font-size: clamp(14px,3.2vw,20px); color: var(--emerald);
+  font-weight: 900; margin: 6px 0;
 }
 
 /* ── Hint styles ── */
 .hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
-.hint-glow   { box-shadow: 0 0 25px rgba(251,191,36,0.85), 0 0 50px rgba(251,191,36,0.45) !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(253,224,71,0.85), 0 0 50px rgba(251,191,36,0.45) !important; }
 
 /* ── Particles ── */
 .confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
@@ -462,48 +377,30 @@ body::before {
 
 /* ── Keyframes ── */
 @keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-@keyframes dance       {
-  0%,100%{transform:translateY(0) rotate(0) scale(1)}
-  15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)}
-  30%{transform:translateY(0) rotate(8deg)}
-  45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)}
-  60%{transform:translateY(0) rotate(5deg)}
-  75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)}
-}
-@keyframes charJump    {
-  0%,100%{transform:translateY(0) scale(1)}
-  35%{transform:translateY(-22px) scale(1.08)}
-  70%{transform:translateY(-8px) scale(1.03)}
-}
-@keyframes wiggle      {
-  0%,100%{transform:rotate(0)}
-  25%{transform:rotate(-6deg) scale(1.05)}
-  75%{transform:rotate(6deg) scale(1.05)}
-}
-@keyframes cfall       {
-  0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}
-  100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}
-}
-@keyframes starpop     {
-  0%{transform:scale(0) rotate(0);opacity:1}
-  60%{transform:scale(1.4) rotate(200deg);opacity:1}
-  100%{transform:scale(0) rotate(360deg);opacity:0}
-}
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
 </style>
 </head>
 <body>
 
-<!-- Vines -->
-<div class="vine" style="left:6%; height:90px; animation-duration:4.5s;"></div>
-<div class="vine" style="left:28%; height:130px; animation-duration:5.2s; animation-delay:-1s;"></div>
-<div class="vine" style="left:68%; height:100px; animation-duration:4.8s; animation-delay:-2s;"></div>
-<div class="vine" style="left:92%; height:120px; animation-duration:5.5s; animation-delay:-0.5s;"></div>
+<!-- Vines on the sides -->
+<div class="vine vine-left" id="vineLeft"></div>
+<div class="vine vine-right" id="vineRight"></div>
 
-<!-- HUD -->
+<!-- HUD (includes small sanctuary counter in left column - does NOT overlap play area) -->
 <div class="hud" id="hud" style="display:none">
-  <div class="hud-left hud-round">
-    <span class="hud-label">ROUND</span>
-    <span class="hud-val" id="hudRound">1/4</span>
+  <div class="hud-left">
+    <div class="hud-round">
+      <span class="hud-label">ROUND</span>
+      <span class="hud-val" id="hudRound">1/4</span>
+    </div>
+    <div class="hud-sanctuary">
+      <span class="hud-sanctuary-icon">🌿</span>
+      <span id="hudSanctuary">0/20</span>
+    </div>
   </div>
   <div class="hud-center">
     <span class="hud-target-text" id="hudTarget">Match the safari card!</span>
@@ -512,13 +409,6 @@ body::before {
     <span class="hud-label">STARS</span>
     <span class="hud-val" id="hudScore">0</span>
   </div>
-</div>
-
-<!-- Animal Sanctuary Achievement -->
-<div class="sanctuary" id="sanctuary" style="display:none">
-  <div class="sanctuary-icon">🌴</div>
-  <div class="sanctuary-label">SANCTUARY</div>
-  <div class="sanctuary-pen" id="sanctuaryPen"></div>
 </div>
 
 <!-- Game Area -->
@@ -533,10 +423,7 @@ body::before {
 <!-- Zara character -->
 <div class="char-area" id="charArea" style="display:none">
   <div class="char-bubble" id="charBubble"></div>
-  <div style="position:relative; display:inline-block;">
-    <div class="char-hat">🎩</div>
-    <div class="char-emoji" id="charEmoji">🧑‍🦱</div>
-  </div>
+  <div class="char-emoji" id="charEmoji">🧑‍🦱</div>
 </div>
 
 <!-- Progress bar -->
@@ -552,52 +439,46 @@ body::before {
 <div class="screen screen-title active" id="scrTitle">
   <div class="animal-row">
     <span>🦁</span>
+    <span>🧑‍🦱</span>
     <span>🐘</span>
-    <span>🦒</span>
-    <span>🦜</span>
   </div>
-  <div class="safari-icon">🧑‍🦱</div>
-  <h1>Zara's Jungle Safari</h1>
-  <p>Help Zara the Explorer match the tens to release all the jungle animals into the sanctuary! 🌴</p>
-  <button class="btn btn-start" id="btnStart">Start the Safari! 🎒</button>
+  <div class="leaf-icon">🌴</div>
+  <h1>Jungle Safari Card Match</h1>
+  <p>Zara the Explorer is on safari! Help her find each number to rescue the jungle animals! 🦒</p>
+  <button class="btn btn-start" id="btnStart">Start Safari! 🌴</button>
 </div>
 
 <!-- ═══ CELEBRATION SCREEN ═══ -->
 <div class="screen screen-celeb" id="scrCeleb">
   <div class="celeb-zara">🧑‍🦱</div>
+  <h2 id="celebTitle">🌟 Safari Star! 🌟</h2>
+  <p id="celebMsg">All jungle animals are safe in the sanctuary!</p>
   <div class="celeb-parade">
-    <span>🐵</span><span>🦁</span><span>🐘</span><span>🦜</span><span>🦒</span>
-    <span>🐯</span><span>🦓</span><span>🐍</span><span>🐊</span><span>🦏</span>
+    <span>🐵</span>
+    <span>🦁</span>
+    <span>🐘</span>
+    <span>🦜</span>
+    <span>🦒</span>
   </div>
-  <h2 id="celebTitle">🌟 Amazing Explorer! 🌟</h2>
-  <p id="celebMsg">All the animals are safe in the sanctuary!</p>
+  <div class="celeb-sanctuary" id="celebSanctuary">🌿 Sanctuary: 20/20 🌿</div>
   <div class="celeb-stars" id="celebStars"></div>
-  <button class="btn btn-again" id="btnAgain">Play Again! 🎒</button>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🌴</button>
 </div>
 
 <script>
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  Aha! — Zara's Jungle Safari: Match the Tens                    ║
-// ║  Card matching — tens: 10, 20, 30... 100                        ║
-// ║  Voice A (en-US-AnaNeural) · Jungle Safari theme                ║
+// ║  Aha! — Jungle Safari Card Match (10–50)                         ║
+// ║  Card matching — match target to correct option                  ║
+// ║  Voice A (en-US-AnaNeural) · Jungle Safari theme                 ║
+// ║  Character: Zara the Explorer                                    ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const AUDIO_BASE = '../../audio';
 
-const NUMBER_WORDS = {
-  10:'ten', 20:'twenty', 30:'thirty', 40:'forty', 50:'fifty',
-  60:'sixty', 70:'seventy', 80:'eighty', 90:'ninety', 100:'one hundred'
-};
-const NUMBERS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-
-const EMOJI_MAP = {
-  10:'🐵', 20:'🦁', 30:'🐘', 40:'🦜', 50:'🦒',
-  60:'🐯', 70:'🦓', 80:'🐍', 90:'🐊', 100:'🦏'
-};
-const ANIMAL_NAMES = {
-  10:'monkey', 20:'lion', 30:'elephant', 40:'parrot', 50:'giraffe',
-  60:'tiger', 70:'zebra', 80:'snake', 90:'crocodile', 100:'rhino'
-};
+const NUMBERS = [10, 20, 30, 40, 50];
+const NUMBER_WORDS = {10:'ten', 20:'twenty', 30:'thirty', 40:'forty', 50:'fifty'};
+const EMOJI = {10:'🐵', 20:'🦁', 30:'🐘', 40:'🦜', 50:'🦒'};
+const ANIMAL_NAMES = {10:'monkey', 20:'lion', 30:'elephant', 40:'parrot', 50:'giraffe'};
 
 // ── Voice A clip pools ──
 const VOICE_A = {
@@ -673,20 +554,20 @@ class GameAudio {
   unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
   startMusic() {
     this._init(); if (this.playing) return; this.playing = true;
-    // Warm jungle pentatonic (major-ish, earthy)
+    // Warm jungle pentatonic — major, hopeful
     const notes = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33];
     const go = () => {
       if (!this.playing) return;
       const f = notes[Math.floor(Math.random() * notes.length)];
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = Math.random() > 0.4 ? 'sine' : 'triangle';
-      o.frequency.value = f * (Math.random() > 0.6 ? 0.5 : 1);
+      o.type = Math.random() > 0.35 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
       g.gain.setValueAtTime(0, this.ctx.currentTime);
       g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.2);
-      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.5);
-      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.3);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.5);
       o.onended = () => { o.disconnect(); g.disconnect(); };
-      this._mt = setTimeout(go, 900 + Math.random() * 1400);
+      this._mt = setTimeout(go, 850 + Math.random() * 1300);
     }; go();
   }
   stopMusic() { this.playing = false; clearTimeout(this._mt); }
@@ -714,8 +595,7 @@ class GameAudio {
       o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
       o.onended=()=>{o.disconnect();g.disconnect()};
     }
-    else if (type==='flip')     { p(600,t,0.06,0.15); p(800,t+0.03,0.08,0.12); }
-    else if (type==='pop')      { p(800,t,0.05,0.2); p(1200,t+0.03,0.06,0.15); }
+    else if (type==='rescue')   { p(440,t,0.1,0.25); p(587.33,t+0.1,0.12,0.3); p(783.99,t+0.22,0.2,0.4); }
   }
   speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
   async _next() {
@@ -758,7 +638,6 @@ class GameAudio {
     return this.speak(`${AUDIO_BASE}/${file}`);
   }
   speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
-  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
   clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
 }
 
@@ -775,21 +654,22 @@ function onTap(el, fn) {
   el.addEventListener('click', e => { if(t)return; fn(e); });
 }
 
-// Make emoji pattern for a number (for tens, show 1 emoji per 10)
+// Make emoji pattern — for large numbers we show groups of 10 so it stays visible
 function makeEmojiPattern(n) {
-  const e = EMOJI_MAP[n];
-  const count = Math.min(Math.floor(n/10), 10);
-  return e.repeat(count);
+  const e = EMOJI[n];
+  // For 10,20,30,40,50 → show 1..5 copies (one per group of ten)
+  const groups = n / 10;
+  return e.repeat(groups);
 }
 
-const BUBBLE_CORRECT = ['Yes! 🌟','Released! 🌴','Awesome! ✨','Got it! 🎒','Safari! 🦁','Nice! 🐘'];
-const BUBBLE_WRONG   = ['Not that one!','Try again! 🎒','Almost! 🦜','Keep looking!','Hmm... 🌴'];
+const BUBBLE_CORRECT = ['Brilliant! 🌟','Safari star! 🦁','Well spotted! 👀','Amazing! 🦒','Super! 🐘','Got it! 🌴','Perfect! 🦜'];
+const BUBBLE_WRONG   = ['Not that one!','Try again! 🌿','Almost! 🐵','Keep looking!','Hmm... 🌴'];
 
 // ══════════════════════════════════════════════════════════════════
 // VISUAL EFFECTS
 // ══════════════════════════════════════════════════════════════════
 function confetti(count = 40, extra = []) {
-  const all = ['🌿','🍃','🦜','🌴','⭐','✨','🌟','🎒','🐵','🦁','🐘', ...extra];
+  const all = ['🌿','🍃','🌴','🐵','🦁','🐘','🦜','🦒','⭐','✨','🌟', ...extra];
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
     el.className = 'confetti'; el.textContent = pick(all);
@@ -806,7 +686,7 @@ function confetti(count = 40, extra = []) {
 function starBurst(el) {
   const r = el.getBoundingClientRect();
   const cx = r.left + r.width/2, cy = r.top + r.height/2;
-  const bits = ['✨','🌟','⭐','🌿','💫','🍃'];
+  const bits = ['✨','🌟','⭐','🌿','🍃','💫'];
   for (let i = 0; i < 8; i++) {
     const s = document.createElement('div');
     s.className = 'starburst';
@@ -816,29 +696,6 @@ function starBurst(el) {
     s.style.animationDelay = (Math.random()*0.2) + 's';
     document.body.appendChild(s);
     setTimeout(() => s.remove(), 900);
-  }
-}
-
-function sanctuarySparkles(targetEl) {
-  const sanctEl = $('sanctuary');
-  if (!sanctEl) return;
-  const sr = sanctEl.getBoundingClientRect();
-  const tr = targetEl.getBoundingClientRect();
-  const sx = tr.left + tr.width/2, sy = tr.top + tr.height/2;
-  const ex = sr.left + sr.width/2, ey = sr.top + sr.height/2;
-  for (let i = 0; i < 6; i++) {
-    const s = document.createElement('div');
-    s.className = 'sparkle';
-    s.textContent = pick(['✨','🌿','💫','🍃']);
-    s.style.left = sx + 'px'; s.style.top = sy + 'px';
-    s.style.transition = `all ${0.5 + i*0.08}s ease-in`;
-    document.body.appendChild(s);
-    requestAnimationFrame(() => {
-      s.style.left = (ex + (Math.random()-0.5)*30) + 'px';
-      s.style.top  = (ey + (Math.random()-0.5)*30) + 'px';
-      s.style.opacity = '0';
-    });
-    setTimeout(() => s.remove(), 1200);
   }
 }
 
@@ -859,36 +716,56 @@ function jumpChar() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// SCENERY — fluttering leaves & jungle critters
+// SCENERY — leaves, toucans, vines
 // ══════════════════════════════════════════════════════════════════
 function buildScenery() {
-  const emojis = ['🍃','🌿','🍂','🦋','🐛','🌺','🌸','🦜'];
-  for (let i = 0; i < 18; i++) {
+  // Falling leaves and occasional creatures
+  const leafEmojis = ['🍃','🌿','🍂','🌱'];
+  for (let i = 0; i < 14; i++) {
     const el = document.createElement('div');
     el.className = 'bg-particle';
-    el.textContent = pick(emojis);
+    el.textContent = pick(leafEmojis);
     el.style.left              = (Math.random()*100) + 'vw';
-    el.style.animationDelay    = (-Math.random()*20) + 's';
-    el.style.animationDuration = (12 + Math.random()*16) + 's';
+    el.style.animationDelay    = (-Math.random()*18) + 's';
+    el.style.animationDuration = (11 + Math.random()*14) + 's';
     document.body.appendChild(el);
   }
+  // Toucan silhouettes drifting across at varying heights
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-toucan';
+    el.textContent = pick(['🦜','🦋']);
+    el.style.top               = (10 + Math.random()*50) + 'vh';
+    el.style.animationDelay    = (-Math.random()*40) + 's';
+    el.style.animationDuration = (25 + Math.random()*20) + 's';
+    document.body.appendChild(el);
+  }
+  // Vines — stacks of leaf emoji
+  ['vineLeft','vineRight'].forEach(id => {
+    const v = $(id);
+    const emojis = ['🌿','🍃','🌱','🌿','🍃'];
+    for (let i = 0; i < 15; i++) {
+      const s = document.createElement('span');
+      s.textContent = pick(emojis);
+      v.appendChild(s);
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
 // ROUND CONFIG — 4 rounds, progressive difficulty
-// 10 tens total — distributed across rounds
+// Each round: match 5 items (numbers 10,20,30,40,50)
 //
-// Round 1: 2 choices. Pool: 10, 20, 30. 3 items.  Target = numeral + emoji + word. Options = numeral + emoji + word.
-// Round 2: 3 choices. Pool: 10, 20, 30, 40, 50. 5 items.  Target = numeral + emoji. Options = numeral + word.
-// Round 3: 4 choices. Pool: 30, 40, 50, 60, 70, 80. 5 items. Target = emoji pattern + small num. Options = numeral + word.
-// Round 4: 4 choices. Pool: 50, 60, 70, 80, 90, 100. 5 items. Target = word + small num. Options = numeral only.
-// Total: 18 matches.
+// Round 1: 2 choices. Target = numeral + emoji + word. Options = numeral + emoji + word.
+// Round 2: 3 choices. Target = numeral + emoji (no word). Options = numeral + word (no emoji).
+// Round 3: 4 choices. Target = emoji pattern + small numeral. Options = numeral + word.
+// Round 4: 4 choices. Target = word + small numeral. Options = numeral only.
 // ══════════════════════════════════════════════════════════════════
 const ROUNDS = [
-  { choices: 2, items: 3, pool: [10, 20, 30],                      label: 'Round 1 — Meet the Animals 🐵',   sub: 'Match the ten!' },
-  { choices: 3, items: 5, pool: [10, 20, 30, 40, 50],              label: 'Round 2 — Into the Jungle 🦒',    sub: 'A bit trickier now!' },
-  { choices: 4, items: 5, pool: [30, 40, 50, 60, 70, 80],          label: 'Round 3 — Deeper Safari 🐯',      sub: 'Count the animals!' },
-  { choices: 4, items: 5, pool: [50, 60, 70, 80, 90, 100],         label: 'Round 4 — Big Animal Rescue 🦏',  sub: 'The hardest trail!' },
+  { choices: 2, label: 'Round 1 — Safari Start 🐵',    sub: 'Match the number card!' },
+  { choices: 3, label: 'Round 2 — Roaring Lions 🦁',   sub: 'A bit harder now!' },
+  { choices: 4, label: 'Round 3 — Count the Herd! 🐘', sub: 'Count carefully!' },
+  { choices: 4, label: 'Round 4 — Word Safari! 🦒',    sub: 'The biggest challenge!' },
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -897,14 +774,11 @@ const ROUNDS = [
 const audio = new GameAudio();
 let gameActive = false, round = 0, score = 0, totalErrors = 0;
 let currentItemIndex = 0;
-let roundNumbers = [];
+let roundNumbers = []; // shuffled array of 5 numbers for this round
 let currentTarget = 0;
 let lockBoard = false;
 let hintTimer = null, hintVoiceTimer = null;
-let totalReleased = 0;
-
-// Total matches across whole game = 3 + 5 + 5 + 5 = 18
-const TOTAL_MATCHES = ROUNDS.reduce((a, r) => a + r.items, 0);
+let totalRescued = 0; // total animals rescued across all rounds (max 20)
 
 // ══════════════════════════════════════════════════════════════════
 // SCREENS
@@ -915,44 +789,15 @@ function showScreen(id) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ANIMAL SANCTUARY (achievement)
+// SANCTUARY COUNTER (HUD-only, no floating box over play area)
 // ══════════════════════════════════════════════════════════════════
-function buildSanctuary() {
-  const pen = $('sanctuaryPen');
-  pen.innerHTML = '';
-  // We'll show a slot for every match (TOTAL_MATCHES = 18)
-  // Each slot shows a random jungle animal emoji
-  const allAnimals = ['🐵','🦁','🐘','🦜','🦒','🐯','🦓','🐍','🐊','🦏'];
-  for (let i = 0; i < TOTAL_MATCHES; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'sanctuary-slot';
-    slot.id = 'sanctSlot' + i;
-    slot.textContent = allAnimals[i % allAnimals.length];
-    pen.appendChild(slot);
-  }
+function updateSanctuaryHud() {
+  $('hudSanctuary').textContent = `${totalRescued}/20`;
 }
 
-function releaseAnimal(cardEl, targetNum) {
-  const slot = $('sanctSlot' + totalReleased);
-  if (slot) {
-    // Tie the released slot's animal to the target number for thematic link
-    if (EMOJI_MAP[targetNum]) slot.textContent = EMOJI_MAP[targetNum];
-    slot.classList.add('released');
-    sanctuarySparkles(cardEl);
-  }
-  totalReleased++;
-}
-
-function glowSanctuary() {
-  const s = $('sanctuary');
-  s.classList.add('glow');
-  setTimeout(() => s.classList.remove('glow'), 3200);
-}
-
-function grandOpenSanctuary() {
-  const s = $('sanctuary');
-  s.classList.add('grand-open');
-  setTimeout(() => s.classList.remove('grand-open'), 3000);
+function rescueAnimal() {
+  totalRescued++;
+  updateSanctuaryHud();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -970,6 +815,12 @@ function buildProg() {
 
 function markProg(n) {
   const d = $('prog' + n); if (d) d.classList.add('done');
+}
+
+function resetProg() {
+  NUMBERS.forEach(n => {
+    const d = $('prog' + n); if (d) d.classList.remove('done');
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -995,7 +846,7 @@ function resetHints() {
 function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
 
 // ══════════════════════════════════════════════════════════════════
-// BUILD TARGET CARD — varies by round (numeral ALWAYS visible in some form)
+// BUILD TARGET CARD — varies by round
 // ══════════════════════════════════════════════════════════════════
 function buildTargetCard(n, roundIdx) {
   const card = $('targetCard');
@@ -1004,18 +855,17 @@ function buildTargetCard(n, roundIdx) {
   if (roundIdx === 0) {
     // Round 1: numeral + emoji + word
     const num = document.createElement('div'); num.className = 'target-numeral'; num.textContent = n;
-    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = EMOJI_MAP[n];
+    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = EMOJI[n];
     const wrd = document.createElement('div'); wrd.className = 'target-word'; wrd.textContent = NUMBER_WORDS[n];
     card.append(num, emo, wrd);
   } else if (roundIdx === 1) {
-    // Round 2: numeral + emoji (no word)
+    // Round 2: numeral + emoji only (no word)
     const num = document.createElement('div'); num.className = 'target-numeral'; num.textContent = n;
-    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = EMOJI_MAP[n];
+    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = EMOJI[n];
     card.append(num, emo);
   } else if (roundIdx === 2) {
-    // Round 3: emoji pattern (count by tens visually) + small numeral
-    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = makeEmojiPattern(n);
-    emo.style.fontSize = 'clamp(18px,4.5vw,28px)';
+    // Round 3: emoji pattern (groups of 10!) + small numeral
+    const emo = document.createElement('div'); emo.className = 'target-emoji pattern'; emo.textContent = makeEmojiPattern(n);
     const sn  = document.createElement('div'); sn.className = 'target-small-num'; sn.textContent = n;
     card.append(emo, sn);
   } else if (roundIdx === 3) {
@@ -1027,13 +877,14 @@ function buildTargetCard(n, roundIdx) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// BUILD OPTION CARDS — varies by round, distractors picked from round pool
+// BUILD OPTION CARDS — varies by round
 // ══════════════════════════════════════════════════════════════════
-function buildOptionCards(targetNum, roundIdx, numChoices, pool) {
+function buildOptionCards(targetNum, roundIdx, numChoices) {
   const area = $('optionsArea');
   area.innerHTML = '';
 
-  let available = pool.filter(n => n !== targetNum);
+  // Build distractors
+  let available = NUMBERS.filter(n => n !== targetNum);
   shuffle(available);
   let options = [targetNum, ...available.slice(0, numChoices - 1)];
   shuffle(options);
@@ -1046,7 +897,7 @@ function buildOptionCards(targetNum, roundIdx, numChoices, pool) {
     if (roundIdx === 0) {
       // Round 1: numeral + emoji + word
       const num = document.createElement('div'); num.className = 'option-numeral'; num.textContent = n;
-      const emo = document.createElement('div'); emo.className = 'option-emoji'; emo.textContent = EMOJI_MAP[n];
+      const emo = document.createElement('div'); emo.className = 'option-emoji'; emo.textContent = EMOJI[n];
       const wrd = document.createElement('div'); wrd.className = 'option-word'; wrd.textContent = NUMBER_WORDS[n];
       card.append(num, emo, wrd);
     } else if (roundIdx === 1) {
@@ -1088,25 +939,25 @@ async function handleOptionTap(cardEl, chosenNum) {
     score++;
     $('hudScore').textContent = score;
 
-    // Speak number ONCE
+    // Speak number ONCE (snappy pacing)
     audio.speakNumber(currentTarget);
 
-    // Release animal into sanctuary
-    releaseAnimal(cardEl, currentTarget);
+    // Rescue an animal — bumps HUD sanctuary counter
+    rescueAnimal();
+    audio.tone('rescue');
 
-    // Voice cheer — fire and forget (don't await)
+    // Voice cheer
+    await delay(220);
     audio.play('correct');
 
     // Mark progress
     markProg(currentTarget);
 
-    // Short delay (pacing)
-    await delay(450);
+    await delay(500);
 
     // Next item or end round
     currentItemIndex++;
-    const rnd = ROUNDS[round];
-    if (currentItemIndex >= rnd.items) {
+    if (currentItemIndex >= 5) {
       await endRound();
     } else {
       presentItem();
@@ -1118,11 +969,11 @@ async function handleOptionTap(cardEl, chosenNum) {
     showCharBubble(pick(BUBBLE_WRONG));
     totalErrors++;
 
+    // Encouragement — non-blocking, then re-speak target
     audio.play('wrong');
-    // Re-speak target after short delay — don't block retry
     setTimeout(() => { if (!lockBoard) audio.speakNumber(currentTarget); }, 500);
 
-    setTimeout(() => cardEl.classList.remove('wrong-shake'), 520);
+    setTimeout(() => cardEl.classList.remove('wrong-shake'), 500);
     lockBoard = false;
     resetHints();
   }
@@ -1136,15 +987,17 @@ async function presentItem() {
   currentTarget = roundNumbers[currentItemIndex];
   const rnd = ROUNDS[round];
 
+  // Build target and options
   buildTargetCard(currentTarget, round);
-  buildOptionCards(currentTarget, round, rnd.choices, rnd.pool);
+  buildOptionCards(currentTarget, round, rnd.choices);
 
-  $('hudTarget').textContent = `Find ${currentTarget} ${EMOJI_MAP[currentTarget]}`;
+  // Update HUD
+  $('hudTarget').textContent = `Find ${currentTarget} ${EMOJI[currentTarget]}`;
 
-  // Speak number once — snappy
+  // Speak the number once — quickly
   audio.tone('reveal');
   audio.speakNumber(currentTarget);
-  await delay(250);
+  await delay(300);
 
   lockBoard = false;
   resetHints();
@@ -1158,19 +1011,17 @@ async function endRound() {
   gameActive = false;
   stopHints();
 
-  glowSanctuary();
   audio.tone('roundDone');
-  confetti(30);
+  confetti(32);
 
-  // Fire voice without awaiting (pacing)
-  audio.play('round-complete');
-
-  await delay(900);
+  await delay(500);
+  await audio.play('round-complete');
 
   round++;
-  if (round >= ROUNDS.length) {
+  if (round >= 4) {
     await endGame();
   } else {
+    // Show round banner
     await showRoundBanner();
     await startRound();
   }
@@ -1185,8 +1036,7 @@ async function showRoundBanner() {
   $('roundSub').textContent = rnd.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  // Tight pacing (~2s shown, ~0.8s fade out) = ~3s transition
-  await delay(2000);
+  await delay(2200);
   $('roundBanner').classList.remove('show');
   await delay(400);
 }
@@ -1195,27 +1045,18 @@ async function showRoundBanner() {
 // START ROUND
 // ══════════════════════════════════════════════════════════════════
 async function startRound() {
-  const rnd = ROUNDS[round];
   currentItemIndex = 0;
+  roundNumbers = shuffle([...NUMBERS]);
+  resetProg();
 
-  // Build round's numbers: sample up to `items` from pool (with uniqueness if possible)
-  let pool = [...rnd.pool];
-  shuffle(pool);
-  const picks = [];
-  for (let i = 0; i < rnd.items; i++) {
-    if (pool.length === 0) pool = shuffle([...rnd.pool]);
-    picks.push(pool.shift());
-  }
-  roundNumbers = picks;
-
-  $('hudRound').textContent = (round+1) + '/' + ROUNDS.length;
+  $('hudRound').textContent = (round+1) + '/4';
   gameActive = true;
 
   await presentItem();
 }
 
 // ══════════════════════════════════════════════════════════════════
-// END GAME — celebration
+// END GAME — celebration with full sanctuary parade
 // ══════════════════════════════════════════════════════════════════
 async function endGame() {
   gameActive = false;
@@ -1223,36 +1064,31 @@ async function endGame() {
   stopHints();
   audio.stopMusic();
 
-  grandOpenSanctuary();
-
   await delay(500);
   audio.tone('celeb');
   confetti(60);
 
+  // Star rating
   const stars = totalErrors <= 2 ? 3 : totalErrors <= 5 ? 2 : 1;
   $('celebStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-  $('celebTitle').textContent =
-    stars === 3 ? '🌟 Amazing Explorer! 🌟' :
-    stars === 2 ? '🌴 Great Safari! 🌴' :
-                  '🎒 Well Done! 🎒';
-  $('celebMsg').textContent = `You released ${totalReleased} animals into the sanctuary!`;
+  $('celebTitle').textContent = stars === 3 ? '🌟 Safari Star! 🌟' : stars === 2 ? '🐘 Great Explorer! 🐘' : '🦒 Well Done! 🦒';
+  $('celebMsg').textContent = `You rescued ${totalRescued} jungle animals!`;
+  $('celebSanctuary').textContent = `🌿 Sanctuary: ${totalRescued}/20 🌿`;
 
   // Hide game UI
   $('hud').style.display = 'none';
   $('gameArea').style.display = 'none';
   $('progBar').style.display = 'none';
-  $('sanctuary').style.display = 'none';
 
   showScreen('scrCeleb');
 
-  // Game-complete voice (fire and forget to keep pacing)
-  audio.play('game-complete');
-  await delay(1400);
+  // Two voice phrases + confetti waves
+  await audio.play('game-complete');
+  await delay(400);
 
-  // Second confetti wave
+  // Second wave confetti
   confetti(40);
-  await delay(1600);
-  audio.play('game-complete');
+  await audio.play('game-complete');
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1261,25 +1097,29 @@ async function endGame() {
 async function startGame() {
   showScreen(null);
 
-  round = 0; score = 0; totalErrors = 0; totalReleased = 0;
+  round = 0; score = 0; totalErrors = 0; totalRescued = 0;
   $('hudScore').textContent = '0';
+  updateSanctuaryHud();
 
-  buildSanctuary();
+  // Build UI
   buildProg();
 
+  // Show game elements
   $('hud').style.display = '';
   $('gameArea').style.display = '';
   $('charArea').style.display = '';
-  $('sanctuary').style.display = '';
   $('progBar').style.display = '';
 
   audio.startMusic();
 
-  // Greeting (fire and forget for snappy pacing)
-  audio.play('greetings');
-  await delay(600);
+  // Greeting
+  await audio.play('greetings');
+  await delay(300);
 
+  // Show first round banner
   await showRoundBanner();
+
+  // Start round 1
   await startRound();
 }
 
@@ -1289,6 +1129,7 @@ async function startGame() {
 buildScenery();
 
 onTap($('btnStart'), () => {
+  // CRITICAL: unlock audio BEFORE startGame (iOS requirement)
   audio.unlock();
   $('btnStart').disabled = true;
   startGame();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Catch the Jungle Fruits!</title>
+<title>Catch the Jungle Fruits! (10-50)</title>
 <style>
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
@@ -457,7 +457,7 @@ body::after {
     <span>&#x1F34D;</span>
   </div>
   <h1>Catch the Jungle Fruits!</h1>
-  <p>Zara the Explorer needs help! Jungle fruits are rising up with numbers on them. Tap the ones with the RIGHT number to fill her basket!</p>
+  <p>Zara the Explorer needs help! Jungle fruits are rising up with numbers 10 to 50. Tap the ones with the RIGHT number to fill her basket!</p>
   <button class="btn btn-start" id="btnStart">Let's Go!</button>
 </div>
 
@@ -476,8 +476,8 @@ body::after {
 
 <script>
 // ====================================================================
-//  Aha! -- Jungle Safari Bubble Pop (Tens)
-//  Zara the Explorer catches fruits with multiples of 10
+//  Aha! -- Jungle Safari Bubble Pop (10-50)
+//  Zara the Explorer catches fruits with 10, 20, 30, 40, 50
 //  Voice A (en-US-AnaNeural) -- Jungle Safari theme
 // ====================================================================
 
@@ -492,8 +492,8 @@ const VOICE_A = {
   'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
 };
 
-const NUMBER_WORDS = {10:'ten',20:'twenty',30:'thirty',40:'forty',50:'fifty',60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
-const ALL_NUMBERS = [10,20,30,40,50,60,70,80,90,100];
+const NUMBERS = [10, 20, 30, 40, 50];
+const NUMBER_WORDS = {10:'ten',20:'twenty',30:'thirty',40:'forty',50:'fifty'};
 const FRUIT_EMOJIS = ['\u{1F965}','\u{1F34C}','\u{1F34D}','\u{1F96D}']; // coconut, banana, pineapple, mango
 
 // ====================================================================
@@ -673,10 +673,10 @@ function jumpChar() {
   el.style.animation = 'charJump 0.5s ease-out';
 }
 
-// Dot pattern using vines for tens (show 1 vine per 10)
-function makeDots(n) {
+// Leaf count pattern - show 1 leaf per 10
+function makeLeaves(n) {
   const count = n / 10;
-  return '\u{1F33F}'.repeat(count);
+  return '\u{1F343}'.repeat(count);
 }
 
 // ====================================================================
@@ -786,28 +786,28 @@ function createFruit(number, displayMode, riseDuration) {
     numEl.className = 'fruit-number';
     numEl.textContent = number;
     body.appendChild(numEl);
-  } else if (displayMode === 'dots') {
-    const dotsEl = document.createElement('div');
-    dotsEl.className = 'fruit-dots';
-    dotsEl.textContent = makeDots(number);
-    body.appendChild(dotsEl);
+  } else if (displayMode === 'leaves') {
+    const leavesEl = document.createElement('div');
+    leavesEl.className = 'fruit-dots';
+    leavesEl.textContent = makeLeaves(number);
+    body.appendChild(leavesEl);
     const numEl = document.createElement('div');
     numEl.className = 'fruit-number';
     numEl.style.fontSize = 'clamp(14px,3vw,20px)';
     numEl.textContent = number;
     body.appendChild(numEl);
   } else if (displayMode === 'mixed') {
-    const style = pick(['numeral', 'dots-num', 'word-num']);
+    const style = pick(['numeral', 'leaves-num', 'word-num']);
     if (style === 'numeral') {
       const numEl = document.createElement('div');
       numEl.className = 'fruit-number';
       numEl.textContent = number;
       body.appendChild(numEl);
-    } else if (style === 'dots-num') {
-      const dotsEl = document.createElement('div');
-      dotsEl.className = 'fruit-dots';
-      dotsEl.textContent = makeDots(number);
-      body.appendChild(dotsEl);
+    } else if (style === 'leaves-num') {
+      const leavesEl = document.createElement('div');
+      leavesEl.className = 'fruit-dots';
+      leavesEl.textContent = makeLeaves(number);
+      body.appendChild(leavesEl);
       const numEl = document.createElement('div');
       numEl.className = 'fruit-number';
       numEl.style.fontSize = 'clamp(14px,3vw,20px)';
@@ -858,16 +858,20 @@ let fruitsOnScreen = [];
 let spawnCount = 0;
 const MAX_SPAWNS = 25;
 
-// Round configs with number subsets and speeds
+// Round configs - ALL numbers restricted to [10, 20, 30, 40, 50]
 const ROUNDS = [
+  // R1: Target big numeral + small word. HUD big target. Slow (15s rise).
   { display: 'numeral-word', speed: 15, targetDisplay: 'numeral-word',
-    targetPool: [10, 20, 30], distractorPool: [10, 20, 30] },
-  { display: 'numeral',      speed: 12, targetDisplay: 'numeral',
-    targetPool: [20, 40, 60], distractorPool: [10, 20, 30, 40, 50, 60, 70] },
-  { display: 'dots',         speed: 15, targetDisplay: 'numeral-word',
-    targetPool: [30, 50, 70], distractorPool: [20, 30, 40, 50, 60, 70, 80] },
-  { display: 'mixed',        speed: 10, targetDisplay: 'numeral',
-    targetPool: [10,20,30,40,50,60,70,80,90,100], distractorPool: [10,20,30,40,50,60,70,80,90,100] },
+    targetPool: NUMBERS, distractorPool: NUMBERS },
+  // R2: Numeral only on fruits. Faster.
+  { display: 'numeral',      speed: 11, targetDisplay: 'numeral',
+    targetPool: NUMBERS, distractorPool: NUMBERS },
+  // R3: leaf count patterns + small numeral. Slower.
+  { display: 'leaves',       speed: 15, targetDisplay: 'numeral-word',
+    targetPool: NUMBERS, distractorPool: NUMBERS },
+  // R4: Mixed. Fast.
+  { display: 'mixed',        speed: 9,  targetDisplay: 'numeral',
+    targetPool: NUMBERS, distractorPool: NUMBERS },
 ];
 
 // ====================================================================
@@ -921,12 +925,12 @@ async function startRound() {
   $('roundSub').textContent = 'Catch the ' + targetNumber + 's!';
   banner.classList.add('show');
   audio.tone('reveal');
-  await delay(600);
+  await delay(700);
 
   await audio.speakNumber(targetNumber);
-  await delay(700);
+  await delay(900);
   banner.classList.remove('show');
-  await delay(300);
+  await delay(400);
 
   showCharBubble('Catch the ' + targetNumber + 's!', 3000);
 
@@ -984,9 +988,14 @@ function startSpawning() {
 function startThinkingPrompts() {
   const prompt = () => {
     if (!roundActive) return;
-    audio.speakNumber(targetNumber);
+    // Alternate between speaking target number and thinking phrase
+    if (Math.random() < 0.5) {
+      audio.speakNumber(targetNumber);
+    } else {
+      audio.play('thinking');
+    }
     showCharBubble('Find the ' + targetNumber + '!', 2500);
-    thinkTimer = setTimeout(prompt, 5500 + Math.random() * 800);
+    thinkTimer = setTimeout(prompt, 5000 + Math.random() * 1000);
   };
   thinkTimer = setTimeout(prompt, 5500);
 }
@@ -1091,13 +1100,13 @@ async function endRound() {
     $('roundSub').textContent = 'Basket filled! Next round...';
     banner.classList.add('show');
     await audio.play('round-complete');
-    await delay(1000);
+    await delay(1200);
     banner.classList.remove('show');
-    await delay(300);
+    await delay(600);
     currentRound++;
     startRound();
   } else {
-    await delay(600);
+    await delay(700);
     showCelebration();
   }
 }

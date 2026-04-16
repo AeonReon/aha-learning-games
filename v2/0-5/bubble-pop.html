@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bubble Pop! 🫧</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --pink: #f8a5c2; --magenta: #e91e8c; --purple: #a29bfe; --deep-purple: #6c5ce7;
+  --gold: #ffe066; --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(160deg, #1a0533 0%, #4a1580 35%, #8b1a6b 65%, #c0295e 100%);
+}
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.4;
+  animation: sparkleFloat linear infinite;
+}
+@keyframes sparkleFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.4; }
+  92%  { opacity: 0.4; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row img { width: clamp(60px, 15vw, 100px); height: auto; image-rendering: auto; }
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,224,102,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(30,10,70,0.88); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.38); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--pink); }
+.hud-score .hud-val { color: var(--gold); }
+
+/* ── Target banner (center HUD) ── */
+.hud-target { color: var(--gold); line-height: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.hud-target-numeral { font-size: clamp(28px,7vw,42px); font-weight: 900; color: #fff; text-shadow: 2px 2px 0 rgba(0,0,0,0.25); line-height: 1; }
+.hud-target-word { font-size: clamp(9px,2vw,12px); color: var(--gold); font-weight: bold; text-transform: lowercase; opacity: 0.7; }
+.hud-target-counter { font-size: clamp(11px,2.5vw,15px); color: var(--pink); font-weight: bold; margin-top: 2px; }
+
+/* ── Character ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-area img {
+  width: clamp(55px,13vw,85px); height: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.4));
+}
+.char-emoji { font-size: clamp(44px,10vw,66px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Bubble play area ── */
+.bubble-area {
+  position: fixed;
+  top: 68px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  overflow: hidden;
+  pointer-events: none;
+}
+.bubble-area.active { pointer-events: auto; }
+
+/* ── Bubbles ── */
+.bubble {
+  position: absolute;
+  width: clamp(70px, 18vw, 90px);
+  height: clamp(70px, 18vw, 90px);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: opacity 0.15s;
+  will-change: transform;
+  /* Glossy bubble look */
+  border: 2px solid rgba(255,255,255,0.35);
+  box-shadow: inset 0 -8px 20px rgba(0,0,0,0.15),
+              0 4px 18px rgba(0,0,0,0.25),
+              inset 0 8px 16px rgba(255,255,255,0.2);
+}
+.bubble::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 18%;
+  width: 35%; height: 25%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+.bubble-numeral {
+  font-size: clamp(28px, 7vw, 42px);
+  font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  line-height: 1;
+  pointer-events: none;
+}
+.bubble-dots {
+  font-size: clamp(10px, 2.5vw, 14px);
+  line-height: 1.2; white-space: pre;
+  text-align: center; letter-spacing: 1px;
+  pointer-events: none;
+}
+.bubble-word {
+  font-size: clamp(10px, 2.5vw, 14px);
+  font-weight: bold; color: rgba(255,255,255,0.85);
+  text-transform: lowercase;
+  pointer-events: none;
+}
+
+/* Bubble pop animation */
+.bubble.popping {
+  animation: bubblePop 0.35s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes bubblePop {
+  0%   { transform: scale(1); opacity: 1; }
+  30%  { transform: scale(1.3); opacity: 0.9; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Bubble wrong animation */
+.bubble.wrong-pop {
+  animation: bubbleWrong 0.45s ease-in-out;
+}
+@keyframes bubbleWrong {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* Float animation handled by JS, wobble by CSS */
+@keyframes wobble {
+  0%,100% { transform: translateX(0); }
+  25%     { transform: translateX(-6px); }
+  75%     { transform: translateX(6px); }
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(30,10,70,0.88); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width:  clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.22);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--pink),var(--deep-purple));
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(25,8,65,0.92); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.12); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--gold); text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.55); margin-top: 5px;
+}
+
+/* ── Wave banner (smaller, quick) ── */
+.wave-banner {
+  position: fixed; top: 40%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay);
+  font-size: clamp(18px,4.5vw,28px); font-weight: 900;
+  color: var(--gold); text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+  opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  text-align: center;
+}
+.wave-banner.show { opacity: 1; }
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(15,4,50,0.88); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.9); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row img { width: clamp(60px,16vw,108px); height: auto; }
+.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles & shared ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* Pop particles — burst out from popped bubble */
+.pop-particle {
+  position: fixed; pointer-events: none;
+  z-index: calc(var(--z-game) + 5);
+  border-radius: 50%;
+  animation: popBurst 0.5s ease-out forwards;
+}
+@keyframes popBurst {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Background canvas -->
+<div class="bg"></div>
+
+<!-- HUD (hidden until game starts) -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">POP THE</div>
+    <div class="hud-val hud-target" id="hudTarget">
+      <div class="hud-target-numeral">—</div>
+    </div>
+    <div class="hud-target-counter" id="hudCounter"></div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Bubble play area -->
+<div class="bubble-area" id="bubbleArea"></div>
+
+<!-- Princess character + speech bubble -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <img id="charImg" src="../../Characters/Princess with bird.gif" alt=""
+    onerror="this.style.display='none';document.getElementById('charEmoji').style.display='block'">
+  <div class="char-emoji" id="charEmoji" style="display:none">👸</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round transition banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- Wave banner (brief text flash) -->
+<div class="wave-banner" id="waveBanner"></div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🫧</span>
+    <img src="../../Characters/Princess with bird.gif" alt=""
+      onerror="this.outerHTML='<span style=\'font-size:clamp(60px,15vw,100px)\'>👸</span>'">
+    <span>🫧</span>
+  </div>
+  <h1>Bubble Pop! 🫧</h1>
+  <p>Pop the magic bubbles before they float away!<br>Tap only the right ones 💜</p>
+  <button class="btn btn-start" id="btnStart">Let's Pop! 🫧</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <img src="../../Characters/Prince and princess dance.gif" alt=""
+      style="width:clamp(65px,16vw,108px)"
+      onerror="this.outerHTML='<span style=\'font-size:clamp(52px,13vw,82px);animation:dance 1s ease-in-out infinite\'>👸</span>'">
+  </div>
+  <h2 id="celebTitle">🫧 Amazing! 🫧</h2>
+  <p  id="celebMsg">You popped them all!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🫧</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Bubble Pop  🫧                                         ║
+// ║  Floating bubble popping game for numbers 0–5                  ║
+// ║  Voice A (en-US-AnaNeural) · Fairy / princess theme            ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+// ── Voice A clip pools ──
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (from ARCHITECTURE.md §5c — do not simplify)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.3; this.musicDucked = 0.025;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 800 + Math.random() * 1200);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='pop')      { p(800,t,0.08,0.3); p(1000,t+0.04,0.1,0.25); }
+    else if (type==='reveal')   { p(440,t,0.15,0.2); p(554,t+0.1,0.18,0.25); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const NUMBER_WORDS = { 0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five' };
+
+function makeDots(n) {
+  if (n === 0) return '🌙';
+  if (n <= 3)  return '💜'.repeat(n);
+  if (n === 4) return '💜💜\n💜💜';
+  if (n === 5) return '💜💜💜\n💜💜';
+  return '';
+}
+
+// Consistent bubble color per number
+const BUBBLE_COLORS = {
+  0: 'rgba(90, 20, 140, 0.55)',    // deep violet
+  1: 'rgba(233, 30, 140, 0.55)',   // hot pink
+  2: 'rgba(248, 165, 194, 0.55)',  // soft rose
+  3: 'rgba(162, 155, 254, 0.55)',  // lavender
+  4: 'rgba(253, 203, 110, 0.55)',  // warm gold
+  5: 'rgba(0, 206, 201, 0.55)',    // teal
+};
+const BUBBLE_BORDERS = {
+  0: 'rgba(130, 60, 180, 0.7)',
+  1: 'rgba(255, 80, 170, 0.7)',
+  2: 'rgba(255, 190, 210, 0.7)',
+  3: 'rgba(180, 175, 255, 0.7)',
+  4: 'rgba(255, 220, 140, 0.7)',
+  5: 'rgba(60, 230, 225, 0.7)',
+};
+
+const BUBBLE_CORRECT = ['Pop! ⭐','Yes! 💜','Got it! ✨','Magic! 💫','Perfect! 🌟','Yay! 🌸'];
+const BUBBLE_WRONG   = ['Not that one! 💜','Careful! ✨','Look again! 🌸','Try another! 💫'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🎉','💜','🌸','🌷','💖','🦋','🫧', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','💜','🌟','💖','🫧']);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.15) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+// Sparkle pop particles (colored dots that fly out from popped bubble)
+function popParticles(cx, cy, color) {
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'pop-particle';
+    const size = 4 + Math.random() * 6;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.background = color || 'rgba(255,255,255,0.8)';
+    const angle = (Math.PI * 2 / 10) * i + Math.random() * 0.5;
+    const dist = 30 + Math.random() * 50;
+    const x = cx + Math.cos(angle) * dist;
+    const y = cy + Math.sin(angle) * dist;
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    // Animate to final position
+    p.animate([
+      { left: cx + 'px', top: cy + 'px', opacity: 1, transform: 'scale(1)' },
+      { left: x + 'px', top: y + 'px', opacity: 0, transform: 'scale(0)' }
+    ], { duration: 400 + Math.random() * 200, easing: 'ease-out', fill: 'forwards' });
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charImg').style.display !== 'none' ? $('charImg') : $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['✨','💜','🌸','⭐','💫','🌟','🫧','💖'];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*20) + 's';
+    el.style.animationDuration = (10 + Math.random()*14) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG
+// ══════════════════════════════════════════════════════════════════
+// Round 1: Numerals. Target announced + shown as numeral. Slow. 3 target + 3 distractor.
+// Round 2: Numerals. Target shown as numeral (no word). Faster. 4 target + 4 distractor.
+// Round 3: Dots. Target shown as numeral + word. Slower. 3 target + 5 distractor.
+// Round 4: Mix (numerals, dots, words). Target numeral only. Faster. 4 target + 4 distractor.
+const ROUNDS = [
+  {
+    label: 'Round 1 — Bubble Time! 🫧',
+    sub: 'Pop the right number bubbles!',
+    display: 'numeral',          // what appears ON the bubbles
+    hudShowWord: true,           // show word under numeral in HUD
+    announceTarget: true,        // voice says "Find and pop the number X"
+    targetCount: 3,
+    distractorCount: 3,
+    floatSpeed: 0.35,            // px per frame (slow)
+    spawnInterval: 1200,         // ms between bubble spawns
+    wavesPerRound: 3,
+  },
+  {
+    label: 'Round 2 — Faster Bubbles! ✨',
+    sub: 'More bubbles, more fun!',
+    display: 'numeral',
+    hudShowWord: false,
+    announceTarget: false,
+    targetCount: 4,
+    distractorCount: 4,
+    floatSpeed: 0.5,
+    spawnInterval: 900,
+    wavesPerRound: 3,
+  },
+  {
+    label: 'Round 3 — Count the Dots! 💜',
+    sub: 'Bubbles have dots — count carefully!',
+    display: 'dots',
+    hudShowWord: true,
+    announceTarget: true,
+    targetCount: 3,
+    distractorCount: 5,
+    floatSpeed: 0.35,
+    spawnInterval: 1100,
+    wavesPerRound: 3,
+  },
+  {
+    label: 'Round 4 — All Mixed Up! 🏆',
+    sub: 'Numbers, dots and words all jumbled!',
+    display: 'mix',
+    hudShowWord: false,
+    announceTarget: false,
+    targetCount: 4,
+    distractorCount: 4,
+    floatSpeed: 0.55,
+    spawnInterval: 850,
+    wavesPerRound: 3,
+  },
+];
+
+const NUMBERS_POOL = [0, 1, 2, 3, 4, 5];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let wave = 0;
+let currentTarget = -1;
+let targetsPoppedThisWave = 0, targetsNeededThisWave = 0;
+let activeBubbles = [];      // { el, num, isTarget, y, x, speed, wobblePhase, alive }
+let spawnQueue = [];          // bubbles waiting to spawn
+let spawnTimer = null;
+let animFrame = null;
+let lastCorrectVoiceTime = 0; // throttle correct voice to max once per 1.5s
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR — shows waves for the current round
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  const cfg = ROUNDS[round];
+  for (let w = 0; w < cfg.wavesPerRound; w++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'pdot' + w;
+    d.textContent = '🫧';
+    bar.appendChild(d);
+  }
+}
+function markProg(waveIdx) {
+  const d = $('pdot' + waveIdx);
+  if (d) d.classList.add('done');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function clearHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+function resetHints() {
+  clearHints();
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    // Find a target bubble on screen and make it pulse
+    const targetBubble = activeBubbles.find(b => b.alive && b.isTarget);
+    if (targetBubble) {
+      targetBubble.el.style.boxShadow = '0 0 32px rgba(255,224,102,0.9), 0 0 64px rgba(255,224,102,0.4), inset 0 -8px 20px rgba(0,0,0,0.15), 0 4px 18px rgba(0,0,0,0.25), inset 0 8px 16px rgba(255,255,255,0.2)';
+      audio.tone('hint');
+      setTimeout(() => {
+        if (targetBubble.alive) targetBubble.el.style.boxShadow = '';
+      }, 1900);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUBBLE CREATION
+// ══════════════════════════════════════════════════════════════════
+function createBubble(num, isTarget, displayMode) {
+  const area = $('bubbleArea');
+  const areaRect = area.getBoundingClientRect();
+  const bubbleSize = Math.min(90, Math.max(70, areaRect.width * 0.18));
+
+  const el = document.createElement('div');
+  el.className = 'bubble';
+  el.style.background = `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), ${BUBBLE_COLORS[num]})`;
+  el.style.borderColor = BUBBLE_BORDERS[num];
+  el.style.width = bubbleSize + 'px';
+  el.style.height = bubbleSize + 'px';
+
+  // Content based on display mode
+  let mode = displayMode;
+  if (mode === 'mix') {
+    // Mix: randomly assign numeral, dots, or word
+    mode = pick(['numeral', 'dots', 'word']);
+  }
+
+  if (mode === 'numeral') {
+    el.innerHTML = `<div class="bubble-numeral">${num}</div>`;
+  } else if (mode === 'dots') {
+    el.innerHTML = `<div class="bubble-numeral">${num}</div><div class="bubble-dots" style="font-size:clamp(10px,2.5vw,16px);line-height:1">${makeDots(num)}</div>`;
+  } else if (mode === 'word') {
+    el.innerHTML = `<div class="bubble-numeral">${num}</div><div class="bubble-word">${NUMBER_WORDS[num]}</div>`;
+  }
+
+  // Random X position (keep within bounds)
+  const margin = 10;
+  const maxX = areaRect.width - bubbleSize - margin;
+  const x = margin + Math.random() * maxX;
+
+  // Start just below the visible area
+  const startY = areaRect.height + 10;
+
+  el.style.left = x + 'px';
+  el.style.top = startY + 'px';
+
+  const bubbleObj = {
+    el, num, isTarget, alive: true,
+    x, y: startY,
+    speed: ROUNDS[round].floatSpeed + (Math.random() * 0.1 - 0.05),
+    wobblePhase: Math.random() * Math.PI * 2,
+    wobbleSpeed: 0.015 + Math.random() * 0.01,
+    wobbleAmp: 4 + Math.random() * 4,
+    tapped: false,
+  };
+
+  // Tap handler
+  onTap(el, () => handleBubbleTap(bubbleObj));
+
+  area.appendChild(el);
+  activeBubbles.push(bubbleObj);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUBBLE ANIMATION LOOP
+// ══════════════════════════════════════════════════════════════════
+function animateBubbles() {
+  const area = $('bubbleArea');
+  const areaH = area.getBoundingClientRect().height;
+
+  for (let i = activeBubbles.length - 1; i >= 0; i--) {
+    const b = activeBubbles[i];
+    if (!b.alive) continue;
+
+    // Float upward
+    b.y -= b.speed;
+
+    // Side-to-side wobble
+    b.wobblePhase += b.wobbleSpeed;
+    const wobbleX = Math.sin(b.wobblePhase) * b.wobbleAmp;
+
+    b.el.style.top = b.y + 'px';
+    b.el.style.left = (b.x + wobbleX) + 'px';
+
+    // Off the top? Remove silently
+    if (b.y < -100) {
+      b.alive = false;
+      b.el.remove();
+      activeBubbles.splice(i, 1);
+    }
+  }
+
+  // Check if wave is complete (all bubbles gone or all targets popped)
+  if (gameActive && spawnQueue.length === 0 && !spawnTimer) {
+    const aliveTargets = activeBubbles.filter(b => b.alive && b.isTarget).length;
+    const aliveBubbles = activeBubbles.filter(b => b.alive).length;
+    if (aliveTargets === 0 && targetsPoppedThisWave >= targetsNeededThisWave) {
+      // Wave complete — all targets popped!
+      gameActive = false;
+      // Let remaining distractors float away, then finish wave
+      setTimeout(() => finishWave(true), 600);
+      return;
+    }
+    if (aliveBubbles === 0 && targetsPoppedThisWave < targetsNeededThisWave) {
+      // Wave ended with missed targets
+      gameActive = false;
+      setTimeout(() => finishWave(false), 400);
+      return;
+    }
+  }
+
+  if (gameActive || activeBubbles.some(b => b.alive)) {
+    animFrame = requestAnimationFrame(animateBubbles);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUBBLE TAP HANDLER
+// ══════════════════════════════════════════════════════════════════
+async function handleBubbleTap(bubble) {
+  if (!gameActive || !bubble.alive || bubble.tapped) return;
+  bubble.tapped = true;
+  resetHints();
+
+  const rect = bubble.el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  if (bubble.isTarget) {
+    // ✓ CORRECT POP ────────────────────────────────────────
+    bubble.alive = false;
+    bubble.el.classList.add('popping');
+    audio.tone('pop');
+    starBurst(bubble.el);
+    popParticles(cx, cy, BUBBLE_BORDERS[bubble.num]);
+
+    targetsPoppedThisWave++;
+    score++;
+    $('hudScore').textContent = score;
+    updateCounter();
+
+    // Character reacts
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+
+    // Throttled voice cheer — max once per 1.5s
+    const now = Date.now();
+    if (now - lastCorrectVoiceTime > 1500) {
+      lastCorrectVoiceTime = now;
+      audio.play('correct');
+    }
+
+    // Remove bubble after pop animation
+    setTimeout(() => {
+      const idx = activeBubbles.indexOf(bubble);
+      if (idx >= 0) activeBubbles.splice(idx, 1);
+      bubble.el.remove();
+    }, 400);
+
+  } else {
+    // ✗ WRONG POP ──────────────────────────────────────────
+    bubble.tapped = false; // allow re-tap after shake
+    bubble.el.classList.add('wrong-pop');
+    bubble.el.style.background = `radial-gradient(circle at 35% 30%, rgba(255,100,100,0.6), rgba(220,50,50,0.5))`;
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1800);
+
+    // Wrong voice phrase
+    audio.play('wrong');
+
+    setTimeout(() => {
+      if (bubble.alive) {
+        bubble.el.classList.remove('wrong-pop');
+        bubble.el.style.background = `radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), ${BUBBLE_COLORS[bubble.num]})`;
+      }
+    }, 500);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// COUNTER UPDATE
+// ══════════════════════════════════════════════════════════════════
+function updateCounter() {
+  $('hudCounter').textContent = `${targetsPoppedThisWave} / ${targetsNeededThisWave} popped`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WAVE MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+async function startWave() {
+  const cfg = ROUNDS[round];
+  targetsPoppedThisWave = 0;
+  targetsNeededThisWave = cfg.targetCount;
+  lastCorrectVoiceTime = 0;
+  updateCounter();
+
+  // Choose a target number for this wave
+  currentTarget = pick(NUMBERS_POOL);
+
+  // Update HUD
+  let hudHtml = `<div class="hud-target-numeral">${currentTarget}</div>`;
+  if (cfg.hudShowWord) {
+    hudHtml += `<div class="hud-target-word">${NUMBER_WORDS[currentTarget]}</div>`;
+  }
+  $('hudTarget').innerHTML = hudHtml;
+
+  // Announce target
+  audio.tone('reveal');
+  if (cfg.announceTarget) {
+    await audio.speakPhrase('tap_the_number');
+    await audio.speakNumber(currentTarget);
+  } else {
+    await audio.speakNumber(currentTarget);
+  }
+
+  // Build spawn queue: target bubbles + distractor bubbles, shuffled
+  spawnQueue = [];
+  for (let i = 0; i < cfg.targetCount; i++) {
+    spawnQueue.push({ num: currentTarget, isTarget: true });
+  }
+  for (let i = 0; i < cfg.distractorCount; i++) {
+    const distractors = NUMBERS_POOL.filter(n => n !== currentTarget);
+    spawnQueue.push({ num: pick(distractors), isTarget: false });
+  }
+  shuffle(spawnQueue);
+
+  // Start spawning
+  gameActive = true;
+  $('bubbleArea').classList.add('active');
+  resetHints();
+
+  spawnNextBubble();
+  animFrame = requestAnimationFrame(animateBubbles);
+
+  // Repeat target number periodically
+  clearInterval(window._repeatTimer);
+  window._repeatTimer = setInterval(() => {
+    if (gameActive) audio.speakNumber(currentTarget);
+  }, 5000);
+}
+
+function spawnNextBubble() {
+  if (spawnQueue.length === 0) {
+    spawnTimer = null;
+    return;
+  }
+  const item = spawnQueue.shift();
+  createBubble(item.num, item.isTarget, ROUNDS[round].display);
+
+  const cfg = ROUNDS[round];
+  spawnTimer = setTimeout(spawnNextBubble, cfg.spawnInterval);
+}
+
+async function finishWave(allCaught) {
+  clearInterval(window._repeatTimer);
+  clearTimeout(spawnTimer);
+  spawnTimer = null;
+  clearHints();
+
+  // Clean up remaining bubbles
+  activeBubbles.forEach(b => {
+    if (b.alive) {
+      b.alive = false;
+      b.el.style.transition = 'opacity 0.3s';
+      b.el.style.opacity = '0';
+      setTimeout(() => b.el.remove(), 400);
+    }
+  });
+  activeBubbles = [];
+  $('bubbleArea').classList.remove('active');
+
+  if (allCaught) {
+    // Mini celebration
+    confetti(15, ['🫧','💜','✨']);
+    audio.tone('correct');
+    showCharBubble('All popped! 🫧', 1800);
+  } else {
+    showCharBubble('Some got away! 🫧', 1800);
+  }
+  await delay(1200);
+
+  wave++;
+  const cfg = ROUNDS[round];
+
+  if (wave >= cfg.wavesPerRound) {
+    // Round complete
+    markProg(wave - 1);
+    await finishRound();
+  } else {
+    // Next wave
+    markProg(wave - 1);
+
+    // Brief wave banner
+    $('waveBanner').textContent = `Wave ${wave + 1} 🫧`;
+    $('waveBanner').classList.add('show');
+    await delay(1000);
+    $('waveBanner').classList.remove('show');
+    await delay(300);
+
+    gameActive = true;
+    startWave();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND TRANSITIONS
+// ══════════════════════════════════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearInterval(window._repeatTimer);
+  clearHints();
+
+  audio.tone('roundDone');
+  confetti(30, ['🫧','💜','✨']);
+  round++;
+
+  if (round >= ROUNDS.length) {
+    await delay(700);
+    celebrateFinish();
+    return;
+  }
+
+  // ── Round complete banner ──
+  $('roundTitle').textContent = '✨ Round Complete! ✨';
+  $('roundSub').textContent   = '';
+  $('roundBanner').classList.add('show');
+  await audio.play('round-complete');
+  await delay(1300);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  // ── Next round intro banner ──
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startRound();
+}
+
+function startRound() {
+  const cfg = ROUNDS[round];
+  wave = 0;
+  $('hudRound').textContent = `${round + 1}/4`;
+  buildProg();
+  gameActive = true;
+  startWave();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display     = 'none';
+  $('progBar').style.display = 'none';
+  $('charArea').style.display= 'none';
+  $('roundBanner').classList.remove('show');
+  $('waveBanner').classList.remove('show');
+  $('bubbleArea').innerHTML = '';
+  $('bubbleArea').classList.remove('active');
+
+  audio.tone('celeb');
+  await delay(350);
+  confetti(60, ['🫧','💜','✨','🌷','💖','🌟']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 5)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🫧 Amazing! 🫧';
+  $('celebMsg').textContent   = `You popped ${score} bubbles! Bubble champion!`;
+  showScreen('scrCeleb');
+
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['🫧','💜','🌟']), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START / RESET
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  // Reset state
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0; score = 0; wave = 0;
+  currentTarget = -1;
+  targetsPoppedThisWave = 0;
+  activeBubbles = [];
+  spawnQueue = [];
+  clearTimeout(spawnTimer); spawnTimer = null;
+  cancelAnimationFrame(animFrame);
+  clearInterval(window._repeatTimer);
+  clearHints();
+  lastCorrectVoiceTime = 0;
+
+  $('hudScore').textContent  = '0';
+  $('hud').style.display     = '';
+  $('charArea').style.display= '';
+  $('bubbleArea').innerHTML  = '';
+  $('roundBanner').classList.remove('show');
+  $('waveBanner').classList.remove('show');
+
+  showScreen(null);
+  audio.startMusic();
+
+  // ── Round 1 opening banner ──
+  const cfg = ROUNDS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startRound();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+</script>
+</body>
+</html>

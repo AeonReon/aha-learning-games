@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sequence 0–5 — Save the Princess! ✨</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --pink: #f8a5c2; --magenta: #e91e8c; --purple: #a29bfe; --deep-purple: #6c5ce7;
+  --gold: #ffe066; --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(160deg, #1a0533 0%, #4a1580 35%, #8b1a6b 65%, #c0295e 100%);
+}
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.4;
+  animation: sparkleFloat linear infinite;
+}
+@keyframes sparkleFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.4; }
+  92%  { opacity: 0.4; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row img { width: clamp(60px, 15vw, 100px); height: auto; image-rendering: auto; }
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(26px, 6.5vw, 46px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,224,102,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(30,10,70,0.88); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.38); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--pink); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-center .hud-val { color: var(--gold); font-size: clamp(13px,3vw,18px); }
+
+/* ── Castle tower ── */
+.castle-area {
+  position: fixed;
+  top: 56px; right: 0; bottom: 56px;
+  width: clamp(60px, 16vw, 90px);
+  z-index: var(--z-char);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  pointer-events: none;
+  padding-top: 8px;
+}
+.castle-tower {
+  position: relative;
+  width: clamp(52px, 14vw, 78px);
+  display: flex; flex-direction: column;
+  align-items: center;
+}
+/* Tower top (turret) */
+.tower-top {
+  width: 0; height: 0;
+  border-left: clamp(26px,7vw,39px) solid transparent;
+  border-right: clamp(26px,7vw,39px) solid transparent;
+  border-bottom: clamp(20px,5vw,30px) solid #6a3d7d;
+  filter: drop-shadow(0 -2px 6px rgba(180,100,220,0.4));
+}
+.tower-flag {
+  position: absolute; top: clamp(-18px,-4.5vw,-26px); left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(14px,3.5vw,22px);
+  animation: flagWave 2s ease-in-out infinite;
+}
+@keyframes flagWave { 0%,100%{transform:translateX(-50%) rotate(-5deg)} 50%{transform:translateX(-50%) rotate(5deg)} }
+/* Tower body */
+.tower-body {
+  width: 100%;
+  background: linear-gradient(180deg, #7a4a8f 0%, #5a2d6e 100%);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: clamp(4px,1vw,8px) 4px;
+  gap: clamp(3px,0.8vw,6px);
+  min-height: clamp(120px,32vw,220px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 0 20px rgba(0,0,0,0.15);
+}
+/* Princess in tower window */
+.tower-window {
+  width: clamp(34px,9vw,50px);
+  height: clamp(38px,10vw,56px);
+  background: radial-gradient(ellipse at center, #1a0533 0%, #0d0220 100%);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 50% 50% 0 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+}
+.tower-window .princess-trapped {
+  font-size: clamp(18px,5vw,28px);
+  animation: princessWave 3s ease-in-out infinite;
+}
+@keyframes princessWave { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-3px) scale(1.05)} }
+.tower-window.freed .princess-trapped { animation: princessFreed 0.8s ease-out forwards; }
+@keyframes princessFreed { 0%{transform:scale(1)} 50%{transform:scale(1.3) translateY(-10px)} 100%{transform:scale(0) translateY(-40px); opacity:0} }
+
+/* Lock row */
+.lock-row {
+  display: flex; flex-wrap: wrap;
+  justify-content: center; gap: clamp(2px,0.5vw,4px);
+  width: 100%;
+}
+.lock-item {
+  font-size: clamp(16px,4vw,24px);
+  transition: transform 0.3s, opacity 0.3s;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.3));
+}
+.lock-item.breaking {
+  animation: lockBreak 0.6s ease-out forwards;
+}
+@keyframes lockBreak {
+  0%   { transform: scale(1) rotate(0); opacity: 1; }
+  30%  { transform: scale(1.3) rotate(-15deg); }
+  60%  { transform: scale(1.4) rotate(10deg); opacity: 0.7; }
+  100% { transform: scale(0.2) rotate(45deg); opacity: 0; }
+}
+.lock-item.broken {
+  opacity: 0; transform: scale(0); pointer-events: none;
+}
+
+/* Tower shake on lock break */
+.castle-tower.shake {
+  animation: towerShake 0.5s ease-in-out;
+}
+@keyframes towerShake {
+  0%,100% { transform: translateX(0); }
+  15%     { transform: translateX(-4px) rotate(-1deg); }
+  30%     { transform: translateX(4px) rotate(1deg); }
+  45%     { transform: translateX(-3px); }
+  60%     { transform: translateX(3px); }
+  75%     { transform: translateX(-2px); }
+}
+/* Tower crumble stages */
+.castle-tower.crumble-1 .tower-body { border-color: rgba(255,200,100,0.3); }
+.castle-tower.crumble-2 .tower-body { border-color: rgba(255,200,100,0.5); box-shadow: 0 4px 20px rgba(255,200,100,0.2), inset 0 0 20px rgba(0,0,0,0.15); }
+.castle-tower.crumble-3 .tower-body { border-color: rgba(255,200,100,0.7); box-shadow: 0 4px 30px rgba(255,200,100,0.4), inset 0 0 20px rgba(0,0,0,0.15); }
+.castle-tower.crumble-4 { animation: towerCollapse 1.2s ease-in-out forwards; }
+@keyframes towerCollapse {
+  0%   { transform: scale(1); opacity: 1; filter: brightness(1); }
+  30%  { transform: scale(1.05); filter: brightness(1.5); }
+  60%  { transform: scale(1.1); filter: brightness(2); }
+  100% { transform: scale(0.3) translateY(30px); opacity: 0; filter: brightness(3); }
+}
+
+/* ── Prince character (bottom-left) ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-area img {
+  width: clamp(55px,13vw,85px); height: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.4));
+}
+.char-emoji { font-size: clamp(44px,10vw,66px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Play area (number nodes) ── */
+.play-area {
+  position: fixed;
+  top: 56px; left: 0; right: clamp(60px,16vw,90px); bottom: 56px;
+  z-index: var(--z-game);
+  pointer-events: none;
+}
+.play-area.active { pointer-events: auto; }
+
+/* SVG connection lines overlay */
+.line-svg {
+  position: absolute; inset: 0;
+  z-index: 1; pointer-events: none;
+}
+.conn-line {
+  stroke: url(#lineGrad);
+  stroke-width: 4;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 8px rgba(255,224,102,0.6));
+}
+.conn-line.drawing {
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  animation: drawLine 0.5s ease-out forwards;
+}
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+/* ── Number nodes ── */
+.num-node {
+  position: absolute;
+  width: clamp(80px, 20vw, 120px);
+  height: clamp(80px, 20vw, 120px);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  border: 3px solid rgba(255,255,255,0.35);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.3s, opacity 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  z-index: 2;
+  opacity: 0; transform: scale(0.5);
+}
+.num-node.show { opacity: 1; transform: scale(1); }
+.num-node:active { transform: scale(0.93) !important; }
+
+.num-node .node-numeral {
+  font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  font-size: clamp(28px, 7vw, 44px);
+  line-height: 1;
+}
+.num-node .node-word {
+  font-size: clamp(10px, 2.5vw, 14px);
+  font-weight: bold; color: rgba(255,255,255,0.8);
+  text-transform: lowercase; line-height: 1;
+  margin-top: 2px;
+}
+.num-node .node-dots {
+  font-size: clamp(10px, 2.5vw, 16px);
+  line-height: 1.2; white-space: pre;
+  text-align: center; letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+/* Node states */
+.num-node.activated {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 30px rgba(255,224,102,0.7), 0 0 60px rgba(255,224,102,0.3), 0 4px 20px rgba(0,0,0,0.3) !important;
+  transform: scale(1.08) !important;
+}
+.num-node.next-hint { animation: pulseHint 1.5s ease-in-out infinite; }
+.num-node.next-hint-subtle { animation: pulseHintSubtle 2s ease-in-out infinite; }
+@keyframes pulseHint {
+  0%,100% { box-shadow: 0 0 12px rgba(255,224,102,0.3), 0 4px 20px rgba(0,0,0,0.3); }
+  50%     { box-shadow: 0 0 30px rgba(255,224,102,0.7), 0 0 50px rgba(255,224,102,0.3), 0 4px 20px rgba(0,0,0,0.3); }
+}
+@keyframes pulseHintSubtle {
+  0%,100% { box-shadow: 0 0 8px rgba(255,224,102,0.15), 0 4px 20px rgba(0,0,0,0.3); }
+  50%     { box-shadow: 0 0 20px rgba(255,224,102,0.4), 0 4px 20px rgba(0,0,0,0.3); }
+}
+.num-node.wrong-tap { animation: wrongShake 0.45s ease-in-out; }
+
+/* Timer background shift (round 4) */
+.play-area.timer-warning { animation: timerShift 30s ease-in-out forwards; }
+@keyframes timerShift {
+  0%   { background: transparent; }
+  50%  { background: rgba(255,180,100,0.06); }
+  100% { background: rgba(255,100,100,0.08); }
+}
+
+/* ── Progress bar (lock-themed) ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(30,10,70,0.88); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: rgba(255,255,255,0.22);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--gold),#c47400);
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(25,8,65,0.92); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.12); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--gold); text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.55); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(15,4,50,0.88); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.9); margin: 6px 0; }
+.celeb-stars { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row img { width: clamp(60px,16vw,108px); height: auto; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles & shared ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+
+/* Path completion celebration */
+.path-celebrate .conn-line {
+  stroke-width: 6;
+  filter: drop-shadow(0 0 16px rgba(255,224,102,0.9));
+  animation: pathGlow 0.8s ease-in-out infinite alternate;
+}
+@keyframes pathGlow {
+  0%   { filter: drop-shadow(0 0 10px rgba(255,224,102,0.6)); }
+  100% { filter: drop-shadow(0 0 24px rgba(255,255,255,0.9)); }
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">TAP NEXT</div>
+    <div class="hud-val" id="hudFind">—</div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area — number nodes + SVG lines -->
+<div class="play-area" id="playArea">
+  <svg class="line-svg" id="lineSvg">
+    <defs>
+      <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%"   stop-color="#ffe066"/>
+        <stop offset="50%"  stop-color="#f8a5c2"/>
+        <stop offset="100%" stop-color="#a29bfe"/>
+      </linearGradient>
+    </defs>
+  </svg>
+</div>
+
+<!-- Castle tower (right side) -->
+<div class="castle-area" id="castleArea" style="display:none">
+  <div class="castle-tower" id="castleTower">
+    <div class="tower-top">
+      <div class="tower-flag">🏳️</div>
+    </div>
+    <div class="tower-body" id="towerBody">
+      <div class="tower-window" id="towerWindow">
+        <span class="princess-trapped">👸</span>
+      </div>
+      <div class="lock-row" id="lockRow"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Prince character (bottom-left) + speech bubble -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <img id="charImg" src="../../Characters/Prince on horse.gif" alt=""
+    onerror="this.style.display='none';document.getElementById('charEmoji').style.display='block'">
+  <div class="char-emoji" id="charEmoji" style="display:none">🤴</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round transition banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🏰</span>
+    <img src="../../Characters/Prince on horse.gif" alt=""
+      onerror="this.outerHTML='<span style=\'font-size:clamp(60px,15vw,100px)\'>🤴</span>'">
+    <span>👸</span>
+  </div>
+  <h1>Save the Princess! ✨</h1>
+  <p>The princess is trapped in the tower!<br>Tap numbers 0–5 in order to break the magic locks! 🔐</p>
+  <button class="btn btn-start" id="btnStart">Let's Rescue Her! ✨</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <img src="../../Characters/Prince and princess dance.gif" alt=""
+      style="width:clamp(65px,16vw,108px)"
+      onerror="this.outerHTML='<span style=\'font-size:clamp(52px,13vw,82px);animation:dance 1s ease-in-out infinite\'>👸🤴</span>'">
+  </div>
+  <h2 id="celebTitle">🌟 Princess Rescued! 🌟</h2>
+  <p  id="celebMsg">You broke all the locks!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! ✨</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Sequence 0–5: Save the Princess!  ✨                    ║
+// ║  Tap numbers in ascending order to break the tower locks.       ║
+// ║  Voice A (en-US-AnaNeural) · Fairy / princess theme             ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+// ── Voice A clip pools ─────────────────────────────────────────────
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (from ARCHITECTURE.md §5c — do not simplify)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.3; this.musicDucked = 0.025;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 800 + Math.random() * 1200);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(440,t,0.15,0.2); p(554,t+0.1,0.18,0.25); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='lockBreak') {
+      // Crunch + shatter sound — metallic crash
+      p(150, t, 0.08, 0.5);
+      p(100, t+0.03, 0.1, 0.3);
+      p(220, t+0.05, 0.12, 0.25, 'sawtooth');
+      p(80, t+0.08, 0.15, 0.2);
+      // Sparkle aftermath
+      p(800, t+0.12, 0.1, 0.15);
+      p(1200, t+0.16, 0.08, 0.1);
+    }
+  }
+  // Ascending sequence chime — pitch rises with each number (0=low, 5=high)
+  toneSequence(idx) {
+    this._init(); const t = this.ctx.currentTime;
+    const freqs = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const f = freqs[Math.min(idx, freqs.length-1)];
+    const p = (freq, s, d, v, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    p(f, t, 0.25, 0.4);
+    p(f * 1.5, t + 0.05, 0.2, 0.15);
+    p(f * 2, t + 0.08, 0.15, 0.1, 'triangle');
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+const NUMBER_WORDS = { 0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five' };
+const NUMBERS = [0,1,2,3,4,5];
+
+function makeDots(n) {
+  if (n === 0) return '🌙';
+  if (n <= 3)  return '💜'.repeat(n);
+  if (n === 4) return '💜💜\n💜💜';
+  if (n === 5) return '💜💜💜\n💜💜';
+  return '';
+}
+
+const NODE_COLORS = [
+  'linear-gradient(135deg,#1a0533,#5a1a8a)',
+  'linear-gradient(135deg,#e91e8c,#b5144d)',
+  'linear-gradient(135deg,#f8a5c2,#e0579b)',
+  'linear-gradient(135deg,#a29bfe,#5a48d6)',
+  'linear-gradient(135deg,#fdcb6e,#c47400)',
+  'linear-gradient(135deg,#00cec9,#006fc5)',
+];
+
+const BUBBLE_CORRECT = ['Yes! ⭐','A lock! 🔓','That\'s it! ✨','Keep going! 🌸','Magic! 💫','Almost free! 🌟'];
+const BUBBLE_WRONG   = ['Not that one! 💜','Try again! ✨','Keep going! 🌸','Almost! 💫'];
+const BUBBLE_LOCK    = ['Lock broken! 🔓','Crack! 💥','One less lock! ✨','She\'s closer! 💜'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🎉','💜','🌸','🌷','💖','🦋', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','💜','🌟','💖','🌸']);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.15) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charImg').style.display !== 'none' ? $('charImg') : $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CASTLE / LOCK SYSTEM
+// ══════════════════════════════════════════════════════════════════
+let lockEls = [];
+let totalLocksSmashed = 0;
+
+function buildLocks(count) {
+  const row = $('lockRow');
+  row.innerHTML = '';
+  lockEls = [];
+  for (let i = 0; i < count; i++) {
+    const lock = document.createElement('span');
+    lock.className = 'lock-item';
+    lock.textContent = '🔒';
+    lock.id = 'lock' + i;
+    row.appendChild(lock);
+    lockEls.push(lock);
+  }
+}
+
+function breakLock(idx) {
+  const lock = lockEls[idx];
+  if (!lock || lock.classList.contains('broken')) return;
+
+  // Lock break animation
+  lock.classList.add('breaking');
+  audio.tone('lockBreak');
+
+  // Tower shakes
+  const tower = $('castleTower');
+  tower.classList.remove('shake');
+  void tower.offsetWidth;
+  tower.classList.add('shake');
+  setTimeout(() => tower.classList.remove('shake'), 600);
+
+  // Lock disappears after animation
+  setTimeout(() => {
+    lock.classList.remove('breaking');
+    lock.classList.add('broken');
+    lock.textContent = '💥';
+    setTimeout(() => { lock.textContent = ''; }, 400);
+  }, 550);
+
+  totalLocksSmashed++;
+
+  // Tower crumble stages (accumulative across all rounds)
+  const stage = Math.min(4, Math.ceil(totalLocksSmashed / 4));
+  tower.classList.remove('crumble-1','crumble-2','crumble-3','crumble-4');
+  if (stage >= 1) tower.classList.add('crumble-' + stage);
+
+  // Star burst from the lock position
+  starBurst(lock);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — sparkles float upward
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['✨','💜','🌸','⭐','💫','🌟','🌷','💖'];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*20) + 's';
+    el.style.animationDuration = (10 + Math.random()*14) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG
+// ══════════════════════════════════════════════════════════════════
+const ROUNDS = [
+  { label:'Round 1 — Break the Locks! 🔐',     sub:'Numbers and words — tap 0 to 5!',     display:'full',    hintMode:'strong', attempts:4 },
+  { label:'Round 2 — The Tower Weakens! ✨',    sub:'Numerals only — keep breaking!',      display:'numeral', hintMode:'subtle', attempts:4 },
+  { label:'Round 3 — Count the Dots! 💜',       sub:'Numbers and dots — keep going!',      display:'dots',    hintMode:'none',   attempts:4 },
+  { label:'Round 4 — Final Push! 🏆',           sub:'All mixed up — free the princess!',   display:'mixed',   hintMode:'none',   attempts:4, timer:true },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let attempt = 0;
+let nextTapIdx = 0;
+let nodePositions = [];
+let nodeEls = [];
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR — lock-themed dots
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  const cfg = ROUNDS[round];
+  for (let i = 0; i < cfg.attempts; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'pdot' + i;
+    d.textContent = '🔒';
+    bar.appendChild(d);
+  }
+}
+function markProg(idx) {
+  const d = $('pdot' + idx);
+  if (d) {
+    d.textContent = '🔓';
+    d.classList.add('done');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function clearHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+function resetHints() {
+  clearHints();
+  if (!gameActive) return;
+  const cfg = ROUNDS[round];
+  if (cfg.hintMode === 'none') return;
+
+  hintTimer = setTimeout(() => {
+    const node = nodeEls[nextTapIdx];
+    if (node && gameActive) {
+      node.classList.add('next-hint');
+      audio.tone('hint');
+      setTimeout(() => node.classList.remove('next-hint'), 2500);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// POSITION GENERATION — random positions with minimum spacing
+// ══════════════════════════════════════════════════════════════════
+function generatePositions() {
+  const area = $('playArea');
+  const areaW = area.clientWidth;
+  const areaH = area.clientHeight;
+  const nodeSize = Math.min(Math.max(80, areaW * 0.2), 120);
+  const margin = nodeSize * 0.6;
+  const minDist = nodeSize * 1.3;
+
+  const positions = [];
+  for (let i = 0; i < 6; i++) {
+    let tries = 0;
+    let x, y;
+    do {
+      x = margin + Math.random() * (areaW - margin * 2 - nodeSize);
+      y = margin + Math.random() * (areaH - margin * 2 - nodeSize);
+      tries++;
+      if (tries > 200) break;
+    } while (positions.some(p => {
+      const dx = p.x - x, dy = p.y - y;
+      return Math.sqrt(dx*dx + dy*dy) < minDist;
+    }));
+    positions.push({ x, y });
+  }
+  return positions;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER NODES
+// ══════════════════════════════════════════════════════════════════
+function renderNodes() {
+  const area = $('playArea');
+  const cfg = ROUNDS[round];
+
+  area.querySelectorAll('.num-node').forEach(n => n.remove());
+  $('lineSvg').innerHTML = '<defs><linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffe066"/><stop offset="50%" stop-color="#f8a5c2"/><stop offset="100%" stop-color="#a29bfe"/></linearGradient></defs>';
+
+  nodePositions = generatePositions();
+  nodeEls = [];
+
+  const mixedModes = shuffle(['numeral','dots','word','numeral','dots','word']);
+
+  NUMBERS.forEach((num, i) => {
+    const node = document.createElement('div');
+    node.className = 'num-node';
+    node.style.background = NODE_COLORS[num];
+    node.style.left = nodePositions[i].x + 'px';
+    node.style.top  = nodePositions[i].y + 'px';
+    node.dataset.num = num;
+
+    let inner = '';
+    let displayMode = cfg.display;
+    if (displayMode === 'mixed') displayMode = mixedModes[i];
+
+    if (displayMode === 'full') {
+      inner = `<div class="node-numeral">${num}</div><div class="node-word">${NUMBER_WORDS[num]}</div>`;
+    } else if (displayMode === 'numeral') {
+      inner = `<div class="node-numeral">${num}</div>`;
+    } else if (displayMode === 'dots') {
+      inner = `<div class="node-numeral">${num}</div><div class="node-dots" style="font-size:clamp(10px,2.5vw,14px);line-height:1">${makeDots(num)}</div>`;
+    } else if (displayMode === 'word') {
+      inner = `<div class="node-numeral">${num}</div><div class="node-word" style="font-size:clamp(11px,2.8vw,16px)">${NUMBER_WORDS[num]}</div>`;
+    }
+    node.innerHTML = inner;
+
+    onTap(node, () => handleNodeTap(node, num));
+    area.appendChild(node);
+    nodeEls[num] = node;
+
+    setTimeout(() => node.classList.add('show'), 100 + i * 100);
+  });
+
+  area.classList.add('active');
+
+  setTimeout(() => {
+    if (cfg.hintMode === 'strong') {
+      nodeEls[0].classList.add('next-hint');
+    } else if (cfg.hintMode === 'subtle') {
+      nodeEls[0].classList.add('next-hint-subtle');
+    }
+  }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NODE CENTER (for SVG lines)
+// ══════════════════════════════════════════════════════════════════
+function nodeCenter(num) {
+  const el = nodeEls[num];
+  if (!el) return { x: 0, y: 0 };
+  return {
+    x: parseFloat(el.style.left) + el.offsetWidth / 2,
+    y: parseFloat(el.style.top)  + el.offsetHeight / 2
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAW CONNECTION LINE
+// ══════════════════════════════════════════════════════════════════
+function drawLine(fromNum, toNum) {
+  const svg = $('lineSvg');
+  const a = nodeCenter(fromNum);
+  const b = nodeCenter(toNum);
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len = Math.sqrt(dx*dx + dy*dy);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', a.x);
+  line.setAttribute('y1', a.y);
+  line.setAttribute('x2', b.x);
+  line.setAttribute('y2', b.y);
+  line.classList.add('conn-line', 'drawing');
+  line.style.setProperty('--len', len);
+  svg.appendChild(line);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════════════════════
+function updateHud() {
+  if (nextTapIdx <= 5) {
+    $('hudFind').textContent = `Tap ${nextTapIdx}`;
+  } else {
+    $('hudFind').textContent = '🔓 Broken!';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HANDLE NODE TAP
+// ══════════════════════════════════════════════════════════════════
+async function handleNodeTap(nodeEl, num) {
+  if (!gameActive) return;
+  clearHints();
+
+  if (num === nextTapIdx) {
+    // ✓ CORRECT
+    gameActive = false;
+
+    nodeEl.classList.remove('next-hint', 'next-hint-subtle');
+    nodeEl.classList.add('activated');
+    starBurst(nodeEl);
+
+    // Ascending chime
+    audio.toneSequence(num);
+
+    // Draw connection line from previous node
+    if (nextTapIdx > 0) {
+      drawLine(nextTapIdx - 1, nextTapIdx);
+    }
+
+    score++;
+    $('hudScore').textContent = score;
+
+    // Character reacts
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+
+    // Voice: speak the number
+    await audio.speakNumber(num);
+
+    nextTapIdx++;
+    updateHud();
+
+    if (nextTapIdx > 5) {
+      // Sequence complete! Break a lock!
+      await celebrateSequence();
+    } else {
+      // Highlight next node
+      const cfg = ROUNDS[round];
+      if (cfg.hintMode === 'strong') {
+        nodeEls[nextTapIdx].classList.add('next-hint');
+      } else if (cfg.hintMode === 'subtle') {
+        nodeEls[nextTapIdx].classList.add('next-hint-subtle');
+      }
+      gameActive = true;
+      resetHints();
+    }
+
+  } else {
+    // ✗ WRONG
+    nodeEl.classList.add('wrong-tap');
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1900);
+
+    audio.play('wrong');
+    setTimeout(() => audio.speakNumber(nextTapIdx), 600);
+    setTimeout(() => {
+      nodeEl.classList.remove('wrong-tap');
+      resetHints();
+    }, 480);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CELEBRATE SEQUENCE COMPLETION — BREAK A LOCK!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateSequence() {
+  $('playArea').classList.remove('timer-warning');
+
+  // Flash the path
+  $('lineSvg').classList.add('path-celebrate');
+  for (let i = 0; i <= 5; i++) starBurst(nodeEls[i]);
+
+  audio.tone('correct');
+  await delay(400);
+
+  // Voice counts along
+  for (let i = 0; i <= 5; i++) {
+    await audio.speakNumber(i);
+    await delay(60);
+  }
+
+  await delay(300);
+  $('lineSvg').classList.remove('path-celebrate');
+
+  // ── BREAK THE LOCK! ──
+  breakLock(attempt);
+  showCharBubble(pick(BUBBLE_LOCK), 2500);
+  confetti(20, ['🔓','💥','✨','🌟']);
+  await audio.play('correct');
+
+  markProg(attempt);
+  attempt++;
+
+  if (attempt >= ROUNDS[round].attempts) {
+    await delay(500);
+    await finishRound();
+  } else {
+    // Next attempt — new positions
+    await delay(600);
+    nextTapIdx = 0;
+    updateHud();
+    renderNodes();
+    gameActive = true;
+    resetHints();
+
+    // Round 4 timer restart
+    if (ROUNDS[round].timer) {
+      $('playArea').classList.remove('timer-warning');
+      void $('playArea').offsetWidth;
+      $('playArea').classList.add('timer-warning');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND TRANSITIONS
+// ══════════════════════════════════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearHints();
+
+  $('playArea').querySelectorAll('.num-node').forEach(n => n.remove());
+  $('lineSvg').innerHTML = '<defs><linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffe066"/><stop offset="50%" stop-color="#f8a5c2"/><stop offset="100%" stop-color="#a29bfe"/></linearGradient></defs>';
+  $('playArea').classList.remove('active', 'timer-warning');
+
+  audio.tone('roundDone');
+  confetti(30, ['💜','🌸','✨','🔓']);
+  round++;
+
+  if (round >= ROUNDS.length) {
+    await delay(700);
+    celebrateFinish();
+    return;
+  }
+
+  // ── Round complete banner ──
+  $('roundTitle').textContent = '✨ Locks Broken! ✨';
+  $('roundSub').textContent   = 'The tower is weakening!';
+  $('roundBanner').classList.add('show');
+  await audio.play('round-complete');
+  await delay(1300);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  // ── Next round intro banner ──
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startRound();
+}
+
+function startRound() {
+  const cfg = ROUNDS[round];
+  $('hudRound').textContent = `${round + 1}/4`;
+  attempt = 0;
+  buildLocks(cfg.attempts);
+  buildProg();
+  startAttempt();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START ATTEMPT
+// ══════════════════════════════════════════════════════════════════
+async function startAttempt() {
+  nextTapIdx = 0;
+  updateHud();
+  renderNodes();
+  gameActive = true;
+
+  audio.tone('reveal');
+  await audio.speakPhrase('tap_the_number');
+  await audio.speakNumber(0);
+
+  resetHints();
+
+  if (ROUNDS[round].timer) {
+    $('playArea').classList.remove('timer-warning');
+    void $('playArea').offsetWidth;
+    $('playArea').classList.add('timer-warning');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION — PRINCESS FREED!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display       = 'none';
+  $('progBar').style.display   = 'none';
+  $('roundBanner').classList.remove('show');
+  $('playArea').classList.remove('active');
+
+  // Tower collapses!
+  const tower = $('castleTower');
+  tower.classList.add('crumble-4');
+  $('towerWindow').classList.add('freed');
+  audio.tone('celeb');
+  await delay(600);
+
+  // Hide castle after collapse animation
+  $('castleArea').style.display = 'none';
+  $('charArea').style.display   = 'none';
+
+  confetti(60, ['💜','🌸','✨','🌷','💖','🌟','👸','🔓']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 6)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🌟 Princess Rescued! 🌟';
+  $('celebMsg').textContent   = `You broke all ${totalLocksSmashed} locks! She\'s free!`;
+  showScreen('scrCeleb');
+
+  await audio.speakPhrase('save_the_princess');
+  await delay(200);
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['💜','🌸','🌟','👸']), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START / RESET
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0; score = 0; attempt = 0;
+  nextTapIdx = 0; totalLocksSmashed = 0;
+  clearHints();
+
+  $('hudScore').textContent    = '0';
+  $('hud').style.display       = '';
+  $('charArea').style.display  = '';
+  $('castleArea').style.display= '';
+  $('roundBanner').classList.remove('show');
+  $('playArea').classList.remove('timer-warning');
+
+  // Reset tower
+  const tower = $('castleTower');
+  tower.classList.remove('shake','crumble-1','crumble-2','crumble-3','crumble-4');
+  tower.style.animation = '';
+  tower.style.transform = '';
+  tower.style.opacity   = '';
+  $('towerWindow').classList.remove('freed');
+
+  showScreen(null);
+  audio.startMusic();
+
+  // ── Round 1 opening banner ──
+  const cfg = ROUNDS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.speakPhrase('save_the_princess');
+  await delay(800);
+  await audio.play('greetings');
+  await delay(1200);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startRound();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+</script>
+</body>
+</html>

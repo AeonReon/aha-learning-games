@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Brew the Potion 6–10 — Luna's Cauldron! 🧪</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep-purple: #1a0a2e; --orange: #ff8c00; --teal: #0d7377; --gold: #ffe066;
+  --cauldron-green: #2ecc71; --cauldron-purple: #9b59b6; --cauldron-blue: #3498db;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(160deg, #0d0520 0%, #1a0a2e 30%, #2d1b69 60%, #1a0a2e 100%);
+}
+.bg-element {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.35;
+  animation: bgFloat linear infinite;
+}
+@keyframes bgFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.35; }
+  92%  { opacity: 0.35; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 14px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 68px); }
+.screen-title h1 {
+  font-size: clamp(24px, 6vw, 42px);
+  color: var(--orange);
+  text-shadow: 0 0 30px rgba(255,140,0,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(13px, 3.2vw, 19px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start { background: linear-gradient(135deg,#ff8c00,#e55d00); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again { background: linear-gradient(135deg,#ff8c00,#e55d00); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(13,5,32,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,140,0,0.15);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.38); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--orange); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-center .hud-val { color: var(--orange); font-size: clamp(13px,3vw,18px); }
+
+/* ── Luna character (bottom-left) ── */
+.char-area {
+  position: fixed; bottom: 120px; left: 8px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(44px,10vw,66px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(11px,2.4vw,15px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Play area (bottles) ── */
+.play-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 180px;
+  z-index: var(--z-game);
+  pointer-events: none;
+}
+.play-area.active { pointer-events: auto; }
+
+/* Timer background shift (round 4) */
+.play-area.timer-warning { animation: timerShift 30s ease-in-out forwards; }
+@keyframes timerShift {
+  0%   { background: transparent; }
+  50%  { background: rgba(255,140,0,0.05); }
+  100% { background: rgba(255,80,80,0.07); }
+}
+
+/* ── Potion Bottles ── */
+.potion-bottle {
+  position: absolute;
+  width: clamp(70px, 18vw, 100px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  border: 3px solid rgba(255,255,255,0.3);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.3s, opacity 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  z-index: 2;
+  opacity: 0; transform: scale(0.5);
+  padding: 8px 4px 12px;
+  border-radius: 12px 12px 22px 22px;
+  position: absolute;
+}
+/* Bottle neck */
+.potion-bottle::before {
+  content: '';
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  width: 28%; height: 14px;
+  background: inherit; border: 2px solid rgba(255,255,255,0.3);
+  border-bottom: none; border-radius: 4px 4px 0 0;
+}
+/* Bottle cork */
+.potion-bottle::after {
+  content: '';
+  position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+  width: 20%; height: 8px;
+  background: #8B4513; border-radius: 2px 2px 0 0;
+}
+.potion-bottle.show { opacity: 1; transform: scale(1); }
+.potion-bottle:active { transform: scale(0.93) !important; }
+.potion-bottle.r4-size {
+  width: clamp(60px, 15vw, 85px);
+}
+.potion-bottle.r4-size .bottle-numeral { font-size: clamp(22px, 5.5vw, 34px); }
+
+.bottle-numeral {
+  font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  font-size: clamp(26px, 6.5vw, 40px);
+  line-height: 1;
+}
+.bottle-emoji {
+  font-size: clamp(16px, 4vw, 24px);
+  line-height: 1; margin-top: 2px;
+}
+.bottle-word {
+  font-size: clamp(9px, 2vw, 12px);
+  font-weight: bold; color: rgba(255,255,255,0.7);
+  text-transform: lowercase; line-height: 1;
+  margin-top: 2px;
+}
+.bottle-dots {
+  font-size: clamp(10px, 2.5vw, 16px);
+  line-height: 1.1; white-space: pre;
+  text-align: center; letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+/* Bottle states */
+.potion-bottle.activated {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 30px rgba(255,224,102,0.7), 0 0 60px rgba(255,224,102,0.3), 0 4px 20px rgba(0,0,0,0.3) !important;
+  transform: scale(1.08) !important;
+}
+.potion-bottle.next-hint { animation: pulseHint 1.5s ease-in-out infinite; }
+@keyframes pulseHint {
+  0%,100% { box-shadow: 0 0 12px rgba(255,224,102,0.3), 0 4px 20px rgba(0,0,0,0.3); }
+  50%     { box-shadow: 0 0 30px rgba(255,224,102,0.7), 0 0 50px rgba(255,224,102,0.3), 0 4px 20px rgba(0,0,0,0.3); }
+}
+.potion-bottle.wrong-tap { animation: wrongShake 0.45s ease-in-out; }
+.potion-bottle.wiggle { animation: wiggleHint 0.6s ease-in-out; }
+@keyframes wiggleHint {
+  0%,100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-5deg); }
+  80% { transform: rotate(5deg); }
+}
+
+/* Fly-to-cauldron animation */
+.potion-bottle.flying {
+  transition: none !important;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── CAULDRON ── */
+.cauldron-area {
+  position: fixed;
+  bottom: 10px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-ui);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center;
+}
+.cauldron {
+  position: relative;
+  width: clamp(100px, 28vw, 160px);
+  height: clamp(70px, 18vw, 110px);
+  background: radial-gradient(ellipse at 50% 40%, #2c2c2c 0%, #1a1a1a 60%, #0a0a0a 100%);
+  border-radius: 10px 10px 50% 50%;
+  border: 3px solid #444;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6), inset 0 -10px 20px rgba(0,0,0,0.5);
+}
+/* Cauldron rim */
+.cauldron::before {
+  content: '';
+  position: absolute; top: -6px; left: -8px; right: -8px; height: 14px;
+  background: linear-gradient(180deg, #555 0%, #333 100%);
+  border-radius: 8px 8px 0 0;
+  border: 2px solid #666;
+}
+/* Cauldron handles */
+.cauldron-handle-l, .cauldron-handle-r {
+  position: absolute; top: 15%; width: 16px; height: 30px;
+  border: 3px solid #555; border-radius: 50%;
+}
+.cauldron-handle-l { left: -14px; }
+.cauldron-handle-r { right: -14px; }
+/* Cauldron legs */
+.cauldron-legs {
+  display: flex; justify-content: center; gap: clamp(30px, 8vw, 60px);
+  margin-top: -2px;
+}
+.cauldron-leg {
+  width: 8px; height: 14px;
+  background: #333; border-radius: 0 0 4px 4px;
+}
+
+/* Cauldron liquid surface */
+.cauldron-liquid {
+  position: absolute; bottom: 8px; left: 8px; right: 8px; top: 20px;
+  border-radius: 0 0 50% 50%;
+  overflow: hidden;
+  transition: background 0.8s;
+}
+.cauldron-liquid.stage-0 { background: radial-gradient(ellipse at 50% 30%, #1a3a1a 0%, #0d1f0d 100%); }
+.cauldron-liquid.stage-1 { background: radial-gradient(ellipse at 50% 30%, #2ecc71 0%, #1a6e3a 100%); }
+.cauldron-liquid.stage-2 { background: radial-gradient(ellipse at 50% 30%, #9b59b6 0%, #5b2d8e 100%); }
+.cauldron-liquid.stage-3 { background: radial-gradient(ellipse at 50% 30%, #3498db 0%, #1a5276 100%); }
+.cauldron-liquid.stage-4 { background: radial-gradient(ellipse at 50% 30%, #f1c40f 0%, #d4ac0d 100%); }
+.cauldron-liquid.stage-5 {
+  background: linear-gradient(135deg, #e74c3c, #f39c12, #2ecc71, #3498db, #9b59b6);
+  background-size: 300% 300%;
+  animation: rainbowLiquid 2s ease-in-out infinite;
+}
+@keyframes rainbowLiquid {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Bubbles in cauldron */
+.cauldron-bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  animation: bubbleRise linear infinite;
+}
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) scale(1); opacity: 0.5; }
+  50%  { opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(0.3); opacity: 0; }
+}
+
+/* Steam / smoke */
+.cauldron-steam {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  width: 100%; height: 30px; pointer-events: none;
+}
+.steam-particle {
+  position: absolute;
+  font-size: clamp(10px, 2vw, 16px);
+  opacity: 0;
+  animation: steamRise 3s ease-out infinite;
+}
+@keyframes steamRise {
+  0%   { transform: translateY(0) scale(0.5); opacity: 0; }
+  20%  { opacity: 0.4; }
+  100% { transform: translateY(-50px) translateX(var(--drift)) scale(1.2); opacity: 0; }
+}
+
+/* Splash effect */
+.splash {
+  position: absolute;
+  font-size: 18px;
+  animation: splashPop 0.5s ease-out forwards;
+  pointer-events: none; z-index: 60;
+}
+@keyframes splashPop {
+  0%   { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-30px) scale(1.5); opacity: 0; }
+}
+
+/* Sparkle trail */
+.sparkle-trail {
+  position: fixed;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 55;
+  animation: trailFade 0.4s ease-out forwards;
+}
+@keyframes trailFade {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.3) translateY(10px); opacity: 0; }
+}
+
+/* Cauldron glow states */
+.cauldron-glow {
+  position: absolute; inset: -15px;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: box-shadow 0.8s, opacity 0.8s;
+  opacity: 0;
+}
+.cauldron-glow.active {
+  opacity: 1;
+}
+.cauldron-glow.g1 { box-shadow: 0 0 30px rgba(46,204,113,0.4), 0 0 60px rgba(46,204,113,0.2); }
+.cauldron-glow.g2 { box-shadow: 0 0 35px rgba(155,89,182,0.5), 0 0 70px rgba(155,89,182,0.25); }
+.cauldron-glow.g3 { box-shadow: 0 0 40px rgba(52,152,219,0.5), 0 0 80px rgba(52,152,219,0.3); }
+.cauldron-glow.g4 { box-shadow: 0 0 45px rgba(241,196,15,0.6), 0 0 90px rgba(241,196,15,0.3); }
+.cauldron-glow.g5 {
+  box-shadow: 0 0 60px rgba(255,100,100,0.5), 0 0 100px rgba(100,255,100,0.3), 0 0 140px rgba(100,100,255,0.3);
+  animation: glowPulse 1s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%,100% { opacity: 0.7; }
+  50%     { opacity: 1; }
+}
+
+/* Potion counter (mini bottles on cauldron) */
+.potion-counter {
+  display: flex; gap: 4px; justify-content: center;
+  margin-top: 4px;
+}
+.potion-pip {
+  width: clamp(14px, 3.5vw, 20px);
+  height: clamp(18px, 4.5vw, 26px);
+  border-radius: 4px 4px 8px 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+}
+.potion-pip.filled {
+  border-color: var(--gold);
+  animation: pipFill 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.potion-pip.filled:nth-child(1) { background: linear-gradient(180deg, #2ecc71, #1a6e3a); }
+.potion-pip.filled:nth-child(2) { background: linear-gradient(180deg, #9b59b6, #5b2d8e); }
+.potion-pip.filled:nth-child(3) { background: linear-gradient(180deg, #3498db, #1a5276); }
+.potion-pip.filled:nth-child(4) { background: linear-gradient(180deg, #f1c40f, #d4ac0d); }
+@keyframes pipFill { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.3)} 100%{transform:scale(1.15)} }
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: calc(var(--z-ui) + 5);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(6px,1.5vw,10px);
+  padding: 4px 10px 6px;
+  background: rgba(13,5,32,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: rgba(255,255,255,0.22);
+  transition: all 0.3s;
+}
+.prog-dot.current {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--gold),#c47400);
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 45%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(13,5,32,0.94); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,140,0,0.2); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--orange); text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.55); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(10,3,30,0.92); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(24px,6vw,44px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(13px,3.2vw,20px); color: rgba(255,255,255,0.9); margin: 6px 0; }
+.celeb-stars { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:14px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-dragon { font-size: clamp(60px, 16vw, 100px); animation: dragonBob 2s ease-in-out infinite; }
+.celeb-dragon-text {
+  font-size: clamp(14px, 3.5vw, 22px);
+  color: var(--orange); font-weight: bold;
+  margin: 8px 0;
+  animation: fadeInUp 1s ease-out 0.5s both;
+}
+@keyframes dragonBob {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-12px) scale(1.05); }
+}
+@keyframes fadeInUp {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cauldron eruption ── */
+.cauldron-eruption {
+  position: fixed; z-index: calc(var(--z-celeb) + 3);
+  pointer-events: none;
+}
+.eruption-particle {
+  position: fixed;
+  font-size: 20px;
+  pointer-events: none;
+  animation: erupt 1.5s ease-out forwards;
+}
+@keyframes erupt {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(var(--ey)) translateX(var(--ex)) scale(0.3); opacity: 0; }
+}
+
+/* ── Particles & shared ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">TAP NEXT</div>
+    <div class="hud-val" id="hudFind">--</div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area — potion bottles -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Cauldron (bottom-center) -->
+<div class="cauldron-area" id="cauldronArea">
+  <div class="cauldron" id="cauldron">
+    <div class="cauldron-glow" id="cauldronGlow"></div>
+    <div class="cauldron-handle-l"></div>
+    <div class="cauldron-handle-r"></div>
+    <div class="cauldron-liquid stage-0" id="cauldronLiquid"></div>
+    <div class="cauldron-steam" id="cauldronSteam"></div>
+  </div>
+  <div class="cauldron-legs"><div class="cauldron-leg"></div><div class="cauldron-leg"></div><div class="cauldron-leg"></div></div>
+  <div class="potion-counter" id="potionCounter">
+    <div class="potion-pip" id="pip0"></div>
+    <div class="potion-pip" id="pip1"></div>
+    <div class="potion-pip" id="pip2"></div>
+    <div class="potion-pip" id="pip3"></div>
+  </div>
+</div>
+
+<!-- Luna character (bottom-left) + speech bubble -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧙‍♀️</div>
+</div>
+
+<!-- Progress bar (5 bottles per sequence) -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round transition banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🧙‍♀️</span>
+    <span>🧪</span>
+    <span>🐉</span>
+  </div>
+  <h1>Brew the Potion! 🧪</h1>
+  <p>Luna needs your help!<br>Tap the spell ingredients in order<br>6, 7, 8, 9, 10 to brew magic potions!</p>
+  <button class="btn btn-start" id="btnStart">Let's Brew! 🧪</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-dragon">🐉</div>
+  <div class="celeb-dragon-text">"Thank you for brewing me!"</div>
+  <h2 id="celebTitle">A Dragon is Born!</h2>
+  <p  id="celebMsg">You brewed all 4 potions!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🧪</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Sequence 6–10: Brew the Potion!  🧪                     ║
+// ║  Tap ingredients in ascending order to brew magic potions.       ║
+// ║  Voice B (en-GB-SoniaNeural) · Spooky Halloween theme           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+// ── Voice B clip pools ─────────────────────────────────────────────
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first with iOS fallback)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.3; this.musicDucked = 0.025;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Spooky pentatonic — minor key, eerie atmosphere
+    const notes = [196.00, 233.08, 261.63, 293.66, 349.23, 392.00]; // G minor pentatonic
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.4 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.6 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.2);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.5);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 900 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(440,t,0.15,0.2); p(554,t+0.1,0.18,0.25); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='bubble') {
+      // Bubbly plop sound
+      p(200, t, 0.08, 0.2);
+      p(300, t+0.05, 0.1, 0.15);
+      p(150, t+0.1, 0.12, 0.1);
+    }
+    else if (type==='splash') {
+      p(400, t, 0.06, 0.3);
+      p(250, t+0.03, 0.08, 0.2);
+      p(600, t+0.06, 0.1, 0.15);
+      p(180, t+0.1, 0.15, 0.1);
+    }
+  }
+  // Ascending sequence chime — pitch rises with each ingredient (0=six low, 4=ten high)
+  toneSequence(idx) {
+    this._init(); const t = this.ctx.currentTime;
+    const freqs = [293.66, 329.63, 392.00, 440.00, 523.25]; // D E G A C ascending
+    const f = freqs[Math.min(idx, freqs.length-1)];
+    const p = (freq, s, d, v, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    p(f, t, 0.25, 0.4);
+    p(f * 1.5, t + 0.05, 0.2, 0.15);
+    p(f * 2, t + 0.08, 0.15, 0.1, 'triangle');
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+const NUMBER_WORDS = { 6:'six', 7:'seven', 8:'eight', 9:'nine', 10:'ten' };
+const NUMBERS = [6,7,8,9,10];
+const SPOOKY_EMOJI = { 6:'🕷️', 7:'🦇', 8:'👻', 9:'🎃', 10:'🧪' };
+const SPOOKY_NAME  = { 6:'spider', 7:'bat', 8:'ghost', 9:'pumpkin', 10:'potion' };
+
+function makeDots(n) {
+  const emoji = SPOOKY_EMOJI[n];
+  if (n === 6) return emoji.repeat(3) + '\n' + emoji.repeat(3);
+  if (n === 7) return emoji.repeat(4) + '\n' + emoji.repeat(3);
+  if (n === 8) return emoji.repeat(4) + '\n' + emoji.repeat(4);
+  if (n === 9) return emoji.repeat(5) + '\n' + emoji.repeat(4);
+  if (n === 10) return emoji.repeat(5) + '\n' + emoji.repeat(5);
+  return emoji.repeat(n);
+}
+
+const BOTTLE_COLORS = {
+  6: 'linear-gradient(135deg,#1a472a,#2ecc71)',
+  7: 'linear-gradient(135deg,#4a1a6b,#9b59b6)',
+  8: 'linear-gradient(135deg,#1a3a5c,#3498db)',
+  9: 'linear-gradient(135deg,#7d3c00,#e67e22)',
+  10: 'linear-gradient(135deg,#6b1a1a,#e74c3c)',
+};
+
+const BUBBLE_CORRECT = ['Into the cauldron! 🧪','Magic! 💫','Bubble bubble! 🫧','Splendid! ✨','Luna approves! 🧙‍♀️','Perfect brew! 🌟'];
+const BUBBLE_WRONG   = ['Not that one! 🧪','Try another! ✨','Check the order! 💫','Almost! 🌟'];
+const BUBBLE_POTION  = ['Potion brewed! 🧪','Magic complete! ✨','Wonderful brew! 💜','Bubbling nicely! 🫧'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🎉','🕷️','🦇','👻','🎃','🧪', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🌟','🧪','🫧']);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.15) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// Sparkle trail effect during fly animation
+function spawnTrail(x, y) {
+  const t = document.createElement('div');
+  t.className = 'sparkle-trail';
+  t.textContent = pick(['✨','💫','⭐','🫧']);
+  t.style.left = (x + (Math.random()-0.5)*20) + 'px';
+  t.style.top  = (y + (Math.random()-0.5)*20) + 'px';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 500);
+}
+
+// Splash effect when ingredient hits cauldron
+function cauldronSplash() {
+  const cauldron = $('cauldron');
+  const r = cauldron.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top;
+  const splashEmojis = ['💧','🫧','💦','✨','💜'];
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'splash';
+    s.textContent = pick(splashEmojis);
+    s.style.left = (cx + (Math.random()-0.5)*60) + 'px';
+    s.style.top  = (cy + Math.random()*10) + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 600);
+  }
+}
+
+// Cauldron eruption for final celebration
+function cauldronErupt() {
+  const cauldron = $('cauldron');
+  const r = cauldron.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top;
+  const emojis = ['🔮','💜','🧪','✨','💫','⭐','🌟','🎉','🕷️','🦇','👻','🎃','🐉'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'eruption-particle';
+    p.textContent = pick(emojis);
+    p.style.left = cx + 'px';
+    p.style.top  = cy + 'px';
+    p.style.fontSize = (16 + Math.random()*18) + 'px';
+    p.style.setProperty('--ex', ((Math.random()-0.5)*300) + 'px');
+    p.style.setProperty('--ey', (-100 - Math.random()*300) + 'px');
+    p.style.animationDelay = (Math.random()*0.5) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2500);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CAULDRON MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+let ingredientsAdded = 0; // 0-5 per sequence
+let potionsBrewed = 0;    // 0-4 total
+
+function resetCauldron() {
+  ingredientsAdded = 0;
+  updateCauldronState();
+  clearCauldronBubbles();
+}
+
+function updateCauldronState() {
+  const liquid = $('cauldronLiquid');
+  const glow = $('cauldronGlow');
+
+  // Remove old stage classes
+  for (let i = 0; i <= 5; i++) liquid.classList.remove('stage-' + i);
+  liquid.classList.add('stage-' + ingredientsAdded);
+
+  // Glow
+  glow.classList.remove('active','g1','g2','g3','g4','g5');
+  if (ingredientsAdded > 0) {
+    glow.classList.add('active', 'g' + ingredientsAdded);
+  }
+
+  // Add more bubbles as ingredients increase
+  updateCauldronBubbles();
+}
+
+function clearCauldronBubbles() {
+  const liquid = $('cauldronLiquid');
+  liquid.querySelectorAll('.cauldron-bubble').forEach(b => b.remove());
+}
+
+function updateCauldronBubbles() {
+  clearCauldronBubbles();
+  const liquid = $('cauldronLiquid');
+  const count = ingredientsAdded * 3;
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('div');
+    b.className = 'cauldron-bubble';
+    const size = 4 + Math.random() * 8;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (10 + Math.random() * 80) + '%';
+    b.style.bottom = (Math.random() * 30) + '%';
+    b.style.animationDuration = (1 + Math.random() * 2) + 's';
+    b.style.animationDelay = (Math.random() * 2) + 's';
+    liquid.appendChild(b);
+  }
+}
+
+function updateSteam() {
+  const steam = $('cauldronSteam');
+  steam.innerHTML = '';
+  const count = Math.max(2, ingredientsAdded * 2);
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'steam-particle';
+    s.textContent = pick(['💨','🌫️','💜']);
+    s.style.left = (20 + Math.random() * 60) + '%';
+    s.style.setProperty('--drift', ((Math.random()-0.5)*40) + 'px');
+    s.style.animationDelay = (Math.random() * 3) + 's';
+    s.style.animationDuration = (2 + Math.random() * 2) + 's';
+    steam.appendChild(s);
+  }
+}
+
+function markPotion(idx) {
+  const pip = $('pip' + idx);
+  if (pip) pip.classList.add('filled');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — floating bats and stars
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['🦇','⭐','✨','🌙','💫','🕸️','🕷️','🌟'];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-element';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*20) + 's';
+    el.style.animationDuration = (12 + Math.random()*16) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG
+// ══════════════════════════════════════════════════════════════════
+const ROUNDS = [
+  { label:'Round 1 — Add the Ingredients! 🧪', sub:'Tap bottles 6 to 10 in order! Hints will help.', display:'full',    hintMode:'strong' },
+  { label:'Round 2 — Brew Again! 🧙‍♀️',        sub:'No hints this time! Remember the sequence.',     display:'full',    hintMode:'none'   },
+  { label:'Round 3 — Count and Brew! 👻',      sub:'Count the patterns to find the right order!',   display:'dots',    hintMode:'none'   },
+  { label:'Round 4 — Speed Brew! 🏆',          sub:'Quick! The cauldron is cooling down!',           display:'full',    hintMode:'none',  timer:true, smaller:true },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let nextTapIdx = 0; // index into NUMBERS array (0-4)
+let bottleEls = {}; // keyed by number
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR — 5 bottles per sequence
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  for (let i = 0; i < 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'pdot' + i;
+    d.textContent = NUMBERS[i];
+    bar.appendChild(d);
+  }
+}
+function markProg(idx) {
+  const d = $('pdot' + idx);
+  if (d) {
+    d.textContent = SPOOKY_EMOJI[NUMBERS[idx]];
+    d.classList.add('done');
+  }
+}
+function highlightProg(idx) {
+  for (let i = 0; i < 5; i++) {
+    const d = $('pdot' + i);
+    if (d) d.classList.toggle('current', i === idx);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function clearHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+function resetHints() {
+  clearHints();
+  if (!gameActive) return;
+  const cfg = ROUNDS[round];
+  if (cfg.hintMode === 'none') return;
+
+  hintTimer = setTimeout(() => {
+    const targetNum = NUMBERS[nextTapIdx];
+    const bottle = bottleEls[targetNum];
+    if (bottle && gameActive) {
+      bottle.classList.add('wiggle');
+      audio.tone('hint');
+      setTimeout(() => bottle.classList.remove('wiggle'), 700);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) {
+      audio.play('thinking');
+      setTimeout(() => { if (gameActive) audio.speakNumber(NUMBERS[nextTapIdx]); }, 1200);
+    }
+  }, 7000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// POSITION GENERATION — random positions with minimum spacing
+// ══════════════════════════════════════════════════════════════════
+function generatePositions(count, smaller) {
+  const area = $('playArea');
+  const areaW = area.clientWidth;
+  const areaH = area.clientHeight;
+  const bottleW = smaller ? Math.min(Math.max(60, areaW * 0.15), 85) : Math.min(Math.max(70, areaW * 0.18), 100);
+  const bottleH = bottleW * 1.3;
+  const margin = bottleW * 0.5;
+  const minDist = bottleW * 1.4;
+
+  const positions = [];
+  for (let i = 0; i < count; i++) {
+    let tries = 0;
+    let x, y;
+    do {
+      x = margin + Math.random() * (areaW - margin * 2 - bottleW);
+      y = margin + 10 + Math.random() * (areaH - margin * 2 - bottleH);
+      tries++;
+      if (tries > 300) break;
+    } while (positions.some(p => {
+      const dx = p.x - x, dy = p.y - y;
+      return Math.sqrt(dx*dx + dy*dy) < minDist;
+    }));
+    positions.push({ x, y });
+  }
+  return positions;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER BOTTLES
+// ══════════════════════════════════════════════════════════════════
+function renderBottles() {
+  const area = $('playArea');
+  const cfg = ROUNDS[round];
+
+  area.querySelectorAll('.potion-bottle').forEach(n => n.remove());
+  bottleEls = {};
+
+  const positions = generatePositions(5, cfg.smaller);
+  const shuffledOrder = shuffle([...Array(5).keys()]); // random placement order
+
+  shuffledOrder.forEach((seqIdx, posIdx) => {
+    const num = NUMBERS[seqIdx];
+    const bottle = document.createElement('div');
+    bottle.className = 'potion-bottle';
+    if (cfg.smaller) bottle.classList.add('r4-size');
+    bottle.style.background = BOTTLE_COLORS[num];
+    bottle.style.left = positions[posIdx].x + 'px';
+    bottle.style.top  = positions[posIdx].y + 'px';
+    bottle.dataset.num = num;
+
+    let inner = '';
+    if (cfg.display === 'full') {
+      inner = `<div class="bottle-numeral">${num}</div>
+               <div class="bottle-emoji">${SPOOKY_EMOJI[num]}</div>
+               <div class="bottle-word">${SPOOKY_NAME[num]}</div>`;
+    } else if (cfg.display === 'dots') {
+      // Dots + small numeral always visible
+      inner = `<div class="bottle-numeral" style="font-size:clamp(12px,3vw,16px);opacity:0.6">${num}</div>
+               <div class="bottle-dots">${makeDots(num)}</div>`;
+    }
+    bottle.innerHTML = inner;
+
+    onTap(bottle, () => handleBottleTap(bottle, num));
+    area.appendChild(bottle);
+    bottleEls[num] = bottle;
+
+    setTimeout(() => bottle.classList.add('show'), 100 + posIdx * 120);
+  });
+
+  area.classList.add('active');
+
+  // Initial hint for round 1
+  setTimeout(() => {
+    if (cfg.hintMode === 'strong') {
+      const firstBottle = bottleEls[NUMBERS[0]];
+      if (firstBottle) firstBottle.classList.add('next-hint');
+    }
+  }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLY-TO-CAULDRON ANIMATION
+// ══════════════════════════════════════════════════════════════════
+function flyToCauldron(bottle) {
+  return new Promise(resolve => {
+    const bottleRect = bottle.getBoundingClientRect();
+    const cauldron = $('cauldron');
+    const cauldronRect = cauldron.getBoundingClientRect();
+
+    const startX = bottleRect.left;
+    const startY = bottleRect.top;
+    const endX = cauldronRect.left + cauldronRect.width/2 - bottleRect.width/2;
+    const endY = cauldronRect.top - 10;
+
+    bottle.classList.add('flying');
+    bottle.style.position = 'fixed';
+    bottle.style.left = startX + 'px';
+    bottle.style.top  = startY + 'px';
+    bottle.style.zIndex = '55';
+
+    const duration = 500;
+    const startTime = performance.now();
+    let lastTrail = 0;
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease-in curve for acceleration feel
+      const ease = progress * progress;
+
+      const curX = startX + (endX - startX) * ease;
+      // Arc upward first then down
+      const arcHeight = -80;
+      const curY = startY + (endY - startY) * ease + arcHeight * Math.sin(progress * Math.PI);
+
+      const scale = 1 - progress * 0.6;
+      bottle.style.left = curX + 'px';
+      bottle.style.top  = curY + 'px';
+      bottle.style.transform = `scale(${scale}) rotate(${progress * 360}deg)`;
+
+      // Sparkle trail every ~50ms
+      if (now - lastTrail > 50) {
+        spawnTrail(curX + bottleRect.width/2, curY + bottleRect.height/2);
+        lastTrail = now;
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Hit cauldron!
+        bottle.style.display = 'none';
+        audio.tone('splash');
+        cauldronSplash();
+        resolve();
+      }
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════════════════════
+function updateHud() {
+  const targetNum = NUMBERS[nextTapIdx];
+  if (nextTapIdx < 5) {
+    $('hudFind').textContent = `Tap ${targetNum}`;
+  } else {
+    $('hudFind').textContent = '🧪 Brewed!';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HANDLE BOTTLE TAP
+// ══════════════════════════════════════════════════════════════════
+async function handleBottleTap(bottleEl, num) {
+  if (!gameActive) return;
+  clearHints();
+
+  const targetNum = NUMBERS[nextTapIdx];
+
+  if (num === targetNum) {
+    // ✓ CORRECT
+    gameActive = false;
+
+    bottleEl.classList.remove('next-hint', 'wiggle');
+    bottleEl.classList.add('activated');
+    starBurst(bottleEl);
+
+    // Ascending chime
+    audio.toneSequence(nextTapIdx);
+
+    score++;
+    $('hudScore').textContent = score;
+
+    // Character reacts
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+
+    // Voice: speak the number
+    audio.speakNumber(num);
+
+    // Mark progress
+    markProg(nextTapIdx);
+
+    await delay(300);
+
+    // Fly bottle to cauldron!
+    await flyToCauldron(bottleEl);
+
+    // Update cauldron state
+    ingredientsAdded++;
+    updateCauldronState();
+    updateSteam();
+    audio.tone('bubble');
+
+    await delay(200);
+
+    nextTapIdx++;
+    highlightProg(nextTapIdx);
+    updateHud();
+
+    if (nextTapIdx >= 5) {
+      // Sequence complete! Potion brewed!
+      await celebrateSequence();
+    } else {
+      // Highlight next bottle hint (round 1 only)
+      const cfg = ROUNDS[round];
+      if (cfg.hintMode === 'strong') {
+        const nextBottle = bottleEls[NUMBERS[nextTapIdx]];
+        if (nextBottle) nextBottle.classList.add('next-hint');
+      }
+      gameActive = true;
+      resetHints();
+    }
+
+  } else {
+    // ✗ WRONG
+    bottleEl.classList.add('wrong-tap');
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1900);
+
+    audio.play('wrong');
+    // Speak the correct target number after a beat
+    setTimeout(() => audio.speakNumber(targetNum), 600);
+    setTimeout(() => {
+      bottleEl.classList.remove('wrong-tap');
+      resetHints();
+    }, 480);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CELEBRATE SEQUENCE COMPLETION — POTION BREWED!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateSequence() {
+  $('playArea').classList.remove('timer-warning');
+
+  // Cauldron celebration — rainbow liquid, max bubbles
+  ingredientsAdded = 5;
+  updateCauldronState();
+  updateSteam();
+
+  audio.tone('celeb');
+
+  // Voice counts along
+  for (let i = 0; i < 5; i++) {
+    await audio.speakNumber(NUMBERS[i]);
+    await delay(60);
+  }
+
+  await delay(300);
+
+  // Potion brewed!
+  showCharBubble(pick(BUBBLE_POTION), 2500);
+  confetti(25, ['🧪','💜','✨','🌟','🫧']);
+  await audio.play('correct');
+
+  markPotion(potionsBrewed);
+  potionsBrewed++;
+
+  if (potionsBrewed >= 4) {
+    await delay(500);
+    await finishRound();
+  } else {
+    // Move to next round
+    await delay(500);
+    await finishRound();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND TRANSITIONS
+// ══════════════════════════════════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearHints();
+
+  $('playArea').querySelectorAll('.potion-bottle').forEach(n => n.remove());
+  $('playArea').classList.remove('active', 'timer-warning');
+
+  audio.tone('roundDone');
+  confetti(30, ['🧪','🫧','✨','🔮']);
+  round++;
+
+  if (round >= ROUNDS.length) {
+    await delay(700);
+    celebrateFinish();
+    return;
+  }
+
+  // ── Round complete banner ──
+  $('roundTitle').textContent = '🧪 Potion Brewed! 🧪';
+  $('roundSub').textContent   = 'Luna is delighted!';
+  $('roundBanner').classList.add('show');
+  await audio.play('round-complete');
+  await delay(1300);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  // ── Next round intro banner ──
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startRound();
+}
+
+function startRound() {
+  const cfg = ROUNDS[round];
+  $('hudRound').textContent = `${round + 1}/4`;
+  resetCauldron();
+  buildProg();
+  startAttempt();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START ATTEMPT (each round = 1 sequence)
+// ══════════════════════════════════════════════════════════════════
+async function startAttempt() {
+  nextTapIdx = 0;
+  updateHud();
+  highlightProg(0);
+  renderBottles();
+  updateSteam();
+  gameActive = true;
+
+  audio.tone('reveal');
+  await audio.speakNumber(6);
+
+  resetHints();
+
+  if (ROUNDS[round].timer) {
+    $('playArea').classList.remove('timer-warning');
+    void $('playArea').offsetWidth;
+    $('playArea').classList.add('timer-warning');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION — DRAGON HATCHES!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display       = 'none';
+  $('progBar').style.display   = 'none';
+  $('roundBanner').classList.remove('show');
+  $('playArea').classList.remove('active');
+
+  // Cauldron eruption!
+  cauldronErupt();
+  audio.tone('celeb');
+  await delay(800);
+
+  // Hide cauldron after eruption
+  $('cauldronArea').style.display = 'none';
+  $('charArea').style.display   = 'none';
+
+  confetti(60, ['🐉','🧪','✨','🌟','💜','🔮','🎉']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 5)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+
+  showScreen('scrCeleb');
+  audio.tone('celeb');
+  await delay(200);
+
+  // Two celebration voice clips
+  await audio.play('game-complete');
+  await delay(400);
+  confetti(50, ['🐉','💜','🧪','🌟']);
+  await audio.play('game-complete');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT & START
+// ══════════════════════════════════════════════════════════════════
+function resetGame() {
+  round = 0; score = 0; potionsBrewed = 0;
+  nextTapIdx = 0;
+  ingredientsAdded = 0;
+  $('hudScore').textContent = '0';
+
+  // Reset potion pips
+  for (let i = 0; i < 4; i++) {
+    const pip = $('pip' + i);
+    if (pip) pip.classList.remove('filled');
+  }
+
+  // Reset cauldron
+  $('cauldronArea').style.display = '';
+  resetCauldron();
+  updateSteam();
+}
+
+async function startGame() {
+  audio.startMusic();
+
+  resetGame();
+  showScreen(null);
+
+  $('hud').style.display     = '';
+  $('charArea').style.display = '';
+
+  // First round intro
+  const cfg = ROUNDS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(1200);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startRound();
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────
+buildScenery();
+updateSteam();
+
+onTap($('btnStart'), () => { audio.unlock(); startGame(); });
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+</script>
+</body>
+</html>

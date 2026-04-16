@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Spell Writing — Luna's Spell Book</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep-purple: #1a0a2e; --orange: #ff8c00; --gold: #ffd700; --teal: #1a3a3a;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--deep-purple);
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(160deg, #1a0a2e 0%, #2d1050 40%, #1a0a2e 70%, #0d1a2e 100%);
+}
+.bg-star {
+  position: fixed; pointer-events: none; z-index: 1;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #fff;
+  animation: twinkle ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+.bg-bat {
+  position: fixed; pointer-events: none; z-index: 2;
+  font-size: clamp(16px, 3vw, 24px);
+  opacity: 0.35;
+  animation: batFly linear infinite;
+}
+@keyframes batFly {
+  0%   { transform: translateX(110vw) translateY(0) scaleX(-1); }
+  25%  { transform: translateX(75vw) translateY(-20px) scaleX(-1); }
+  50%  { transform: translateX(40vw) translateY(10px) scaleX(-1); }
+  75%  { transform: translateX(15vw) translateY(-15px) scaleX(-1); }
+  100% { transform: translateX(-60px) translateY(0) scaleX(-1); }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: center;
+  margin-bottom: 10px;
+  font-size: clamp(36px, 9vw, 60px);
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, #ff8c00, #ff6600);
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, #ff8c00, #ff6600); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(26,10,46,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,140,0,0.2);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.38); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--orange); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-center .hud-val { color: var(--gold); font-size: clamp(14px,3vw,20px); }
+
+/* ── Character ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: #4a0e6b;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+@keyframes charJump {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-15px) rotate(-4deg); }
+  70%  { transform: translateY(-5px) rotate(2deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+/* ── Canvas area ── */
+.canvas-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+}
+.canvas-area canvas {
+  border-radius: 18px;
+  box-shadow: 0 0 40px rgba(255,140,0,0.15), 0 6px 30px rgba(0,0,0,0.5);
+  background: rgba(10,5,25,0.6);
+}
+
+/* ── Number display ── */
+.number-display {
+  position: fixed;
+  top: 56px; right: 12px;
+  z-index: var(--z-ui);
+  pointer-events: none;
+}
+.number-display .big-num {
+  font-size: clamp(40px,10vw,70px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255,215,0,0.5);
+  line-height: 1;
+}
+.number-display .sub-label {
+  font-size: clamp(10px,2vw,14px);
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui); height: 56px;
+  background: rgba(26,10,46,0.92); backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(255,140,0,0.2);
+  display: flex; align-items: center; justify-content: center; gap: clamp(6px,2vw,14px);
+  padding: 0 12px;
+}
+.prog-dot {
+  width: clamp(32px,8vw,44px); height: clamp(32px,8vw,44px);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3.2vw,20px); font-weight: 900;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3);
+  border: 2px solid rgba(255,255,255,0.08);
+  transition: all 0.4s;
+}
+.prog-dot.active {
+  background: rgba(255,140,0,0.2); color: var(--orange);
+  border-color: var(--orange);
+  box-shadow: 0 0 12px rgba(255,140,0,0.3);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, #ff8c00, #ffd700);
+  color: #1a0a2e; border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(255,215,0,0.4);
+}
+
+/* ── Spell Book ── */
+.spell-book {
+  position: fixed; top: 60px; left: 8px;
+  z-index: var(--z-char);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.spell-book-icon {
+  font-size: clamp(28px,6vw,40px);
+  filter: drop-shadow(0 0 8px rgba(255,140,0,0.4));
+}
+.spell-book-pages {
+  display: flex; gap: 2px; flex-wrap: wrap; max-width: 60px; justify-content: center;
+}
+.spell-page {
+  width: 8px; height: 10px; border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.5s;
+}
+.spell-page.lit {
+  background: linear-gradient(135deg, #ff8c00, #ffd700);
+  box-shadow: 0 0 6px rgba(255,215,0,0.6);
+  animation: pagePop 0.5s ease-out;
+}
+@keyframes pagePop {
+  0% { transform: scale(0); } 50% { transform: scale(1.5); } 100% { transform: scale(1); }
+}
+
+/* ── Level banner ── */
+.level-banner {
+  position: fixed; inset: 0;
+  z-index: var(--z-celeb);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(10,5,25,0.92);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.4s;
+}
+.level-banner.show { opacity: 1; visibility: visible; pointer-events: auto; }
+.level-banner h2 {
+  font-size: clamp(24px,6vw,42px);
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255,215,0,0.5);
+  margin-bottom: 6px;
+}
+.level-banner p {
+  font-size: clamp(14px,3.5vw,20px);
+  color: var(--white85);
+}
+
+/* ── Confetti ── */
+.confetti {
+  position: fixed; pointer-events: none;
+  z-index: var(--z-celeb);
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+.starburst {
+  position: fixed; pointer-events: none; z-index: var(--z-celeb);
+  animation: starPop 0.8s ease-out forwards;
+}
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(0); opacity: 1; }
+  60%  { transform: scale(1.5) rotate(180deg); opacity: 0.8; }
+  100% { transform: scale(0.5) rotate(360deg) translateY(-40px); opacity: 0; }
+}
+
+/* ── Celebration screen ── */
+.screen-celeb h1 {
+  font-size: clamp(26px,6.5vw,46px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin-bottom: 12px;
+}
+.screen-celeb p {
+  font-size: clamp(16px,4vw,22px);
+  color: var(--white85); line-height: 1.5;
+}
+.screen-celeb .final-book {
+  font-size: clamp(60px,15vw,100px);
+  margin: 16px 0;
+  animation: bookPulse 1.5s ease-in-out infinite;
+}
+@keyframes bookPulse {
+  0%,100% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.05) rotate(-2deg); }
+  50% { transform: scale(1.1) rotate(0); }
+  75% { transform: scale(1.05) rotate(2deg); }
+}
+.final-score {
+  font-size: clamp(18px,4.5vw,28px);
+  color: var(--gold); font-weight: 900;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg" id="bg"></div>
+
+<!-- Title Screen -->
+<div class="screen screen-title active" id="screenTitle">
+  <div class="icon-row"><span>🧙‍♀️</span><span>📖</span><span>✨</span></div>
+  <h1>Spell Writing</h1>
+  <p>Help Luna write numbers in her spell book! Trace each number with your magic wand to cast the spell!</p>
+  <button class="btn btn-start" id="btnStart">Cast Spells!</button>
+</div>
+
+<!-- Game Screen (HUD + Canvas + Progress) -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <div class="hud-label">LEVEL</div>
+    <div class="hud-val" id="hudLevel">1</div>
+  </div>
+  <div class="hud-center">
+    <div class="hud-val" id="hudNumber">6</div>
+  </div>
+  <div class="hud-right hud-score">
+    <div class="hud-label">SPELLS</div>
+    <div class="hud-val" id="hudScore">0</div>
+  </div>
+</div>
+
+<!-- Number display -->
+<div class="number-display" id="numDisplay" style="display:none">
+  <div class="big-num" id="bigNum">6</div>
+  <div class="sub-label" id="numSubLabel"></div>
+</div>
+
+<!-- Spell Book -->
+<div class="spell-book" id="spellBook" style="display:none">
+  <div class="spell-book-icon">📖</div>
+  <div class="spell-book-pages" id="spellPages"></div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-area" id="canvasArea" style="display:none">
+  <canvas id="traceCanvas"></canvas>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Character -->
+<div class="char-area" id="charArea" style="display:none">
+  <span class="char-emoji" id="charEmoji">🧙‍♀️</span>
+  <div class="char-bubble" id="charBubble"></div>
+</div>
+
+<!-- Level Banner -->
+<div class="level-banner" id="levelBanner">
+  <h2 id="bannerTitle">Level 1</h2>
+  <p id="bannerSub">Follow the magic guide!</p>
+</div>
+
+<!-- Celebration Screen -->
+<div class="screen screen-celeb" id="screenCeleb">
+  <h1>Spell Book Complete!</h1>
+  <div class="final-book">📖✨</div>
+  <p>Luna's spells are powered up!<br>You are a true wizard!</p>
+  <div class="final-score" id="finalScore">20 Spells Cast!</div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════════════
+const AUDIO_BASE = '../../audio';
+
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    const notes = [196.00, 233.08, 261.63, 311.13, 349.23, 392.00, 466.16];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.6 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.12, this.ctx.currentTime + 0.2);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.5);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1000 + Math.random() * 1500);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')    { p(440,t,0.12,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='checkpoint') {
+      p(600 + Math.random()*200, t, 0.08, 0.15, 'triangle');
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT DATA
+// ══════════════════════════════════════════════════════════════════
+const CHECKPOINTS = {
+  6:  [{x:0.55,y:0.12},{x:0.30,y:0.15},{x:0.20,y:0.42},{x:0.22,y:0.68},{x:0.45,y:0.85},{x:0.72,y:0.80},{x:0.78,y:0.60},{x:0.55,y:0.48},{x:0.28,y:0.50}],
+  7:  [{x:0.25,y:0.12},{x:0.78,y:0.12},{x:0.78,y:0.18},{x:0.45,y:0.88}],
+  8:  [{x:0.50,y:0.50},{x:0.50,y:0.12},{x:0.78,y:0.30},{x:0.50,y:0.50},{x:0.22,y:0.70},{x:0.50,y:0.88},{x:0.78,y:0.70},{x:0.50,y:0.50}],
+  9:  [{x:0.50,y:0.88},{x:0.75,y:0.60},{x:0.78,y:0.32},{x:0.55,y:0.12},{x:0.28,y:0.18},{x:0.22,y:0.40},{x:0.38,y:0.55},{x:0.72,y:0.52}],
+  '10_1': [{x:0.28,y:0.15},{x:0.32,y:0.88}],
+  '10_0': [{x:0.68,y:0.15},{x:0.82,y:0.35},{x:0.82,y:0.65},{x:0.68,y:0.85},{x:0.52,y:0.85},{x:0.38,y:0.65},{x:0.38,y:0.35},{x:0.52,y:0.15},{x:0.68,y:0.15}],
+};
+
+// Number sequence for each level: 6,7,8,9,10 (10 splits into 10_1 and 10_0)
+const TRACE_SEQUENCE = [6, 7, 8, 9, '10_1', '10_0'];
+
+// Level configs
+const LEVELS = [
+  { label: 'Level 1 — Follow the Guide!', sub: 'Watch the sparkle, then trace!', outlineOpacity: 1.0, showGuide: true },
+  { label: 'Level 2 — Trace the Glow!', sub: 'No guide this time!', outlineOpacity: 1.0, showGuide: false },
+  { label: 'Level 3 — Fading Outline!', sub: 'The outline is fading...', outlineOpacity: 0.5, showGuide: false },
+  { label: 'Level 4 — Nearly From Memory!', sub: 'Can you remember the shapes?', outlineOpacity: 0.15, showGuide: false },
+];
+
+const BUBBLE_CORRECT = ['Spell cast! ✨','Magic! 🔮','Wonderful! 💫','The spell works! ⚡','Beautiful! 🌟'];
+const BUBBLE_WRONG   = ['Keep tracing! 🔮','Follow the path! ✨','Almost there! 💫','Try the glow! 🌟'];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let currentLevel = 0;
+let currentTraceIndex = 0;
+let score = 0;
+let totalSpells = 0;
+let spellPageCount = 0;
+
+// Tracing state
+let traceCheckpoints = [];
+let nextCheckpoint = 0;
+let isDrawing = false;
+let drawPoints = [];
+let hitRadius = 0;
+let canvas, ctx;
+let canvasW, canvasH, dpr;
+let guideAnimating = false;
+let hintTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Stars
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-star';
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 100) + 'vh';
+    el.style.animationDuration = (2 + Math.random() * 4) + 's';
+    el.style.animationDelay = (-Math.random() * 5) + 's';
+    el.style.width = el.style.height = (1 + Math.random() * 3) + 'px';
+    $('bg').appendChild(el);
+  }
+  // Bats
+  for (let i = 0; i < 4; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-bat';
+    el.textContent = '🦇';
+    el.style.top = (10 + Math.random() * 40) + 'vh';
+    el.style.animationDuration = (12 + Math.random() * 10) + 's';
+    el.style.animationDelay = (-Math.random() * 15) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40) {
+  const all = ['⭐','✨','💫','🌟','🎃','🦇','🔮','💜','🧙‍♀️','🕸️'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurstAt(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🔮','🌟','⚡']);
+    s.style.left = (x + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+function showGameUI(show) {
+  const d = show ? '' : 'none';
+  $('hud').style.display = show ? '' : 'none';
+  $('canvasArea').style.display = show ? '' : 'none';
+  $('progBar').style.display = show ? '' : 'none';
+  $('charArea').style.display = show ? '' : 'none';
+  $('spellBook').style.display = show ? '' : 'none';
+  $('numDisplay').style.display = show ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SPELL BOOK
+// ══════════════════════════════════════════════════════════════════
+function buildSpellBook() {
+  const pages = $('spellPages');
+  pages.innerHTML = '';
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'spell-page';
+    p.id = 'page' + i;
+    pages.appendChild(p);
+  }
+}
+
+function lightSpellPage() {
+  const p = $('page' + spellPageCount);
+  if (p) {
+    p.classList.add('lit');
+    spellPageCount++;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  const labels = [6, 7, 8, 9, '10'];
+  labels.forEach((n, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'prog' + i;
+    d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+
+function updateProg() {
+  // Map trace index to progress dot index
+  // 0=6, 1=7, 2=8, 3=9, 4=10_1, 5=10_0
+  // Progress dots: 0=6, 1=7, 2=8, 3=9, 4=10
+  let dotIndex;
+  if (currentTraceIndex <= 3) dotIndex = currentTraceIndex;
+  else dotIndex = 4;
+
+  for (let i = 0; i < 5; i++) {
+    const d = $('prog' + i);
+    if (!d) continue;
+    d.classList.remove('active', 'done');
+    if (i < dotIndex || (i === 4 && currentTraceIndex > 5)) d.classList.add('done');
+    else if (i === dotIndex) d.classList.add('active');
+  }
+}
+
+function markProgDone(idx) {
+  // idx 0-3 = numbers 6-9, idx 4 = 10
+  const d = $('prog' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════════════════════
+function setupCanvas() {
+  canvas = $('traceCanvas');
+  const area = $('canvasArea');
+  const rect = area.getBoundingClientRect();
+  const pad = 16;
+  const w = rect.width - pad * 2;
+  const h = rect.height - pad * 2;
+  const size = Math.min(w, h, 400);
+
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+
+  ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  canvasW = size;
+  canvasH = size;
+  hitRadius = canvasW * 0.15;
+
+  // Touch/mouse events
+  canvas.addEventListener('mousedown', onPointerDown);
+  canvas.addEventListener('mousemove', onPointerMove);
+  canvas.addEventListener('mouseup', onPointerUp);
+  canvas.addEventListener('mouseleave', onPointerUp);
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onPointerUp, { passive: false });
+}
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onPointerDown(e) {
+  if (!gameActive || guideAnimating) return;
+  audio.unlock();
+  isDrawing = true;
+  drawPoints = [];
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  checkCheckpoint(pos);
+}
+
+function onPointerMove(e) {
+  if (!isDrawing || !gameActive || guideAnimating) return;
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  drawTraceLine();
+  checkCheckpoint(pos);
+}
+
+function onPointerUp() {
+  isDrawing = false;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAWING
+// ══════════════════════════════════════════════════════════════════
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+}
+
+function drawNumberOutline(key, opacity) {
+  const cps = CHECKPOINTS[key];
+  if (!cps || cps.length < 2) return;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.strokeStyle = '#c8a0ff';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(180,120,255,0.5)';
+  ctx.shadowBlur = 15;
+
+  ctx.beginPath();
+  const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+
+  ctx.moveTo(pts[0].x, pts[0].y);
+
+  if (pts.length === 2) {
+    ctx.lineTo(pts[1].x, pts[1].y);
+  } else {
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i+1].x) / 2;
+      const my = (pts[i].y + pts[i+1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  }
+
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCheckpointDots() {
+  const cps = traceCheckpoints;
+  for (let i = 0; i < cps.length; i++) {
+    const cp = cps[i];
+    const x = cp.x * canvasW;
+    const y = cp.y * canvasH;
+
+    if (i < nextCheckpoint) {
+      // Hit - glowing gold dot
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,215,0,0.8)';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawTraceLine() {
+  if (drawPoints.length < 2) return;
+
+  // Redraw everything
+  clearCanvas();
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const level = LEVELS[currentLevel];
+  drawNumberOutline(key, level.outlineOpacity);
+
+  // Draw the trace line (fire effect)
+  ctx.save();
+  ctx.strokeStyle = '#ff8c00';
+  ctx.lineWidth = 9;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(255,140,0,0.8)';
+  ctx.shadowBlur = 12;
+
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+
+  // Inner glow line
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = 'rgba(255,215,0,0.6)';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  drawCheckpointDots();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT CHECKING
+// ══════════════════════════════════════════════════════════════════
+function checkCheckpoint(pos) {
+  if (nextCheckpoint >= traceCheckpoints.length) return;
+
+  const cp = traceCheckpoints[nextCheckpoint];
+  const cpx = cp.x * canvasW;
+  const cpy = cp.y * canvasH;
+  const dx = pos.x - cpx;
+  const dy = pos.y - cpy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist <= hitRadius) {
+    nextCheckpoint++;
+    audio.tone('checkpoint');
+    resetHints();
+
+    // Redraw to show hit dot
+    clearCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+    drawTraceLine();
+    drawCheckpointDots();
+
+    if (nextCheckpoint >= traceCheckpoints.length) {
+      // All checkpoints hit - trace complete!
+      onTraceComplete();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANIMATED GUIDE (Level 1)
+// ══════════════════════════════════════════════════════════════════
+function animateGuide(key) {
+  return new Promise(resolve => {
+    const cps = CHECKPOINTS[key];
+    if (!cps || cps.length < 2) { resolve(); return; }
+
+    guideAnimating = true;
+    const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+    const totalDuration = 2000;
+    const start = performance.now();
+
+    // Build a dense path from checkpoints using same curve logic
+    const densePoints = [];
+    const steps = 80;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const totalLen = pts.length - 1;
+      const segment = t * totalLen;
+      const i = Math.min(Math.floor(segment), totalLen - 1);
+      const localT = segment - i;
+
+      if (pts.length === 2) {
+        densePoints.push({
+          x: pts[0].x + (pts[1].x - pts[0].x) * t,
+          y: pts[0].y + (pts[1].y - pts[0].y) * t
+        });
+      } else {
+        // Use quadratic interpolation for smoothness
+        const p0 = pts[i];
+        const p1 = pts[Math.min(i + 1, pts.length - 1)];
+        densePoints.push({
+          x: p0.x + (p1.x - p0.x) * localT,
+          y: p0.y + (p1.y - p0.y) * localT
+        });
+      }
+    }
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const idx = Math.floor(progress * (densePoints.length - 1));
+
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+
+      // Draw sparkle trail
+      ctx.save();
+      const trailLen = 8;
+      for (let j = Math.max(0, idx - trailLen); j <= idx; j++) {
+        const p = densePoints[j];
+        const alpha = 1 - (idx - j) / trailLen;
+        ctx.fillStyle = `rgba(255,215,0,${alpha * 0.7})`;
+        ctx.shadowColor = `rgba(255,140,0,${alpha})`;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5 + alpha * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Sparkle head
+      if (idx < densePoints.length) {
+        const p = densePoints[idx];
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(255,215,0,1)';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        guideAnimating = false;
+        clearCanvas();
+        drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    if (!gameActive || guideAnimating) return;
+    if (nextCheckpoint < traceCheckpoints.length) {
+      // Pulse the next checkpoint area
+      const cp = traceCheckpoints[nextCheckpoint];
+      const x = cp.x * canvasW;
+      const y = cp.y * canvasH;
+
+      // Draw hint glow
+      const key = TRACE_SEQUENCE[currentTraceIndex];
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,140,0,0.3)';
+      ctx.shadowColor = 'rgba(255,140,0,0.8)';
+      ctx.shadowBlur = 25;
+      ctx.beginPath();
+      ctx.arc(x, y, hitRadius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      audio.tone('hint');
+      showCharBubble('Trace here! ✨', 2000);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRACE COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onTraceComplete() {
+  gameActive = false;
+  isDrawing = false;
+  clearTimeout(hintTimer);
+
+  score++;
+  totalSpells++;
+  $('hudScore').textContent = score;
+
+  // Sparkle burst on canvas center
+  const rect = canvas.getBoundingClientRect();
+  starBurstAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+  // Bats fly across
+  for (let i = 0; i < 3; i++) {
+    const bat = document.createElement('div');
+    bat.className = 'bg-bat';
+    bat.textContent = '🦇';
+    bat.style.top = (20 + Math.random() * 50) + 'vh';
+    bat.style.animationDuration = '2s';
+    bat.style.opacity = '0.7';
+    document.body.appendChild(bat);
+    setTimeout(() => bat.remove(), 2200);
+  }
+
+  // Light a spell page
+  lightSpellPage();
+
+  audio.tone('correct');
+  jumpChar();
+
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const dispNum = (key === '10_1' || key === '10_0') ? 10 : key;
+  showCharBubble(pick(BUBBLE_CORRECT), 2000);
+
+  await audio.play('correct');
+  await delay(600);
+
+  // Advance to next trace
+  currentTraceIndex++;
+
+  // Check if 10_1 just completed - mark "10" progress when 10_0 completes
+  if (currentTraceIndex === 5) {
+    // Just finished 10_1, moving to 10_0 - don't mark 10 done yet
+  } else if (currentTraceIndex === 6) {
+    // Finished 10_0 - mark 10 done
+    markProgDone(4);
+  } else if (currentTraceIndex <= 4) {
+    markProgDone(currentTraceIndex - 1);
+  }
+
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) {
+    // Level complete
+    currentTraceIndex = 0;
+    currentLevel++;
+
+    if (currentLevel >= LEVELS.length) {
+      await onGameComplete();
+    } else {
+      await onLevelComplete();
+    }
+  } else {
+    await startTrace();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEVEL COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onLevelComplete() {
+  audio.tone('roundDone');
+  confetti(30);
+  showCharBubble('Level complete! 🎃', 2500);
+
+  await audio.play('round-complete');
+  await delay(1000);
+
+  await showLevelBanner();
+}
+
+async function showLevelBanner() {
+  const level = LEVELS[currentLevel];
+  $('bannerTitle').textContent = level.label;
+  $('bannerSub').textContent = level.sub;
+  $('levelBanner').classList.add('show');
+
+  audio.tone('reveal');
+  await audio.play('greetings');
+  await delay(1500);
+
+  $('levelBanner').classList.remove('show');
+  await delay(400);
+
+  await startLevel();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onGameComplete() {
+  showGameUI(false);
+
+  // Screen flash
+  document.body.style.background = '#fff';
+  await delay(100);
+  document.body.style.background = '';
+
+  audio.tone('celeb');
+  confetti(60);
+
+  $('finalScore').textContent = score + ' Spells Cast!';
+  showScreen('screenCeleb');
+
+  await delay(500);
+  confetti(40);
+
+  await audio.play('game-complete');
+  await delay(1500);
+  await audio.play('game-complete');
+  confetti(40);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START TRACE
+// ══════════════════════════════════════════════════════════════════
+async function startTrace() {
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const cps = CHECKPOINTS[key];
+  traceCheckpoints = cps;
+  nextCheckpoint = 0;
+  isDrawing = false;
+  drawPoints = [];
+  gameActive = true;
+
+  // Update HUD
+  const level = LEVELS[currentLevel];
+  $('hudLevel').textContent = currentLevel + 1;
+
+  // Display number
+  let dispNum, subLabel = '';
+  if (key === '10_1') {
+    dispNum = '10';
+    subLabel = 'part 1/2 — trace the 1';
+  } else if (key === '10_0') {
+    dispNum = '10';
+    subLabel = 'part 2/2 — trace the 0';
+  } else {
+    dispNum = key;
+    subLabel = '';
+  }
+
+  $('bigNum').textContent = dispNum;
+  $('numSubLabel').textContent = subLabel;
+  $('hudNumber').textContent = dispNum;
+
+  updateProg();
+
+  // Draw the outline
+  clearCanvas();
+  drawNumberOutline(key, level.outlineOpacity);
+
+  // Speak the number
+  const speakNum = (key === '10_1' || key === '10_0') ? 10 : key;
+  audio.speakNumber(speakNum);
+
+  // Level 1: show animated guide first
+  if (level.showGuide) {
+    await delay(300);
+    await animateGuide(key);
+    showCharBubble('Your turn! Trace it! ✨', 2000);
+  } else {
+    showCharBubble('Trace the number! 🔮', 2000);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START LEVEL
+// ══════════════════════════════════════════════════════════════════
+async function startLevel() {
+  currentTraceIndex = 0;
+  buildProg();
+  await startTrace();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  audio.unlock();
+  showScreen(null);
+  currentLevel = 0;
+  currentTraceIndex = 0;
+  score = 0;
+  totalSpells = 0;
+  spellPageCount = 0;
+
+  $('hudScore').textContent = '0';
+  showGameUI(true);
+  buildSpellBook();
+  setupCanvas();
+
+  audio.startMusic();
+
+  // Show level 1 banner
+  await showLevelBanner();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => startGame());
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+
+// Unlock audio on any touch
+document.addEventListener('touchstart', () => audio.unlock(), { once: true, passive: true });
+document.addEventListener('click', () => audio.unlock(), { once: true });
+</script>
+</body>
+</html>

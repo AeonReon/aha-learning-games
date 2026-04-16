@@ -1,0 +1,430 @@
+{
+  "voice-a": {
+    "greetings": [
+      {
+        "id": "are-you-ready",
+        "file": "audio/voice-a/greetings/are-you-ready.mp3",
+        "text": "Are you ready?"
+      },
+      {
+        "id": "lets-go",
+        "file": "audio/voice-a/greetings/lets-go.mp3",
+        "text": "Let's go!"
+      },
+      {
+        "id": "here-we-go",
+        "file": "audio/voice-a/greetings/here-we-go.mp3",
+        "text": "Here we go!"
+      },
+      {
+        "id": "come-on-lets-play",
+        "file": "audio/voice-a/greetings/come-on-lets-play.mp3",
+        "text": "Come on, let's play!"
+      },
+      {
+        "id": "are-you-watching",
+        "file": "audio/voice-a/greetings/are-you-watching.mp3",
+        "text": "Are you watching?"
+      },
+      {
+        "id": "pay-attention-now",
+        "file": "audio/voice-a/greetings/pay-attention-now.mp3",
+        "text": "Pay attention now!"
+      },
+      {
+        "id": "this-is-going-to-be-fun",
+        "file": "audio/voice-a/greetings/this-is-going-to-be-fun.mp3",
+        "text": "This is going to be fun!"
+      }
+    ],
+    "correct": [
+      {
+        "id": "well-done",
+        "file": "audio/voice-a/correct/well-done.mp3",
+        "text": "Well done!"
+      },
+      {
+        "id": "brilliant",
+        "file": "audio/voice-a/correct/brilliant.mp3",
+        "text": "Brilliant!"
+      },
+      {
+        "id": "you-got-it",
+        "file": "audio/voice-a/correct/you-got-it.mp3",
+        "text": "You got it!"
+      },
+      {
+        "id": "amazing",
+        "file": "audio/voice-a/correct/amazing.mp3",
+        "text": "Amazing!"
+      },
+      {
+        "id": "thats-right",
+        "file": "audio/voice-a/correct/thats-right.mp3",
+        "text": "That's right!"
+      },
+      {
+        "id": "superstar",
+        "file": "audio/voice-a/correct/superstar.mp3",
+        "text": "Superstar!"
+      },
+      {
+        "id": "fantastic",
+        "file": "audio/voice-a/correct/fantastic.mp3",
+        "text": "Fantastic!"
+      },
+      {
+        "id": "yes-youre-so-clever",
+        "file": "audio/voice-a/correct/yes-youre-so-clever.mp3",
+        "text": "Yes! You're so clever!"
+      },
+      {
+        "id": "i-knew-you-could-do-it",
+        "file": "audio/voice-a/correct/i-knew-you-could-do-it.mp3",
+        "text": "I knew you could do it!"
+      },
+      {
+        "id": "youre-on-fire",
+        "file": "audio/voice-a/correct/youre-on-fire.mp3",
+        "text": "You're on fire!"
+      },
+      {
+        "id": "perfect",
+        "file": "audio/voice-a/correct/perfect.mp3",
+        "text": "Perfect!"
+      },
+      {
+        "id": "incredible",
+        "file": "audio/voice-a/correct/incredible.mp3",
+        "text": "Incredible!"
+      },
+      {
+        "id": "wow-look-at-you-go",
+        "file": "audio/voice-a/correct/wow-look-at-you-go.mp3",
+        "text": "Wow, look at you go!"
+      }
+    ],
+    "wrong": [
+      {
+        "id": "oops-not-that-one",
+        "file": "audio/voice-a/wrong/oops-not-that-one.mp3",
+        "text": "Oops, not that one — try again!"
+      },
+      {
+        "id": "almost-have-another-go",
+        "file": "audio/voice-a/wrong/almost-have-another-go.mp3",
+        "text": "Almost! Have another go!"
+      },
+      {
+        "id": "not-quite-you-can-do-it",
+        "file": "audio/voice-a/wrong/not-quite-you-can-do-it.mp3",
+        "text": "Not quite — you can do it!"
+      },
+      {
+        "id": "keep-trying-youre-so-close",
+        "file": "audio/voice-a/wrong/keep-trying-youre-so-close.mp3",
+        "text": "Keep trying, you're so close!"
+      },
+      {
+        "id": "dont-worry-try-again",
+        "file": "audio/voice-a/wrong/dont-worry-try-again.mp3",
+        "text": "Don't worry, try again!"
+      },
+      {
+        "id": "nearly-give-it-another-go",
+        "file": "audio/voice-a/wrong/nearly-give-it-another-go.mp3",
+        "text": "Nearly! Give it another go!"
+      }
+    ],
+    "thinking": [
+      {
+        "id": "take-your-time",
+        "file": "audio/voice-a/thinking/take-your-time.mp3",
+        "text": "Take your time..."
+      },
+      {
+        "id": "have-a-good-look",
+        "file": "audio/voice-a/thinking/have-a-good-look.mp3",
+        "text": "Have a good look..."
+      },
+      {
+        "id": "which-one-could-it-be",
+        "file": "audio/voice-a/thinking/which-one-could-it-be.mp3",
+        "text": "Which one could it be?"
+      },
+      {
+        "id": "you-can-do-it-keep-looking",
+        "file": "audio/voice-a/thinking/you-can-do-it-keep-looking.mp3",
+        "text": "You can do it, keep looking!"
+      },
+      {
+        "id": "i-believe-in-you",
+        "file": "audio/voice-a/thinking/i-believe-in-you.mp3",
+        "text": "I believe in you!"
+      }
+    ],
+    "round-complete": [
+      {
+        "id": "round-complete-amazing",
+        "file": "audio/voice-a/round-complete/round-complete-amazing.mp3",
+        "text": "Round complete! Amazing work!"
+      },
+      {
+        "id": "you-did-it-on-to-the-next",
+        "file": "audio/voice-a/round-complete/you-did-it-on-to-the-next.mp3",
+        "text": "You did it! On to the next one!"
+      },
+      {
+        "id": "brilliant-round-keep-going",
+        "file": "audio/voice-a/round-complete/brilliant-round-keep-going.mp3",
+        "text": "Brilliant round! Keep going!"
+      },
+      {
+        "id": "round-done-youre-doing-so-well",
+        "file": "audio/voice-a/round-complete/round-done-youre-doing-so-well.mp3",
+        "text": "Round done — you're doing so well!"
+      }
+    ],
+    "game-complete": [
+      {
+        "id": "you-finished-so-proud",
+        "file": "audio/voice-a/game-complete/you-finished-so-proud.mp3",
+        "text": "You finished! I'm so proud of you!"
+      },
+      {
+        "id": "you-are-a-superstar",
+        "file": "audio/voice-a/game-complete/you-are-a-superstar.mp3",
+        "text": "You are a superstar!"
+      },
+      {
+        "id": "what-a-fantastic-player",
+        "file": "audio/voice-a/game-complete/what-a-fantastic-player.mp3",
+        "text": "What a fantastic player you are!"
+      },
+      {
+        "id": "you-did-the-whole-thing",
+        "file": "audio/voice-a/game-complete/you-did-the-whole-thing.mp3",
+        "text": "You did the whole thing! Wow!"
+      },
+      {
+        "id": "youre-incredible-we-did-it",
+        "file": "audio/voice-a/game-complete/youre-incredible-we-did-it.mp3",
+        "text": "You're incredible! We did it!"
+      }
+    ]
+  },
+  "voice-b": {
+    "greetings": [
+      {
+        "id": "hello-ready-to-play",
+        "file": "audio/voice-b/greetings/hello-ready-to-play.mp3",
+        "text": "Hello there! Ready to play?"
+      },
+      {
+        "id": "lets-discover-something-wonderful",
+        "file": "audio/voice-b/greetings/lets-discover-something-wonderful.mp3",
+        "text": "Let's discover something wonderful!"
+      },
+      {
+        "id": "oh-i-love-this-game",
+        "file": "audio/voice-b/greetings/oh-i-love-this-game.mp3",
+        "text": "Oh, I love this game!"
+      },
+      {
+        "id": "wonderful-are-you-ready",
+        "file": "audio/voice-b/greetings/wonderful-are-you-ready.mp3",
+        "text": "Wonderful — are you ready?"
+      },
+      {
+        "id": "lets-begin-our-adventure",
+        "file": "audio/voice-b/greetings/lets-begin-our-adventure.mp3",
+        "text": "Let's begin our adventure!"
+      },
+      {
+        "id": "i-am-so-glad-youre-here",
+        "file": "audio/voice-b/greetings/i-am-so-glad-youre-here.mp3",
+        "text": "I am so glad you're here!"
+      },
+      {
+        "id": "time-to-learn-something-new",
+        "file": "audio/voice-b/greetings/time-to-learn-something-new.mp3",
+        "text": "Time to learn something new!"
+      }
+    ],
+    "correct": [
+      {
+        "id": "oh-wonderful-well-done",
+        "file": "audio/voice-b/correct/oh-wonderful-well-done.mp3",
+        "text": "Oh wonderful, well done!"
+      },
+      {
+        "id": "youre-such-a-clever-one",
+        "file": "audio/voice-b/correct/youre-such-a-clever-one.mp3",
+        "text": "You're such a clever one!"
+      },
+      {
+        "id": "beautiful-thats-exactly-right",
+        "file": "audio/voice-b/correct/beautiful-thats-exactly-right.mp3",
+        "text": "Beautiful, that's exactly right!"
+      },
+      {
+        "id": "oh-my-goodness-yes",
+        "file": "audio/voice-b/correct/oh-my-goodness-yes.mp3",
+        "text": "Oh my goodness, yes!"
+      },
+      {
+        "id": "gorgeous-work",
+        "file": "audio/voice-b/correct/gorgeous-work.mp3",
+        "text": "Gorgeous work!"
+      },
+      {
+        "id": "you-make-me-so-happy",
+        "file": "audio/voice-b/correct/you-make-me-so-happy.mp3",
+        "text": "You make me so happy!"
+      },
+      {
+        "id": "splendid-absolutely-splendid",
+        "file": "audio/voice-b/correct/splendid-absolutely-splendid.mp3",
+        "text": "Splendid, absolutely splendid!"
+      },
+      {
+        "id": "what-a-star-you-are",
+        "file": "audio/voice-b/correct/what-a-star-you-are.mp3",
+        "text": "What a star you are!"
+      },
+      {
+        "id": "oh-how-clever",
+        "file": "audio/voice-b/correct/oh-how-clever.mp3",
+        "text": "Oh, how clever!"
+      },
+      {
+        "id": "thats-perfect-my-dear",
+        "file": "audio/voice-b/correct/thats-perfect-my-dear.mp3",
+        "text": "That's perfect, my dear!"
+      },
+      {
+        "id": "i-am-so-proud-of-you",
+        "file": "audio/voice-b/correct/i-am-so-proud-of-you.mp3",
+        "text": "I am so proud of you!"
+      },
+      {
+        "id": "you-did-it-wonderful",
+        "file": "audio/voice-b/correct/you-did-it-wonderful.mp3",
+        "text": "You did it, wonderful!"
+      },
+      {
+        "id": "oh-yes-well-done",
+        "file": "audio/voice-b/correct/oh-yes-well-done.mp3",
+        "text": "Oh yes, well done!"
+      }
+    ],
+    "wrong": [
+      {
+        "id": "not-that-one-but-youll-find-it",
+        "file": "audio/voice-b/wrong/not-that-one-but-youll-find-it.mp3",
+        "text": "Not that one, but I know you'll find it!"
+      },
+      {
+        "id": "so-close-have-another-lovely-go",
+        "file": "audio/voice-b/wrong/so-close-have-another-lovely-go.mp3",
+        "text": "So close! Have another lovely go!"
+      },
+      {
+        "id": "nearly-there-my-clever-one",
+        "file": "audio/voice-b/wrong/nearly-there-my-clever-one.mp3",
+        "text": "Nearly there, my clever one!"
+      },
+      {
+        "id": "keep-trying-youre-doing-so-well",
+        "file": "audio/voice-b/wrong/keep-trying-youre-doing-so-well.mp3",
+        "text": "Keep trying, you're doing so well!"
+      },
+      {
+        "id": "dont-worry-try-once-more",
+        "file": "audio/voice-b/wrong/dont-worry-try-once-more.mp3",
+        "text": "Don't worry, try once more!"
+      },
+      {
+        "id": "have-another-go-you-can-do-it",
+        "file": "audio/voice-b/wrong/have-another-go-you-can-do-it.mp3",
+        "text": "Have another go — you can do it!"
+      }
+    ],
+    "thinking": [
+      {
+        "id": "hmm-lets-think-together",
+        "file": "audio/voice-b/thinking/hmm-lets-think-together.mp3",
+        "text": "Hmm, let's think together..."
+      },
+      {
+        "id": "i-wonder-which-one",
+        "file": "audio/voice-b/thinking/i-wonder-which-one.mp3",
+        "text": "I wonder which one it could be..."
+      },
+      {
+        "id": "take-a-nice-long-look",
+        "file": "audio/voice-b/thinking/take-a-nice-long-look.mp3",
+        "text": "Take a nice long look..."
+      },
+      {
+        "id": "you-are-doing-so-well",
+        "file": "audio/voice-b/thinking/you-are-doing-so-well.mp3",
+        "text": "You are doing so well..."
+      },
+      {
+        "id": "we-can-do-this-together",
+        "file": "audio/voice-b/thinking/we-can-do-this-together.mp3",
+        "text": "We can do this together..."
+      }
+    ],
+    "round-complete": [
+      {
+        "id": "wonderful-round-youre-blooming",
+        "file": "audio/voice-b/round-complete/wonderful-round-youre-blooming.mp3",
+        "text": "Wonderful round! You're blooming!"
+      },
+      {
+        "id": "oh-that-was-beautiful-next-round",
+        "file": "audio/voice-b/round-complete/oh-that-was-beautiful-next-round.mp3",
+        "text": "Oh that was beautiful! Next round!"
+      },
+      {
+        "id": "gorgeous-work-keep-going",
+        "file": "audio/voice-b/round-complete/gorgeous-work-keep-going.mp3",
+        "text": "Gorgeous work, keep going!"
+      },
+      {
+        "id": "oh-how-marvellous-round-done",
+        "file": "audio/voice-b/round-complete/oh-how-marvellous-round-done.mp3",
+        "text": "Oh how marvellous, round done!"
+      }
+    ],
+    "game-complete": [
+      {
+        "id": "you-finished-how-marvellous",
+        "file": "audio/voice-b/game-complete/you-finished-how-marvellous.mp3",
+        "text": "You finished the whole game! How marvellous!"
+      },
+      {
+        "id": "i-am-so-proud-of-you",
+        "file": "audio/voice-b/game-complete/i-am-so-proud-of-you.mp3",
+        "text": "I am so proud of you!"
+      },
+      {
+        "id": "you-are-truly-amazing",
+        "file": "audio/voice-b/game-complete/you-are-truly-amazing.mp3",
+        "text": "You are truly amazing!"
+      },
+      {
+        "id": "what-a-star-you-are",
+        "file": "audio/voice-b/game-complete/what-a-star-you-are.mp3",
+        "text": "What a star you are!"
+      },
+      {
+        "id": "oh-my-goodness-you-did-it",
+        "file": "audio/voice-b/game-complete/oh-my-goodness-you-did-it.mp3",
+        "text": "Oh my goodness, you did it!"
+      }
+    ]
+  }
+}

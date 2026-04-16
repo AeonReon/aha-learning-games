@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Number Tracing ✨</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --pink: #f8a5c2; --magenta: #e91e8c; --purple: #a29bfe; --deep-purple: #6c5ce7;
+  --gold: #ffe066; --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(160deg, #1a0533 0%, #4a1580 35%, #8b1a6b 65%, #c0295e 100%);
+}
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.4;
+  animation: sparkleFloat linear infinite;
+}
+@keyframes sparkleFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.4; }
+  92%  { opacity: 0.4; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row img { width: clamp(60px, 15vw, 100px); height: auto; }
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,224,102,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 16px; }
+.btn-next   { background: linear-gradient(135deg,#a29bfe,#6c5ce7); margin-top: 14px; min-width: 160px; }
+.btn-retry  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 10px; font-size: clamp(14px,3.5vw,20px); padding: 10px 28px; min-height: 44px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(30,10,70,0.88); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.38); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--pink); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-center .hud-val { color: var(--gold); font-size: clamp(17px,4vw,26px) !important; line-height: 1.1; }
+
+/* ── Character ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-area img {
+  width: clamp(45px,11vw,70px); height: auto;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.4));
+}
+.char-emoji { font-size: clamp(36px,9vw,56px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Canvas area ── */
+.canvas-wrap {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 4px;
+}
+.number-label {
+  text-align: center;
+  margin-bottom: 2px;
+  pointer-events: none;
+}
+.number-label .numeral {
+  font-size: clamp(28px,7vw,48px);
+  font-weight: 900; color: var(--gold);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+.number-label .word {
+  font-size: clamp(14px,3.2vw,22px);
+  color: rgba(255,255,255,0.7);
+  font-weight: bold;
+}
+.canvas-container {
+  position: relative;
+  width: clamp(240px, 65vw, 380px);
+  height: clamp(240px, 65vw, 380px);
+  background: rgba(255,255,255,0.95);
+  border-radius: 24px;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.3), inset 0 0 0 3px rgba(108,92,231,0.2);
+  overflow: hidden;
+}
+canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  touch-action: none;
+}
+
+/* ── Success overlay on canvas ── */
+.success-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(108,92,231,0.18);
+  border-radius: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 5;
+}
+.success-overlay.show { opacity: 1; pointer-events: auto; }
+.success-overlay h2 {
+  font-size: clamp(28px,7vw,48px); color: var(--gold);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  animation: bounce 1s ease-in-out infinite;
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(30,10,70,0.88); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.22);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--pink),var(--deep-purple));
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(25,8,65,0.92); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.12); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--gold); text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.55); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(15,4,50,0.88); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.9); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row img { width: clamp(60px,16vw,108px); height: auto; }
+.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Checkpoint dots (visible in Level 1 & 2) ── */
+.checkpoint-dot {
+  position: absolute;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 3px solid #1a1a2e;
+  background: rgba(255,255,255,0.9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #1a1a2e;
+  transform: translate(-50%,-50%);
+  z-index: 4;
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.checkpoint-dot.active {
+  border-color: var(--magenta);
+  box-shadow: 0 0 12px rgba(233,30,140,0.6);
+  animation: cpPulse 1s ease-in-out infinite;
+}
+.checkpoint-dot.hit {
+  background: #2ecc71;
+  border-color: #27ae60;
+  color: #fff;
+  transform: translate(-50%,-50%) scale(1.2);
+}
+.checkpoint-dot.flash-hit {
+  background: #2ecc71;
+  border-color: #27ae60;
+  color: #fff;
+  transform: translate(-50%,-50%) scale(1.3);
+  opacity: 1;
+  animation: flashHit 0.6s ease-out forwards;
+}
+@keyframes cpPulse {
+  0%,100% { box-shadow: 0 0 8px rgba(233,30,140,0.4); }
+  50% { box-shadow: 0 0 20px rgba(233,30,140,0.8); }
+}
+@keyframes flashHit {
+  0% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+  50% { transform: translate(-50%,-50%) scale(1.5); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+}
+
+/* ── Guide arrow ── */
+.guide-arrow {
+  position: absolute; z-index: 4;
+  font-size: 24px;
+  pointer-events: none;
+  transform: translate(-50%,-50%);
+  animation: arrowBob 0.8s ease-in-out infinite;
+}
+@keyframes arrowBob {
+  0%,100% { transform: translate(-50%,-50%) translateY(0); opacity: 0.9; }
+  50% { transform: translate(-50%,-50%) translateY(-6px); opacity: 1; }
+}
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">LEVEL</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">TRACE</div>
+    <div class="hud-val" id="hudFind">—</div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Canvas area -->
+<div class="canvas-wrap" id="canvasWrap" style="display:none">
+  <div class="number-label" id="numberLabel">
+    <div class="numeral" id="lblNumeral"></div>
+    <div class="word" id="lblWord"></div>
+  </div>
+  <div class="canvas-container" id="canvasContainer">
+    <canvas id="cvOutline"></canvas>
+    <canvas id="cvDraw"></canvas>
+    <div class="success-overlay" id="successOverlay">
+      <h2>Amazing! ✨</h2>
+      <button class="btn btn-next" id="btnNext">Next ➜</button>
+    </div>
+  </div>
+  <button class="btn btn-retry" id="btnRetry">Try Again 🔄</button>
+</div>
+
+<!-- Character + bubble -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <img id="charImg" src="../../../learning-games/Characters/Princess with bird.gif" alt=""
+    onerror="this.style.display='none';document.getElementById('charEmoji').style.display='block'">
+  <div class="char-emoji" id="charEmoji" style="display:none">👸</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>✏️</span>
+    <img src="../../../learning-games/Characters/Princess with bird.gif" alt=""
+      onerror="this.outerHTML='<span style=\'font-size:clamp(60px,15vw,100px)\'>👸</span>'">
+    <span>✨</span>
+  </div>
+  <h1>Number Tracing ✨</h1>
+  <p>Trace the numbers with your finger!<br>Follow the magic path 💜</p>
+  <button class="btn btn-start" id="btnStart">Let's Trace! ✏️</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <img src="../../../learning-games/Characters/Prince and princess dance.gif" alt=""
+      style="width:clamp(65px,16vw,108px)"
+      onerror="this.outerHTML='<span style=\'font-size:clamp(52px,13vw,82px);animation:dance 1s ease-in-out infinite\'>👸</span>'">
+  </div>
+  <h2 id="celebTitle">🌟 Amazing! 🌟</h2>
+  <p id="celebMsg">You traced all the numbers!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! ✨</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Number Tracing ✏️                                       ║
+// ║  Checkpoint-based tracing for numbers 0-5                       ║
+// ║  Voice A (en-US-AnaNeural) · Fairy / princess theme             ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../../learning-games/audio';
+
+// ── Voice A clip pools ──
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.3; this.musicDucked = 0.025;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 800 + Math.random() * 1200);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(440,t,0.15,0.2); p(554,t+0.1,0.18,0.25); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    // Ascending checkpoint tone — pitch rises with index
+    else if (type.startsWith('cp')) {
+      const idx = parseInt(type.slice(2)) || 0;
+      const baseFreq = 440 + idx * 80;
+      p(baseFreq, t, 0.12, 0.35);
+      p(baseFreq * 1.25, t + 0.08, 0.15, 0.3);
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    return new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+const NUMBER_WORDS = { 0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five' };
+const BUBBLE_CORRECT = ['Yes! ⭐','Amazing! 💜','Perfect! ✨','Well done! 🌸','Magic! 💫','Beautiful! 🌟'];
+const BUBBLE_ENCOURAGE = ['Keep going! 💜','You can do it! ✨','Almost there! 🌸','Great tracing! 💫'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🎉','💜','🌸','🌷','💖','🦋', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100)+'vw'; el.style.top = '-30px';
+    el.style.fontSize = (16+Math.random()*14)+'px';
+    el.style.animationDelay = (Math.random()*1.8)+'s';
+    el.style.animationDuration = (2.5+Math.random()*2.5)+'s';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurstAt(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','💜','🌟','💖','🌸']);
+    s.style.left = (x + (Math.random()-0.5)*120)+'px';
+    s.style.top = (y + (Math.random()-0.5)*120)+'px';
+    s.style.animationDelay = (Math.random()*0.15)+'s';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charImg').style.display !== 'none' ? $('charImg') : $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+function buildScenery() {
+  const emojis = ['✨','💜','🌸','⭐','💫','🌟','🌷','💖'];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(emojis);
+    el.style.left = (Math.random()*100)+'vw';
+    el.style.animationDelay = (-Math.random()*20)+'s';
+    el.style.animationDuration = (10+Math.random()*14)+'s';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// NUMBER CHECKPOINT DEFINITIONS
+// Coordinates are percentages of canvas size (0-100)
+// Order matches natural handwriting direction
+// ══════════════════════════════════════════════════════════════════
+const NUMBER_CHECKPOINTS = {
+  // 0: oval — start top-center, clockwise
+  0: [
+    { x: 50, y: 15 },  // top center
+    { x: 78, y: 35 },  // right-upper
+    { x: 78, y: 65 },  // right-lower
+    { x: 50, y: 85 },  // bottom center
+    { x: 22, y: 65 },  // left-lower
+    { x: 22, y: 35 },  // left-upper (closing the loop)
+  ],
+  // 1: top-down stroke with optional serif
+  1: [
+    { x: 42, y: 22 },  // top serif start
+    { x: 50, y: 18 },  // top of vertical
+    { x: 50, y: 85 },  // bottom of vertical
+  ],
+  // 2: arc from top-left, curves right, sweeps down-left, base stroke right
+  2: [
+    { x: 28, y: 30 },  // start of arc (upper-left)
+    { x: 50, y: 16 },  // top of arc
+    { x: 72, y: 30 },  // right curve
+    { x: 55, y: 52 },  // middle diagonal
+    { x: 28, y: 85 },  // bottom-left
+    { x: 72, y: 85 },  // bottom-right sweep
+  ],
+  // 3: start top-left, two rightward bumps
+  3: [
+    { x: 30, y: 20 },  // top-left start
+    { x: 65, y: 20 },  // top-right
+    { x: 70, y: 36 },  // upper-right bump
+    { x: 45, y: 50 },  // middle
+    { x: 70, y: 66 },  // lower-right bump
+    { x: 30, y: 82 },  // bottom-left end
+  ],
+  // 4: down-left diagonal, right horizontal, vertical down
+  4: [
+    { x: 62, y: 15 },  // top start
+    { x: 25, y: 60 },  // diagonal down-left
+    { x: 75, y: 60 },  // horizontal right
+    { x: 62, y: 85 },  // vertical down from intersection
+  ],
+  // 5: horizontal left, down, bottom arc
+  5: [
+    { x: 70, y: 16 },  // top-right start
+    { x: 30, y: 16 },  // top-left (horizontal stroke)
+    { x: 30, y: 50 },  // down to middle
+    { x: 60, y: 48 },  // start of bottom arc
+    { x: 72, y: 68 },  // right of arc
+    { x: 35, y: 84 },  // bottom-left end
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// SVG PATH DATA — for drawing number outlines
+// Coordinates in a 100x100 viewBox, scaled to canvas
+// ══════════════════════════════════════════════════════════════════
+const NUMBER_PATHS = {
+  0: 'M 50,15 C 78,15 82,35 82,50 C 82,65 78,85 50,85 C 22,85 18,65 18,50 C 18,35 22,15 50,15 Z',
+  1: 'M 42,22 L 50,18 L 50,85 M 38,85 L 62,85',
+  2: 'M 28,30 C 28,16 72,10 72,30 C 72,42 50,52 28,85 L 72,85',
+  3: 'M 30,20 L 65,20 C 78,20 78,50 45,50 C 78,50 78,82 45,82 C 38,82 30,78 30,82',
+  4: 'M 62,15 L 25,60 L 75,60 M 62,45 L 62,85',
+  5: 'M 70,16 L 30,16 L 30,50 C 45,42 78,44 78,65 C 78,82 55,88 35,84',
+};
+
+// ══════════════════════════════════════════════════════════════════
+// LEVEL CONFIG
+// Level 1: Guided — visible numbered dots, arrow hint, 40px tolerance
+// Level 2: Dotted — visible dots (no numbers), 30px tolerance
+// Level 3: Outline — dots hidden, flash on hit, 22px tolerance
+// Level 4: Faded  — faint outline, dots hidden, 18px tolerance
+// ══════════════════════════════════════════════════════════════════
+const LEVELS = [
+  {
+    label: 'Level 1 — Guided ✏️',
+    sub: 'Follow the numbered dots!',
+    tolerance: 40,
+    showDots: true,
+    showNumbers: true,
+    showArrow: true,
+    outlineOpacity: 1.0,
+  },
+  {
+    label: 'Level 2 — Dotted 🌸',
+    sub: 'Dots are showing — find the path!',
+    tolerance: 30,
+    showDots: true,
+    showNumbers: false,
+    showArrow: false,
+    outlineOpacity: 1.0,
+  },
+  {
+    label: 'Level 3 — Outline 💜',
+    sub: 'No dots — just the outline!',
+    tolerance: 22,
+    showDots: false,
+    showNumbers: false,
+    showArrow: false,
+    outlineOpacity: 1.0,
+  },
+  {
+    label: 'Level 4 — Memory ✨',
+    sub: 'Faded outline — you know this!',
+    tolerance: 18,
+    showDots: false,
+    showNumbers: false,
+    showArrow: false,
+    outlineOpacity: 0.2,
+  },
+];
+
+const NUMBERS_SEQ = [0, 1, 2, 3, 4, 5];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let level = 0, score = 0;
+let numIdx = 0; // which number in NUMBERS_SEQ
+let currentNumber = 0;
+let checkpoints = [];
+let nextCP = 0; // index of next checkpoint to hit
+let drawing = false;
+let drawPoints = [];
+let hintTimer = null, hintVoiceTimer = null;
+
+// Canvas refs
+let cvOutline, ctxOutline, cvDraw, ctxDraw;
+let canvasSize = 300;
+let dpr = 1;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  NUMBERS_SEQ.forEach((n, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'pdot' + i; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+function markProg(idx) {
+  const d = $('pdot' + idx); if (d) d.classList.add('done');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════════════════════
+function setupCanvas() {
+  const container = $('canvasContainer');
+  const rect = container.getBoundingClientRect();
+  canvasSize = Math.min(rect.width, rect.height);
+  dpr = window.devicePixelRatio || 1;
+
+  cvOutline = $('cvOutline');
+  cvDraw = $('cvDraw');
+
+  [cvOutline, cvDraw].forEach(cv => {
+    cv.width = canvasSize * dpr;
+    cv.height = canvasSize * dpr;
+    cv.style.width = canvasSize + 'px';
+    cv.style.height = canvasSize + 'px';
+  });
+
+  ctxOutline = cvOutline.getContext('2d');
+  ctxOutline.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctxDraw = cvDraw.getContext('2d');
+  ctxDraw.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAW THE NUMBER OUTLINE
+// ══════════════════════════════════════════════════════════════════
+function drawOutline(num, opacity) {
+  ctxOutline.clearRect(0, 0, canvasSize, canvasSize);
+
+  const pathStr = NUMBER_PATHS[num];
+  if (!pathStr) return;
+
+  // Scale from 100x100 viewbox to canvas
+  const scale = canvasSize / 100;
+
+  ctxOutline.save();
+  ctxOutline.globalAlpha = opacity;
+  ctxOutline.strokeStyle = '#1a1a2e';
+  ctxOutline.lineWidth = 12;
+  ctxOutline.lineCap = 'round';
+  ctxOutline.lineJoin = 'round';
+
+  // Parse and draw the SVG path
+  const p = new Path2D();
+  const cmds = pathStr.match(/[MLCZ][^MLCZ]*/g) || [];
+  cmds.forEach(cmd => {
+    const type = cmd[0];
+    const nums = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
+    if (type === 'M') p.moveTo(nums[0]*scale, nums[1]*scale);
+    else if (type === 'L') p.lineTo(nums[0]*scale, nums[1]*scale);
+    else if (type === 'C') p.bezierCurveTo(nums[0]*scale,nums[1]*scale, nums[2]*scale,nums[3]*scale, nums[4]*scale,nums[5]*scale);
+    else if (type === 'Z') p.closePath();
+  });
+
+  ctxOutline.stroke(p);
+  ctxOutline.restore();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT DOT RENDERING
+// ══════════════════════════════════════════════════════════════════
+function renderCheckpointDots() {
+  // Remove old dots & arrows
+  document.querySelectorAll('.checkpoint-dot, .guide-arrow').forEach(el => el.remove());
+
+  const cfg = LEVELS[level];
+  if (!cfg.showDots) return;
+
+  const container = $('canvasContainer');
+  const scale = canvasSize / 100;
+
+  checkpoints.forEach((cp, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'checkpoint-dot';
+    dot.id = 'cp' + i;
+    dot.style.left = (cp.x * scale) + 'px';
+    dot.style.top = (cp.y * scale) + 'px';
+
+    if (cfg.showNumbers) {
+      dot.textContent = i + 1;
+    }
+
+    if (i === nextCP) {
+      dot.classList.add('active');
+    }
+    if (i < nextCP) {
+      dot.classList.add('hit');
+    }
+
+    container.appendChild(dot);
+  });
+
+  // Guide arrow for Level 1
+  if (cfg.showArrow && nextCP < checkpoints.length) {
+    showGuideArrow();
+  }
+}
+
+function showGuideArrow() {
+  document.querySelectorAll('.guide-arrow').forEach(el => el.remove());
+  if (!LEVELS[level].showArrow || nextCP >= checkpoints.length) return;
+
+  const cp = checkpoints[nextCP];
+  const scale = canvasSize / 100;
+  const arrow = document.createElement('div');
+  arrow.className = 'guide-arrow';
+  arrow.textContent = '👆';
+  arrow.style.left = (cp.x * scale) + 'px';
+  arrow.style.top = (cp.y * scale - 28) + 'px';
+  $('canvasContainer').appendChild(arrow);
+}
+
+function updateCheckpointVisuals() {
+  const cfg = LEVELS[level];
+
+  if (cfg.showDots) {
+    // Update existing dots
+    checkpoints.forEach((cp, i) => {
+      const dot = $('cp' + i);
+      if (!dot) return;
+      dot.classList.remove('active');
+      if (i < nextCP) dot.classList.add('hit');
+      if (i === nextCP) dot.classList.add('active');
+    });
+    if (cfg.showArrow) showGuideArrow();
+  } else {
+    // Level 3 & 4: flash a dot briefly when hit
+    const hitIdx = nextCP - 1;
+    if (hitIdx >= 0) {
+      const cp = checkpoints[hitIdx];
+      const scale = canvasSize / 100;
+      const dot = document.createElement('div');
+      dot.className = 'checkpoint-dot flash-hit';
+      dot.style.left = (cp.x * scale) + 'px';
+      dot.style.top = (cp.y * scale) + 'px';
+      dot.textContent = '✓';
+      $('canvasContainer').appendChild(dot);
+      setTimeout(() => dot.remove(), 600);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAWING — TOUCH/MOUSE HANDLERS
+// ══════════════════════════════════════════════════════════════════
+function getCanvasPos(e) {
+  const rect = cvDraw.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return {
+    x: touch.clientX - rect.left,
+    y: touch.clientY - rect.top
+  };
+}
+
+function startDraw(e) {
+  if (!gameActive) return;
+  e.preventDefault();
+  drawing = true;
+  drawPoints = [];
+  clearDrawCanvas();
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  resetHints();
+}
+
+function moveDraw(e) {
+  if (!drawing || !gameActive) return;
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  renderDrawLine();
+  checkCheckpoint(pos);
+}
+
+function endDraw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  drawing = false;
+}
+
+function renderDrawLine() {
+  ctxDraw.clearRect(0, 0, canvasSize, canvasSize);
+  if (drawPoints.length < 2) return;
+
+  ctxDraw.save();
+  ctxDraw.strokeStyle = '#e91e8c';
+  ctxDraw.lineWidth = 4;
+  ctxDraw.lineCap = 'round';
+  ctxDraw.lineJoin = 'round';
+  ctxDraw.globalAlpha = 0.85;
+
+  ctxDraw.beginPath();
+  ctxDraw.moveTo(drawPoints[0].x, drawPoints[0].y);
+
+  // Smooth line using quadratic curves
+  for (let i = 1; i < drawPoints.length - 1; i++) {
+    const xc = (drawPoints[i].x + drawPoints[i+1].x) / 2;
+    const yc = (drawPoints[i].y + drawPoints[i+1].y) / 2;
+    ctxDraw.quadraticCurveTo(drawPoints[i].x, drawPoints[i].y, xc, yc);
+  }
+  // Last point
+  const last = drawPoints[drawPoints.length - 1];
+  ctxDraw.lineTo(last.x, last.y);
+  ctxDraw.stroke();
+  ctxDraw.restore();
+}
+
+function clearDrawCanvas() {
+  ctxDraw.clearRect(0, 0, canvasSize, canvasSize);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT COLLISION CHECK
+// ══════════════════════════════════════════════════════════════════
+function checkCheckpoint(pos) {
+  if (nextCP >= checkpoints.length) return;
+
+  const cfg = LEVELS[level];
+  const scale = canvasSize / 100;
+  const cp = checkpoints[nextCP];
+  const cpX = cp.x * scale;
+  const cpY = cp.y * scale;
+  const dist = Math.sqrt((pos.x - cpX)**2 + (pos.y - cpY)**2);
+
+  if (dist <= cfg.tolerance) {
+    // HIT!
+    const hitIdx = nextCP;
+    nextCP++;
+
+    // Ascending tone
+    audio.tone('cp' + hitIdx);
+
+    // Green sparkle burst at checkpoint
+    const rect = $('canvasContainer').getBoundingClientRect();
+    starBurstAt(rect.left + cpX, rect.top + cpY);
+
+    updateCheckpointVisuals();
+    resetHints();
+
+    // Encourage occasionally
+    if (hitIdx > 0 && hitIdx < checkpoints.length - 1 && Math.random() < 0.35) {
+      showCharBubble(pick(BUBBLE_ENCOURAGE), 1500);
+    }
+
+    // All checkpoints hit?
+    if (nextCP >= checkpoints.length) {
+      onTraceComplete();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRACE COMPLETE — number done!
+// ══════════════════════════════════════════════════════════════════
+async function onTraceComplete() {
+  gameActive = false;
+  drawing = false;
+  clearHints();
+
+  audio.tone('correct');
+  jumpChar();
+  showCharBubble(pick(BUBBLE_CORRECT), 2500);
+
+  // Show success overlay
+  $('successOverlay').classList.add('show');
+
+  const rect = $('canvasContainer').getBoundingClientRect();
+  starBurstAt(rect.left + rect.width/2, rect.top + rect.height/2);
+
+  score++;
+  $('hudScore').textContent = score;
+  markProg(numIdx);
+
+  await audio.play('correct');
+  await audio.speakNumber(currentNumber);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function clearHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+function resetHints() {
+  clearHints();
+  if (!gameActive) return;
+
+  hintTimer = setTimeout(() => {
+    if (!gameActive || nextCP >= checkpoints.length) return;
+    // Pulse the current checkpoint more intensely
+    const cfg = LEVELS[level];
+    if (cfg.showDots) {
+      const dot = $('cp' + nextCP);
+      if (dot) {
+        dot.style.transform = 'translate(-50%,-50%) scale(1.4)';
+        audio.tone('hint');
+        setTimeout(() => { if (dot) dot.style.transform = ''; }, 1500);
+      }
+    } else {
+      // For hidden-dot levels, briefly flash the next checkpoint
+      const cp = checkpoints[nextCP];
+      const scale = canvasSize / 100;
+      const dot = document.createElement('div');
+      dot.className = 'checkpoint-dot active';
+      dot.style.left = (cp.x * scale) + 'px';
+      dot.style.top = (cp.y * scale) + 'px';
+      dot.textContent = '?';
+      $('canvasContainer').appendChild(dot);
+      audio.tone('hint');
+      setTimeout(() => dot.remove(), 1800);
+    }
+  }, 4000);
+
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// QUESTION FLOW — present a single number to trace
+// ══════════════════════════════════════════════════════════════════
+async function presentNumber() {
+  gameActive = false;
+  drawing = false;
+  $('successOverlay').classList.remove('show');
+  clearDrawCanvas();
+  clearHints();
+
+  currentNumber = NUMBERS_SEQ[numIdx];
+  checkpoints = NUMBER_CHECKPOINTS[currentNumber];
+  nextCP = 0;
+  drawPoints = [];
+
+  // Update HUD
+  $('hudFind').textContent = NUMBER_WORDS[currentNumber];
+  $('lblNumeral').textContent = currentNumber;
+  $('lblWord').textContent = NUMBER_WORDS[currentNumber];
+
+  // Setup canvas & draw outline
+  setupCanvas();
+  const cfg = LEVELS[level];
+  drawOutline(currentNumber, cfg.outlineOpacity);
+  renderCheckpointDots();
+
+  // Speak the number
+  audio.tone('reveal');
+  await audio.speakPhrase('trace_the_letter'); // "Trace it!" — closest available phrase
+  await audio.speakNumber(currentNumber);
+
+  gameActive = true;
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEVEL / ROUND TRANSITIONS
+// ══════════════════════════════════════════════════════════════════
+async function advanceNumber() {
+  numIdx++;
+  if (numIdx >= NUMBERS_SEQ.length) {
+    // Level complete
+    await finishLevel();
+  } else {
+    presentNumber();
+  }
+}
+
+async function finishLevel() {
+  gameActive = false;
+  clearHints();
+
+  audio.tone('roundDone');
+  confetti(30, ['💜','🌸','✨']);
+  level++;
+
+  if (level >= LEVELS.length) {
+    await delay(700);
+    celebrateFinish();
+    return;
+  }
+
+  // Level complete banner
+  $('roundTitle').textContent = '✨ Level Complete! ✨';
+  $('roundSub').textContent   = '';
+  $('roundBanner').classList.add('show');
+  await audio.play('round-complete');
+  await delay(1300);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  // Next level intro banner
+  const cfg = LEVELS[level];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  // Start next level
+  startLevel();
+}
+
+function startLevel() {
+  const cfg = LEVELS[level];
+  $('hudRound').textContent = `${level + 1}/4`;
+  numIdx = 0;
+  buildProg();
+  presentNumber();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('canvasWrap').style.display = 'none';
+  $('roundBanner').classList.remove('show');
+
+  audio.tone('celeb');
+  await delay(350);
+  confetti(60, ['💜','🌸','✨','🌷','💖','🌟']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 5)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🌟 Amazing! 🌟';
+  $('celebMsg').textContent = `You traced ${score} numbers! You're a tracing star!`;
+  showScreen('scrCeleb');
+
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['💜','🌸','🌟']), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START / RESET
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  audio.stopMusic();
+  audio.clearQueue();
+  level = 0; score = 0; numIdx = 0;
+  drawing = false; gameActive = false;
+  clearHints();
+
+  $('hudScore').textContent = '0';
+  $('hud').style.display = '';
+  $('charArea').style.display = '';
+  $('canvasWrap').style.display = '';
+  $('roundBanner').classList.remove('show');
+  $('successOverlay').classList.remove('show');
+
+  showScreen(null);
+  audio.startMusic();
+
+  // Level 1 opening banner
+  const cfg = LEVELS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  startLevel();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT — event bindings
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+// Touch drawing events on the draw canvas
+const drawCanvas = $('cvDraw');
+drawCanvas.addEventListener('touchstart', startDraw, { passive: false });
+drawCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+drawCanvas.addEventListener('touchend', endDraw, { passive: false });
+drawCanvas.addEventListener('mousedown', startDraw);
+drawCanvas.addEventListener('mousemove', e => { if (drawing) moveDraw(e); });
+drawCanvas.addEventListener('mouseup', endDraw);
+drawCanvas.addEventListener('mouseleave', endDraw);
+
+// Buttons
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+onTap($('btnNext'), () => {
+  advanceNumber();
+});
+onTap($('btnRetry'), () => {
+  if ($('successOverlay').classList.contains('show')) return;
+  clearDrawCanvas();
+  drawPoints = [];
+  nextCP = 0;
+  renderCheckpointDots();
+  resetHints();
+});
+
+// Handle resize
+window.addEventListener('resize', () => {
+  if (gameActive || $('canvasWrap').style.display !== 'none') {
+    setupCanvas();
+    const cfg = LEVELS[level];
+    drawOutline(currentNumber, cfg.outlineOpacity);
+    renderCheckpointDots();
+    renderDrawLine();
+  }
+});
+</script>
+</body>
+</html>

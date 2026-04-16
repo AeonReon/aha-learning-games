@@ -3,45 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Trace the Numbers! ✨</title>
+<title>Magic Number Tracing — Princess's Spell</title>
 <style>
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
   --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
-  --pink: #f8a5c2; --magenta: #e91e8c; --purple: #a29bfe; --deep-purple: #6c5ce7;
-  --gold: #ffe066; --white85: rgba(255,255,255,0.85);
+  --pink: #ff7ab8; --magenta: #e91e8c; --purple: #a29bfe; --deep-purple: #4a1580;
+  --gold: #ffe066; --soft-gold: #ffd700;
+  --white85: rgba(255,255,255,0.9);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: var(--font);
   overflow: hidden;
   height: 100vh; height: 100dvh;
   width: 100vw;
-  touch-action: manipulation;
+  touch-action: none;
   -webkit-user-select: none; user-select: none;
   -webkit-tap-highlight-color: transparent;
+  background: #1a0533;
 }
 
-/* Background */
+/* ── Background ── */
 .bg {
   position: fixed; inset: 0; z-index: var(--z-bg);
   background: linear-gradient(160deg, #1a0533 0%, #4a1580 35%, #8b1a6b 65%, #c0295e 100%);
 }
 .bg-sparkle {
   position: fixed; pointer-events: none; z-index: 1;
-  font-size: clamp(12px, 2.5vw, 20px);
-  opacity: 0.4;
-  animation: sparkleFloat linear infinite;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #fff;
+  animation: twinkle ease-in-out infinite;
 }
-@keyframes sparkleFloat {
-  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
-  8%   { opacity: 0.4; }
-  92%  { opacity: 0.4; }
-  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.3); box-shadow: 0 0 10px #fff; }
+}
+.bg-heart {
+  position: fixed; pointer-events: none; z-index: 2;
+  font-size: clamp(16px, 3vw, 24px);
+  opacity: 0.5;
+  animation: heartFloat linear infinite;
+}
+@keyframes heartFloat {
+  0%   { transform: translateY(110vh) translateX(0) rotate(-10deg); opacity: 0; }
+  10%  { opacity: 0.5; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateY(-60px) translateX(40px) rotate(10deg); opacity: 0; }
 }
 
-/* Screen system */
+/* ── Screen system ── */
 .screen {
   position: fixed; inset: 0;
   display: flex; flex-direction: column;
@@ -53,19 +65,18 @@ body {
 }
 .screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
 
-/* Title screen */
-.screen-title .icon-row {
-  display: flex; gap: 10px;
-  justify-content: center; align-items: flex-end;
-  margin-bottom: 10px;
-}
-.screen-title .icon-row img { width: clamp(60px, 15vw, 100px); height: auto; }
-.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+/* ── Title screen ── */
 .screen-title h1 {
   font-size: clamp(28px, 7vw, 50px);
   color: var(--gold);
-  text-shadow: 0 0 30px rgba(255,224,102,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  text-shadow: 0 0 30px rgba(255,215,0,0.7), 2px 2px 0 rgba(0,0,0,0.35);
   margin: 6px 0 8px;
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: center;
+  margin-bottom: 10px;
+  font-size: clamp(36px, 9vw, 60px);
 }
 .screen-title p {
   font-size: clamp(14px, 3.5vw, 20px);
@@ -73,7 +84,7 @@ body {
   max-width: 360px; line-height: 1.45;
 }
 
-/* Buttons */
+/* ── Buttons ── */
 .btn {
   min-width: var(--tap); min-height: 58px;
   padding: 14px 44px;
@@ -85,19 +96,22 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active { transform: scale(0.93); }
-.btn-start  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
-.btn-again  { background: linear-gradient(135deg,#f8a5c2,#e91e8c); margin-top: 16px; }
-.btn-try    { background: linear-gradient(135deg,#a29bfe,#6c5ce7); margin-top: 10px; font-size: clamp(14px, 3.5vw, 20px); padding: 10px 30px; min-height: 44px; }
-@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+.btn-start {
+  background: linear-gradient(135deg, #ff7ab8, #e91e8c);
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, #ff7ab8, #e91e8c); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2) drop-shadow(0 0 20px #ff7ab8)} }
 
-/* HUD */
+/* ── HUD ── */
 .hud {
   position: fixed; top: 0; left: 0; right: 0;
   z-index: var(--z-ui);
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 8px 14px;
-  background: rgba(30,10,70,0.88); backdrop-filter: blur(6px);
-  border-bottom: 2px solid rgba(255,255,255,0.08);
+  background: rgba(26,5,51,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,122,184,0.3);
   pointer-events: none;
 }
 .hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
@@ -105,39 +119,22 @@ body {
   position: absolute; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center;
 }
-.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.38); font-weight: bold; letter-spacing: 0.05em; }
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.5); font-weight: bold; letter-spacing: 0.05em; }
 .hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
 .hud-round .hud-val { color: var(--pink); }
 .hud-score .hud-val { color: var(--gold); }
-.hud-find-word { color: var(--gold); line-height: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.hud-find-numeral { font-size: clamp(22px,5.5vw,36px); font-weight: 900; color: #fff; text-shadow: 2px 2px 0 rgba(0,0,0,0.25); line-height: 1; }
-.hud-find-word-sub { font-size: clamp(9px,2vw,12px); color: var(--gold); font-weight: bold; text-transform: lowercase; opacity: 0.7; }
+.hud-center .hud-val { color: var(--gold); font-size: clamp(14px,3vw,20px); }
 
-/* Canvas area */
-.canvas-wrap {
-  position: fixed;
-  z-index: var(--z-game);
-  display: flex; align-items: center; justify-content: center;
-}
-.canvas-wrap canvas {
-  border-radius: 20px;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.35);
-}
-
-/* Character */
+/* ── Character ── */
 .char-area {
   position: fixed; bottom: 58px; left: 10px;
   z-index: var(--z-char); pointer-events: none;
 }
-.char-area img {
-  width: clamp(55px,13vw,85px); height: auto;
-  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.4));
-}
-.char-emoji { font-size: clamp(44px,10vw,66px); }
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 0 12px rgba(255,122,184,0.6)); }
 .char-bubble {
   position: absolute; bottom: 100%; left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,255,255,0.96); color: var(--deep-purple);
+  background: rgba(255,255,255,0.96); color: #8b1a6b;
   padding: 6px 14px; border-radius: 20px;
   font-size: clamp(12px,2.6vw,16px); font-weight: bold;
   white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
@@ -151,180 +148,287 @@ body {
   border-left: 7px solid transparent; border-right: 7px solid transparent;
   border-top: 8px solid rgba(255,255,255,0.96);
 }
+@keyframes charJump {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-15px) rotate(-4deg); }
+  70%  { transform: translateY(-5px) rotate(2deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
 
-/* Progress bar */
-.prog-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+/* ── Canvas area ── */
+.canvas-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+}
+.canvas-area canvas {
+  border-radius: 18px;
+  box-shadow: 0 0 40px rgba(255,122,184,0.2), 0 6px 30px rgba(0,0,0,0.5);
+  background: rgba(30,10,60,0.55);
+}
+
+/* ── Number display ── */
+.number-display {
+  position: fixed;
+  top: 56px; right: 12px;
   z-index: var(--z-ui);
-  display: flex; justify-content: center; align-items: center;
-  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
-  padding: 5px 10px 8px;
-  background: rgba(30,10,70,0.88); backdrop-filter: blur(5px);
   pointer-events: none;
 }
+.number-display .big-num {
+  font-size: clamp(40px,10vw,70px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255,215,0,0.6);
+  line-height: 1;
+}
+.number-display .sub-label {
+  font-size: clamp(10px,2vw,14px);
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui); height: 56px;
+  background: rgba(26,5,51,0.92); backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(255,122,184,0.3);
+  display: flex; align-items: center; justify-content: center; gap: clamp(6px,2vw,14px);
+  padding: 0 12px;
+}
 .prog-dot {
-  width: clamp(28px,5.5vw,38px);
-  height: clamp(28px,5.5vw,38px);
+  width: clamp(32px,8vw,44px); height: clamp(32px,8vw,44px);
   border-radius: 50%;
-  background: rgba(255,255,255,0.07);
-  border: 2px solid rgba(255,255,255,0.12);
   display: flex; align-items: center; justify-content: center;
-  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
-  color: rgba(255,255,255,0.22);
+  font-size: clamp(14px,3.2vw,20px); font-weight: 900;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35);
+  border: 2px solid rgba(255,255,255,0.1);
+  transition: all 0.4s;
+}
+.prog-dot.active {
+  background: rgba(255,122,184,0.25); color: #fff;
+  border-color: var(--pink);
+  box-shadow: 0 0 14px rgba(255,122,184,0.5);
 }
 .prog-dot.done {
-  background: linear-gradient(135deg,var(--pink),var(--deep-purple));
-  border-color: var(--gold); color: #fff;
-  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
-}
-@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
-
-/* Round banner */
-.round-banner {
-  position: fixed; top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  z-index: var(--z-overlay); text-align: center;
-  background: rgba(25,8,65,0.92); backdrop-filter: blur(12px);
-  border: 2px solid rgba(255,255,255,0.12); border-radius: 26px;
-  padding: 22px 40px; min-width: 280px;
-  opacity: 0; pointer-events: none; transition: opacity 0.38s;
-}
-.round-banner.show { opacity: 1; }
-.round-banner h2 {
-  font-size: clamp(20px,5vw,34px); font-weight: 900;
-  color: var(--gold); text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
-}
-.round-banner p {
-  font-size: clamp(12px,2.8vw,17px);
-  color: rgba(255,255,255,0.55); margin-top: 5px;
+  background: linear-gradient(135deg, #ff7ab8, #ffd700);
+  color: #4a1580; border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(255,215,0,0.5);
 }
 
-/* Celebration screen */
-.screen-celeb {
-  background: rgba(15,4,50,0.88); backdrop-filter: blur(12px);
+/* ── Magic Wand ── */
+.magic-wand {
+  position: fixed; top: 60px; left: 8px;
+  z-index: var(--z-char);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.wand-icon {
+  font-size: clamp(28px,6vw,40px);
+  filter: drop-shadow(0 0 8px rgba(255,122,184,0.6));
+}
+.wand-stars {
+  display: flex; gap: 2px; flex-wrap: wrap; max-width: 60px; justify-content: center;
+}
+.wand-star {
+  width: 8px; height: 10px; border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.5s;
+}
+.wand-star.lit {
+  background: linear-gradient(135deg, #ff7ab8, #ffd700);
+  box-shadow: 0 0 8px rgba(255,215,0,0.7);
+  animation: starPop2 0.5s ease-out;
+}
+@keyframes starPop2 {
+  0% { transform: scale(0); } 50% { transform: scale(1.5); } 100% { transform: scale(1); }
+}
+
+/* ── Level banner ── */
+.level-banner {
+  position: fixed; inset: 0;
   z-index: var(--z-celeb);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(26,5,51,0.94);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.4s;
 }
-.screen-celeb h2 {
-  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
-  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
-  animation: bounce 1.5s ease-in-out infinite;
+.level-banner.show { opacity: 1; visibility: visible; pointer-events: auto; }
+.level-banner h2 {
+  font-size: clamp(24px,6vw,42px);
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255,215,0,0.6);
+  margin-bottom: 6px;
 }
-.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.9); margin: 6px 0; }
-.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
-.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
-.celeb-icon-row img { width: clamp(60px,16vw,108px); height: auto; }
-.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+.level-banner p {
+  font-size: clamp(14px,3.5vw,20px);
+  color: var(--white85);
+}
 
-/* Particles */
-.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
-.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+/* ── Confetti ── */
+.confetti {
+  position: fixed; pointer-events: none;
+  z-index: var(--z-celeb);
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+.starburst {
+  position: fixed; pointer-events: none; z-index: var(--z-celeb);
+  animation: starPop 0.8s ease-out forwards;
+}
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(0); opacity: 1; }
+  60%  { transform: scale(1.5) rotate(180deg); opacity: 0.8; }
+  100% { transform: scale(0.5) rotate(360deg) translateY(-40px); opacity: 0; }
+}
 
-/* Keyframes */
-@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
-@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
-@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
-@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+/* ── Celebration screen ── */
+.screen-celeb h1 {
+  font-size: clamp(26px,6.5vw,46px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.7), 2px 2px 0 rgba(0,0,0,0.35);
+  margin-bottom: 12px;
+}
+.screen-celeb p {
+  font-size: clamp(16px,4vw,22px);
+  color: var(--white85); line-height: 1.5;
+}
+.screen-celeb .final-wand {
+  font-size: clamp(60px,15vw,100px);
+  margin: 16px 0;
+  animation: wandPulse 1.5s ease-in-out infinite;
+}
+@keyframes wandPulse {
+  0%,100% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.05) rotate(-6deg); }
+  50% { transform: scale(1.1) rotate(0); }
+  75% { transform: scale(1.05) rotate(6deg); }
+}
+.final-score {
+  font-size: clamp(18px,4.5vw,28px);
+  color: var(--gold); font-weight: 900;
+  margin-top: 8px;
+}
 </style>
 </head>
 <body>
 
-<div class="bg"></div>
+<!-- Background -->
+<div class="bg" id="bg"></div>
+
+<!-- Title Screen -->
+<div class="screen screen-title active" id="screenTitle">
+  <div class="icon-row"><span>👸</span><span>✨</span><span>🪄</span></div>
+  <h1>Magic Number Tracing</h1>
+  <p>Help the Princess cast her spell! Trace each number with your magic wand to add a sparkle star!</p>
+  <button class="btn btn-start" id="btnStart">Cast the Spell!</button>
+</div>
 
 <!-- HUD -->
 <div class="hud" id="hud" style="display:none">
   <div class="hud-left hud-round">
-    <span class="hud-label">LEVEL</span>
-    <span class="hud-val" id="hudRound">1/4</span>
+    <div class="hud-label">LEVEL</div>
+    <div class="hud-val" id="hudLevel">1</div>
   </div>
   <div class="hud-center">
-    <div class="hud-label">TRACE</div>
-    <div class="hud-val hud-find-word" id="hudFind"><div class="hud-find-numeral">--</div></div>
+    <div class="hud-val" id="hudNumber">0</div>
   </div>
   <div class="hud-right hud-score">
-    <span class="hud-label">STARS</span>
-    <span class="hud-val" id="hudScore">0</span>
+    <div class="hud-label">STARS</div>
+    <div class="hud-val" id="hudScore">0</div>
   </div>
 </div>
 
-<!-- Canvas area -->
-<div class="canvas-wrap" id="canvasWrap">
-  <canvas id="traceCanvas"></canvas>
+<!-- Number display -->
+<div class="number-display" id="numDisplay" style="display:none">
+  <div class="big-num" id="bigNum">0</div>
+  <div class="sub-label" id="numSubLabel"></div>
 </div>
 
-<!-- Try Again button -->
-<button class="btn btn-try" id="btnTryAgain" style="display:none;position:fixed;z-index:var(--z-ui);pointer-events:auto">Try Again</button>
+<!-- Magic Wand -->
+<div class="magic-wand" id="magicWand" style="display:none">
+  <div class="wand-icon">🪄</div>
+  <div class="wand-stars" id="wandStars"></div>
+</div>
 
-<!-- Character -->
-<div class="char-area" id="charArea" style="display:none">
-  <div class="char-bubble" id="charBubble"></div>
-  <img id="charImg" src="../../Characters/Princess with bird.gif" alt=""
-    onerror="this.style.display='none';document.getElementById('charEmoji').style.display='block'">
-  <div class="char-emoji" id="charEmoji" style="display:none">👸</div>
+<!-- Canvas -->
+<div class="canvas-area" id="canvasArea" style="display:none">
+  <canvas id="traceCanvas"></canvas>
 </div>
 
 <!-- Progress bar -->
 <div class="prog-bar" id="progBar" style="display:none"></div>
 
-<!-- Round banner -->
-<div class="round-banner" id="roundBanner">
-  <h2 id="roundTitle"></h2>
-  <p id="roundSub"></p>
+<!-- Character -->
+<div class="char-area" id="charArea" style="display:none">
+  <span class="char-emoji" id="charEmoji">👸</span>
+  <div class="char-bubble" id="charBubble"></div>
 </div>
 
-<!-- Title screen -->
-<div class="screen screen-title active" id="scrTitle">
-  <div class="icon-row">
-    <span>✨</span>
-    <img src="../../Characters/Princess with bird.gif" alt=""
-      onerror="this.outerHTML='<span style=\'font-size:clamp(60px,15vw,100px)\'>👸</span>'">
-    <span>✨</span>
-  </div>
-  <h1>Trace the Numbers! ✨</h1>
-  <p>Draw the numbers with your finger!<br>Follow the sparkle trail 💜</p>
-  <button class="btn btn-start" id="btnStart">Let's Trace! ✨</button>
+<!-- Level Banner -->
+<div class="level-banner" id="levelBanner">
+  <h2 id="bannerTitle">Level 1</h2>
+  <p id="bannerSub">Follow the magic guide!</p>
 </div>
 
-<!-- Celebration screen -->
-<div class="screen screen-celeb" id="scrCeleb">
-  <div class="celeb-icon-row">
-    <img src="../../Characters/Prince and princess dance.gif" alt=""
-      style="width:clamp(65px,16vw,108px)"
-      onerror="this.outerHTML='<span style=\'font-size:clamp(52px,13vw,82px);animation:dance 1s ease-in-out infinite\'>👸</span>'">
-  </div>
-  <h2 id="celebTitle">🌟 Amazing! 🌟</h2>
-  <p id="celebMsg">You can trace numbers!</p>
-  <div class="celeb-stars" id="celebStars"></div>
-  <button class="btn btn-again" id="btnAgain">Play Again! ✨</button>
+<!-- Celebration Screen -->
+<div class="screen screen-celeb" id="screenCeleb">
+  <h1>Spell Complete!</h1>
+  <div class="final-wand">👸🪄✨</div>
+  <p>The Princess's magic wand is full of stars!<br>You are a true fairy!</p>
+  <div class="final-score" id="finalScore">24 Stars!</div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════════════
 const AUDIO_BASE = '../../audio';
 
-// Voice A pools
 const VOICE_A = {
   greetings: [
-    'voice-a/greetings/here-we-go.mp3','voice-a/greetings/lets-go.mp3',
-    'voice-a/greetings/come-on-lets-play.mp3','voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
     'voice-a/greetings/this-is-going-to-be-fun.mp3',
   ],
   correct: [
-    'voice-a/correct/amazing.mp3','voice-a/correct/brilliant.mp3',
-    'voice-a/correct/fantastic.mp3','voice-a/correct/i-knew-you-could-do-it.mp3',
-    'voice-a/correct/incredible.mp3','voice-a/correct/perfect.mp3',
-    'voice-a/correct/superstar.mp3','voice-a/correct/thats-right.mp3',
-    'voice-a/correct/well-done.mp3','voice-a/correct/wow-look-at-you-go.mp3',
-    'voice-a/correct/yes-youre-so-clever.mp3','voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
     'voice-a/correct/youre-on-fire.mp3',
   ],
   wrong: [
-    'voice-a/wrong/almost-have-another-go.mp3','voice-a/wrong/dont-worry-try-again.mp3',
-    'voice-a/wrong/keep-trying-youre-so-close.mp3','voice-a/wrong/nearly-give-it-another-go.mp3',
-    'voice-a/wrong/not-quite-you-can-do-it.mp3','voice-a/wrong/oops-not-that-one.mp3',
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
   ],
   thinking: [
-    'voice-a/thinking/have-a-good-look.mp3','voice-a/thinking/i-believe-in-you.mp3',
-    'voice-a/thinking/take-your-time.mp3','voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
     'voice-a/thinking/you-can-do-it-keep-looking.mp3',
   ],
   'round-complete': [
@@ -342,13 +446,10 @@ const VOICE_A = {
   ],
 };
 
-// ══════════════════════════════════════════════════════════════════
-// AUDIO CLASS (from ARCHITECTURE.md)
-// ══════════════════════════════════════════════════════════════════
 class GameAudio {
   constructor() {
     this.ctx = null; this.musicGain = null; this.sfxGain = null;
-    this.musicVol = 0.08; this.sfxVol = 0.3; this.musicDucked = 0.025;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
     this.playing = false; this.voiceQueue = []; this.speaking = false;
     this._lastPlayed = {};
   }
@@ -357,29 +458,30 @@ class GameAudio {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
     this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
-    this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVol; this.sfxGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
   }
   unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
   startMusic() {
     this._init(); if (this.playing) return; this.playing = true;
-    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    // Dreamy fairy notes — gentle pentatonic in a higher register
+    const notes = [329.63, 392.00, 440.00, 493.88, 587.33, 659.25, 783.99];
     const go = () => {
       if (!this.playing) return;
       const f = notes[Math.floor(Math.random() * notes.length)];
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.type = Math.random() > 0.6 ? 'sine' : 'triangle';
       o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
       g.gain.setValueAtTime(0, this.ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.15);
-      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
-      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.2);
+      g.gain.linearRampToValueAtTime(0.10, this.ctx.currentTime + 0.2);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.4);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.6);
       o.onended = () => { o.disconnect(); g.disconnect(); };
-      this._mt = setTimeout(go, 800 + Math.random() * 1200);
+      this._mt = setTimeout(go, 1000 + Math.random() * 1500);
     }; go();
   }
   stopMusic() { this.playing = false; clearTimeout(this._mt); }
-  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
-  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
   tone(type) {
     this._init(); const t = this.ctx.currentTime;
     const p = (f, s, d, v = 0.4, w = 'sine') => {
@@ -389,31 +491,22 @@ class GameAudio {
       o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
       o.onended = () => { o.disconnect(); g.disconnect(); };
     };
-    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
-    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
-    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
-    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
-    else if (type==='reveal')   { p(440,t,0.15,0.2); p(554,t+0.1,0.18,0.25); }
-    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
-    else if (type==='whoosh')   {
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')    { p(440,t,0.12,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='hint')      { p(659,t,0.15,0.15); p(784,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
       o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
       g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
       o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
       o.onended=()=>{o.disconnect();g.disconnect()};
     }
-  }
-  // Ascending checkpoint tone — pitch increases with checkpoint index
-  checkpointTone(idx, total) {
-    this._init(); const t = this.ctx.currentTime;
-    const baseFreq = 400;
-    const freq = baseFreq + (idx / Math.max(1, total - 1)) * 400;
-    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-    o.type = 'sine'; o.frequency.value = freq;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.35, t + 0.02);
-    g.gain.linearRampToValueAtTime(0, t + 0.25);
-    o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t + 0.3);
-    o.onended = () => { o.disconnect(); g.disconnect(); };
+    else if (type==='checkpoint') {
+      p(700 + Math.random()*300, t, 0.08, 0.15, 'triangle');
+    }
   }
   speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
   async _next() {
@@ -456,7 +549,6 @@ class GameAudio {
     return this.speak(`${AUDIO_BASE}/${file}`);
   }
   speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
-  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
   clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
 }
 
@@ -465,44 +557,116 @@ class GameAudio {
 // ══════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const delay = ms => new Promise(r => setTimeout(r, ms));
-function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
-function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 function onTap(el, fn) {
   let t = false;
   el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
   el.addEventListener('click', e => { if(t)return; fn(e); });
 }
 
-const NUMBER_WORDS = { 0:'zero',1:'one',2:'two',3:'three',4:'four',5:'five' };
-const BUBBLE_CORRECT = ['Yes! ⭐','Great! 💜','That\'s it! ✨','Well done! 🌸','Magic! 💫','Perfect! 🌟'];
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT DATA
+// ══════════════════════════════════════════════════════════════════
+const CHECKPOINTS = {
+  0: [{x:0.50,y:0.15},{x:0.75,y:0.30},{x:0.80,y:0.50},{x:0.75,y:0.70},{x:0.50,y:0.85},{x:0.25,y:0.70},{x:0.20,y:0.50},{x:0.25,y:0.30},{x:0.50,y:0.15}],
+  1: [{x:0.40,y:0.25},{x:0.50,y:0.15},{x:0.50,y:0.85},{x:0.35,y:0.85},{x:0.65,y:0.85}],
+  2: [{x:0.25,y:0.25},{x:0.50,y:0.15},{x:0.75,y:0.25},{x:0.75,y:0.40},{x:0.50,y:0.55},{x:0.25,y:0.70},{x:0.25,y:0.85},{x:0.75,y:0.85}],
+  3: [{x:0.25,y:0.20},{x:0.65,y:0.15},{x:0.78,y:0.30},{x:0.65,y:0.45},{x:0.45,y:0.50},{x:0.65,y:0.55},{x:0.78,y:0.70},{x:0.65,y:0.85},{x:0.25,y:0.80}],
+  4: [{x:0.25,y:0.15},{x:0.22,y:0.55},{x:0.75,y:0.55},{x:0.70,y:0.15},{x:0.70,y:0.85}],
+  5: [{x:0.75,y:0.15},{x:0.30,y:0.15},{x:0.28,y:0.45},{x:0.50,y:0.45},{x:0.75,y:0.55},{x:0.75,y:0.75},{x:0.55,y:0.85},{x:0.25,y:0.80}],
+};
+
+// Number sequence for each level: 0,1,2,3,4,5
+const TRACE_SEQUENCE = [0, 1, 2, 3, 4, 5];
+
+// Level configs
+const LEVELS = [
+  { label: 'Level 1 — Follow the Sparkle!', sub: 'Watch the fairy dust, then trace!', outlineOpacity: 1.0, showGuide: true },
+  { label: 'Level 2 — Trace the Glow!', sub: 'No guide this time!', outlineOpacity: 1.0, showGuide: false },
+  { label: 'Level 3 — Fading Magic!', sub: 'The outline is fading...', outlineOpacity: 0.5, showGuide: false },
+  { label: 'Level 4 — From Memory!', sub: 'Can you remember the shapes?', outlineOpacity: 0.15, showGuide: false },
+];
+
+const BUBBLE_CORRECT = ['Magical! ✨','Beautiful! 💖','Wonderful! 💫','Cast the spell! 🪄','You did it! 👑','Sparkle! 🌟'];
+const BUBBLE_TRACE   = ['Trace the number! 🪄','Follow the glow! ✨','Your turn! 💖'];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let currentLevel = 0;
+let currentTraceIndex = 0;
+let score = 0;
+let wandStarCount = 0;
+
+// Tracing state
+let traceCheckpoints = [];
+let nextCheckpoint = 0;
+let isDrawing = false;
+let drawPoints = [];
+let hitRadius = 0;
+let canvas, ctx;
+let canvasW, canvasH, dpr;
+let guideAnimating = false;
+let hintTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Twinkling stars
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 100) + 'vh';
+    el.style.animationDuration = (2 + Math.random() * 4) + 's';
+    el.style.animationDelay = (-Math.random() * 5) + 's';
+    el.style.width = el.style.height = (1 + Math.random() * 3) + 'px';
+    $('bg').appendChild(el);
+  }
+  // Floating hearts
+  const heartEmojis = ['💖','💗','💕','✨','🌸','🌷'];
+  for (let i = 0; i < 6; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-heart';
+    el.textContent = pick(heartEmojis);
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.animationDuration = (10 + Math.random() * 10) + 's';
+    el.style.animationDelay = (-Math.random() * 15) + 's';
+    document.body.appendChild(el);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════
 // VISUAL EFFECTS
 // ══════════════════════════════════════════════════════════════════
-function confetti(count = 40, extra = []) {
-  const all = ['⭐','✨','💫','🌟','🎉','💜','🌸','🌷','💖','🦋', ...extra];
+function confetti(count = 40) {
+  const all = ['⭐','✨','💫','🌟','💖','💗','🌸','🌷','👸','🪄','🦄','💎'];
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
     el.className = 'confetti'; el.textContent = pick(all);
-    el.style.left = (Math.random()*100) + 'vw'; el.style.top = '-30px';
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
     el.style.fontSize = (16 + Math.random()*14) + 'px';
-    el.style.animationDelay = (Math.random()*1.8) + 's';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
     el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 6200);
   }
 }
 
-function starBurstAt(cx, cy) {
+function starBurstAt(x, y) {
   for (let i = 0; i < 8; i++) {
     const s = document.createElement('div');
     s.className = 'starburst';
-    s.textContent = pick(['✨','💫','⭐','💜','🌟','💖','🌸']);
-    s.style.left = (cx + (Math.random()-0.5)*120) + 'px';
-    s.style.top  = (cy + (Math.random()-0.5)*120) + 'px';
-    s.style.animationDelay = (Math.random()*0.15) + 's';
+    s.textContent = pick(['✨','💫','⭐','💖','🌟','💎']);
+    s.style.left = (x + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
     document.body.appendChild(s);
-    setTimeout(() => s.remove(), 1000);
+    setTimeout(() => s.remove(), 900);
   }
 }
 
@@ -515,127 +679,51 @@ function showCharBubble(text, dur = 2200) {
 }
 
 function jumpChar() {
-  const el = $('charImg').style.display !== 'none' ? $('charImg') : $('charEmoji');
+  const el = $('charEmoji');
   el.style.animation = '';
   void el.offsetWidth;
   el.style.animation = 'charJump 0.65s ease-out';
   setTimeout(() => { el.style.animation = ''; }, 700);
 }
 
-function buildScenery() {
-  const emojis = ['✨','💜','🌸','⭐','💫','🌟','🌷','💖'];
-  for (let i = 0; i < 16; i++) {
-    const el = document.createElement('div');
-    el.className = 'bg-sparkle';
-    el.textContent = pick(emojis);
-    el.style.left = (Math.random()*100) + 'vw';
-    el.style.animationDelay = (-Math.random()*20) + 's';
-    el.style.animationDuration = (10 + Math.random()*14) + 's';
-    document.body.appendChild(el);
-  }
-}
-
 // ══════════════════════════════════════════════════════════════════
-// NUMBER PATH DATA — canvas stroke paths for each number
-// Each number is an array of sub-paths (strokes).
-// Each sub-path is an array of {x,y} points as fractions of the drawing area.
-// ══════════════════════════════════════════════════════════════════
-const NUMBER_PATHS = {
-  0: [[ // oval
-    {x:0.50,y:0.08},{x:0.70,y:0.10},{x:0.85,y:0.25},{x:0.88,y:0.50},
-    {x:0.85,y:0.75},{x:0.70,y:0.90},{x:0.50,y:0.92},
-    {x:0.30,y:0.90},{x:0.15,y:0.75},{x:0.12,y:0.50},
-    {x:0.15,y:0.25},{x:0.30,y:0.10},{x:0.50,y:0.08}
-  ]],
-  1: [[ // diagonal start stroke + vertical line
-    {x:0.38,y:0.18},{x:0.50,y:0.08}
-  ],[ // main vertical
-    {x:0.50,y:0.08},{x:0.50,y:0.88}
-  ],[ // base
-    {x:0.35,y:0.88},{x:0.65,y:0.88}
-  ]],
-  2: [[ // curve top then diagonal
-    {x:0.22,y:0.28},{x:0.25,y:0.18},{x:0.35,y:0.10},{x:0.50,y:0.08},
-    {x:0.65,y:0.10},{x:0.75,y:0.18},{x:0.78,y:0.28},{x:0.75,y:0.40},
-    {x:0.65,y:0.50},{x:0.50,y:0.60},{x:0.35,y:0.72},{x:0.22,y:0.85},
-    {x:0.22,y:0.88},{x:0.78,y:0.88}
-  ]],
-  3: [[ // top curve
-    {x:0.25,y:0.15},{x:0.40,y:0.08},{x:0.55,y:0.08},{x:0.70,y:0.12},
-    {x:0.75,y:0.22},{x:0.72,y:0.35},{x:0.62,y:0.44},{x:0.50,y:0.48}
-  ],[ // bottom curve
-    {x:0.50,y:0.48},{x:0.62,y:0.52},{x:0.75,y:0.62},{x:0.78,y:0.72},
-    {x:0.72,y:0.82},{x:0.60,y:0.90},{x:0.45,y:0.92},{x:0.28,y:0.88}
-  ]],
-  4: [[ // down-left diagonal
-    {x:0.65,y:0.08},{x:0.55,y:0.25},{x:0.42,y:0.42},{x:0.28,y:0.58},{x:0.20,y:0.65}
-  ],[ // horizontal bar
-    {x:0.20,y:0.65},{x:0.80,y:0.65}
-  ],[ // vertical drop
-    {x:0.65,y:0.08},{x:0.65,y:0.92}
-  ]],
-  5: [[ // top horizontal
-    {x:0.72,y:0.08},{x:0.28,y:0.08}
-  ],[ // vertical drop
-    {x:0.28,y:0.08},{x:0.28,y:0.48}
-  ],[ // bottom curve
-    {x:0.28,y:0.48},{x:0.42,y:0.45},{x:0.58,y:0.45},{x:0.72,y:0.52},
-    {x:0.78,y:0.64},{x:0.75,y:0.76},{x:0.65,y:0.86},{x:0.50,y:0.92},
-    {x:0.35,y:0.90},{x:0.22,y:0.82}
-  ]],
-};
-
-// Checkpoint positions
-const CHECKPOINTS = {
-  0: [{x:0.50,y:0.08},{x:0.85,y:0.50},{x:0.50,y:0.92},{x:0.15,y:0.50}],
-  1: [{x:0.42,y:0.18},{x:0.50,y:0.50},{x:0.50,y:0.88}],
-  2: [{x:0.32,y:0.22},{x:0.68,y:0.18},{x:0.72,y:0.42},{x:0.35,y:0.62},{x:0.22,y:0.80},{x:0.75,y:0.82}],
-  3: [{x:0.30,y:0.18},{x:0.72,y:0.22},{x:0.55,y:0.50},{x:0.72,y:0.78},{x:0.30,y:0.82}],
-  4: [{x:0.65,y:0.12},{x:0.22,y:0.62},{x:0.78,y:0.62},{x:0.65,y:0.88}],
-  5: [{x:0.72,y:0.12},{x:0.28,y:0.12},{x:0.28,y:0.50},{x:0.65,y:0.52},{x:0.75,y:0.72},{x:0.45,y:0.88},{x:0.22,y:0.80}],
-};
-
-// ══════════════════════════════════════════════════════════════════
-// LEVEL CONFIG
-// ══════════════════════════════════════════════════════════════════
-const LEVELS = [
-  { label:'Level 1 — Follow the Path! 🌸', sub:'Numbered dots show you the way!', tolerance:40, showDots:true, showNumbers:true, showHint:true, outlineOpacity:1.0 },
-  { label:'Level 2 — Dots Only! ✨',        sub:'Follow the dots — figure out the order!', tolerance:30, showDots:true, showNumbers:false, showHint:false, outlineOpacity:1.0 },
-  { label:'Level 3 — Outline Only! 💜',     sub:'No dots — just the number outline!', tolerance:22, showDots:false, showNumbers:false, showHint:false, outlineOpacity:1.0 },
-  { label:'Level 4 — Almost From Memory! 🏆',sub:'Faded outline — you know these!', tolerance:18, showDots:false, showNumbers:false, showHint:false, outlineOpacity:0.15 },
-];
-const NUMBERS_SEQ = [0,1,2,3,4,5];
-
-// ══════════════════════════════════════════════════════════════════
-// GAME STATE
-// ══════════════════════════════════════════════════════════════════
-const audio = new GameAudio();
-let gameActive = false;
-let level = 0, score = 0;
-let numIdx = 0; // which number in the current level
-let currentNumber = -1;
-let currentCheckpoint = 0;
-let checkpointsHit = [];
-let isDrawing = false;
-let drawingPoints = [];
-
-// Canvas sizing
-const canvas = $('traceCanvas');
-const ctx2d = canvas.getContext('2d');
-let dpr = 1;
-let canvasW = 0, canvasH = 0; // CSS pixels
-let drawAreaX = 0, drawAreaY = 0, drawAreaW = 0, drawAreaH = 0; // within canvas CSS coords
-
-// Sparkle animation
-let sparkleAnim = null;
-let sparklePhase = 0;
-
-// ══════════════════════════════════════════════════════════════════
-// SCREEN MANAGEMENT
+// SCREENS
 // ══════════════════════════════════════════════════════════════════
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   if (id) $(id).classList.add('active');
+}
+
+function showGameUI(show) {
+  $('hud').style.display = show ? '' : 'none';
+  $('canvasArea').style.display = show ? '' : 'none';
+  $('progBar').style.display = show ? '' : 'none';
+  $('charArea').style.display = show ? '' : 'none';
+  $('magicWand').style.display = show ? '' : 'none';
+  $('numDisplay').style.display = show ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MAGIC WAND (achievement)
+// ══════════════════════════════════════════════════════════════════
+function buildMagicWand() {
+  const stars = $('wandStars');
+  stars.innerHTML = '';
+  // 24 stars total (6 numbers × 4 levels)
+  for (let i = 0; i < 24; i++) {
+    const s = document.createElement('div');
+    s.className = 'wand-star';
+    s.id = 'wstar' + i;
+    stars.appendChild(s);
+  }
+}
+
+function lightWandStar() {
+  const s = $('wstar' + wandStarCount);
+  if (s) {
+    s.classList.add('lit');
+    wandStarCount++;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -643,558 +731,537 @@ function showScreen(id) {
 // ══════════════════════════════════════════════════════════════════
 function buildProg() {
   const bar = $('progBar');
-  bar.innerHTML = ''; bar.style.display = '';
-  NUMBERS_SEQ.forEach((n, i) => {
+  bar.innerHTML = '';
+  const labels = [0, 1, 2, 3, 4, 5];
+  labels.forEach((n, i) => {
     const d = document.createElement('div');
-    d.className = 'prog-dot'; d.id = 'pdot' + i; d.textContent = n;
+    d.className = 'prog-dot';
+    d.id = 'prog' + i;
+    d.textContent = n;
     bar.appendChild(d);
   });
 }
-function markProg(idx) {
-  const d = $('pdot' + idx); if (d) d.classList.add('done');
+
+function updateProg() {
+  for (let i = 0; i < 6; i++) {
+    const d = $('prog' + i);
+    if (!d) continue;
+    d.classList.remove('active', 'done');
+    if (i < currentTraceIndex) d.classList.add('done');
+    else if (i === currentTraceIndex) d.classList.add('active');
+  }
+}
+
+function markProgDone(idx) {
+  const d = $('prog' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
 }
 
 // ══════════════════════════════════════════════════════════════════
 // CANVAS SETUP
 // ══════════════════════════════════════════════════════════════════
-function sizeCanvas() {
-  dpr = Math.min(window.devicePixelRatio || 1, 3);
+function setupCanvas() {
+  canvas = $('traceCanvas');
+  const area = $('canvasArea');
+  const rect = area.getBoundingClientRect();
+  const pad = 16;
+  const w = rect.width - pad * 2;
+  const h = rect.height - pad * 2;
+  const size = Math.min(w, h, 400);
 
-  const hudH = 56;
-  const progH = 52;
-  const margin = 12;
-  const availW = window.innerWidth - margin * 2;
-  const availH = window.innerHeight - hudH - progH - margin * 2;
-
-  // Square canvas, fit to available space
-  const size = Math.min(availW, availH, 400);
-  canvasW = size;
-  canvasH = size;
-
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
   canvas.style.width = size + 'px';
   canvas.style.height = size + 'px';
-  canvas.width = Math.round(size * dpr);
-  canvas.height = Math.round(size * dpr);
 
-  // Position canvas wrapper
-  const wrap = $('canvasWrap');
-  wrap.style.top = (hudH + margin) + 'px';
-  wrap.style.left = '50%';
-  wrap.style.transform = 'translateX(-50%)';
-  wrap.style.width = size + 'px';
-  wrap.style.height = size + 'px';
+  ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Drawing area within canvas (with padding)
-  const pad = size * 0.08;
-  drawAreaX = pad;
-  drawAreaY = pad;
-  drawAreaW = size - pad * 2;
-  drawAreaH = size - pad * 2;
+  canvasW = size;
+  canvasH = size;
+  hitRadius = canvasW * 0.15;
 
-  // Position Try Again button
-  const btn = $('btnTryAgain');
-  btn.style.bottom = (progH + 8) + 'px';
-  btn.style.right = '12px';
+  canvas.addEventListener('mousedown', onPointerDown);
+  canvas.addEventListener('mousemove', onPointerMove);
+  canvas.addEventListener('mouseup', onPointerUp);
+  canvas.addEventListener('mouseleave', onPointerUp);
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onPointerUp, { passive: false });
 }
 
-// Convert fractional checkpoint coords to canvas CSS coords
-function cpToCanvas(cp) {
-  return {
-    x: drawAreaX + cp.x * drawAreaW,
-    y: drawAreaY + cp.y * drawAreaH
-  };
-}
-
-// ══════════════════════════════════════════════════════════════════
-// DRAWING NUMBER OUTLINES ON CANVAS
-// ══════════════════════════════════════════════════════════════════
-function drawNumberOutline(num, opacity) {
-  const paths = NUMBER_PATHS[num];
-  if (!paths) return;
-
-  ctx2d.save();
-  ctx2d.scale(dpr, dpr);
-  ctx2d.strokeStyle = `rgba(26, 26, 46, ${opacity})`;
-  ctx2d.lineWidth = 14;
-  ctx2d.lineCap = 'round';
-  ctx2d.lineJoin = 'round';
-
-  paths.forEach(subpath => {
-    if (subpath.length < 2) return;
-    ctx2d.beginPath();
-    const p0 = cpToCanvas(subpath[0]);
-    ctx2d.moveTo(p0.x, p0.y);
-
-    if (subpath.length === 2) {
-      const p1 = cpToCanvas(subpath[1]);
-      ctx2d.lineTo(p1.x, p1.y);
-    } else {
-      // Smooth curve through points using quadratic bezier
-      for (let i = 1; i < subpath.length - 1; i++) {
-        const curr = cpToCanvas(subpath[i]);
-        const next = cpToCanvas(subpath[i + 1]);
-        const midX = (curr.x + next.x) / 2;
-        const midY = (curr.y + next.y) / 2;
-        ctx2d.quadraticCurveTo(curr.x, curr.y, midX, midY);
-      }
-      // Final point
-      const last = cpToCanvas(subpath[subpath.length - 1]);
-      const secondLast = cpToCanvas(subpath[subpath.length - 2]);
-      ctx2d.quadraticCurveTo(secondLast.x, secondLast.y, last.x, last.y);
-    }
-    ctx2d.stroke();
-  });
-
-  ctx2d.restore();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// DRAWING CHECKPOINTS
-// ══════════════════════════════════════════════════════════════════
-function drawCheckpoints(num, lvl) {
-  const cps = CHECKPOINTS[num];
-  if (!cps) return;
-  const cfg = LEVELS[lvl];
-
-  ctx2d.save();
-  ctx2d.scale(dpr, dpr);
-
-  cps.forEach((cp, i) => {
-    const pos = cpToCanvas(cp);
-    const isHit = i < currentCheckpoint;
-    const isNext = i === currentCheckpoint;
-
-    if (cfg.showDots || isHit) {
-      ctx2d.beginPath();
-      ctx2d.arc(pos.x, pos.y, isHit ? 16 : 20, 0, Math.PI * 2);
-
-      if (isHit) {
-        // Hit — solid green
-        ctx2d.fillStyle = '#2ecc71';
-        ctx2d.fill();
-        ctx2d.strokeStyle = '#27ae60';
-        ctx2d.lineWidth = 3;
-        ctx2d.stroke();
-        // Checkmark
-        ctx2d.fillStyle = '#fff';
-        ctx2d.font = 'bold 16px sans-serif';
-        ctx2d.textAlign = 'center';
-        ctx2d.textBaseline = 'middle';
-        ctx2d.fillText('✓', pos.x, pos.y);
-      } else if (cfg.showDots) {
-        // Unhit dot
-        ctx2d.fillStyle = isNext ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)';
-        ctx2d.fill();
-        ctx2d.strokeStyle = isNext ? '#6c5ce7' : '#a29bfe';
-        ctx2d.lineWidth = isNext ? 4 : 3;
-        ctx2d.stroke();
-
-        // Number inside dot (level 1 only)
-        if (cfg.showNumbers) {
-          ctx2d.fillStyle = '#6c5ce7';
-          ctx2d.font = 'bold 16px sans-serif';
-          ctx2d.textAlign = 'center';
-          ctx2d.textBaseline = 'middle';
-          ctx2d.fillText(String(i + 1), pos.x, pos.y + 1);
-        }
-
-        // Pulse ring on next checkpoint
-        if (isNext) {
-          ctx2d.beginPath();
-          ctx2d.arc(pos.x, pos.y, 26 + Math.sin(sparklePhase) * 4, 0, Math.PI * 2);
-          ctx2d.strokeStyle = 'rgba(108, 92, 231, 0.4)';
-          ctx2d.lineWidth = 2;
-          ctx2d.stroke();
-        }
-      }
-    }
-
-    // In level 3, briefly flash checkpoints when hit
-    if (!cfg.showDots && isHit) {
-      ctx2d.beginPath();
-      ctx2d.arc(pos.x, pos.y, 14, 0, Math.PI * 2);
-      ctx2d.fillStyle = 'rgba(46, 204, 113, 0.5)';
-      ctx2d.fill();
-    }
-  });
-
-  ctx2d.restore();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// DRAW THE USER'S TRACING LINE
-// ══════════════════════════════════════════════════════════════════
-function drawUserLine() {
-  if (drawingPoints.length < 2) return;
-
-  ctx2d.save();
-  ctx2d.scale(dpr, dpr);
-  ctx2d.strokeStyle = '#ff69b4';
-  ctx2d.lineWidth = 4;
-  ctx2d.lineCap = 'round';
-  ctx2d.lineJoin = 'round';
-  ctx2d.beginPath();
-  ctx2d.moveTo(drawingPoints[0].x, drawingPoints[0].y);
-  for (let i = 1; i < drawingPoints.length; i++) {
-    ctx2d.lineTo(drawingPoints[i].x, drawingPoints[i].y);
-  }
-  ctx2d.stroke();
-  ctx2d.restore();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// SPARKLE HINT ANIMATION (Level 1)
-// ══════════════════════════════════════════════════════════════════
-function drawSparkleHint(num, lvl) {
-  if (lvl !== 0 || currentCheckpoint >= CHECKPOINTS[num].length) return;
-  const cfg = LEVELS[lvl];
-  if (!cfg.showHint) return;
-
-  const cps = CHECKPOINTS[num];
-  const nextCp = cps[currentCheckpoint];
-  const pos = cpToCanvas(nextCp);
-
-  ctx2d.save();
-  ctx2d.scale(dpr, dpr);
-
-  // Animated sparkle circle around next checkpoint
-  const r = 28 + Math.sin(sparklePhase * 2) * 5;
-  ctx2d.beginPath();
-  ctx2d.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-  ctx2d.strokeStyle = `rgba(255, 224, 102, ${0.5 + Math.sin(sparklePhase) * 0.3})`;
-  ctx2d.lineWidth = 3;
-  ctx2d.setLineDash([4, 6]);
-  ctx2d.stroke();
-  ctx2d.setLineDash([]);
-
-  // Arrow pointing to next checkpoint from current position
-  if (currentCheckpoint > 0) {
-    const prevCp = cps[currentCheckpoint - 1];
-    const prevPos = cpToCanvas(prevCp);
-    ctx2d.beginPath();
-    ctx2d.setLineDash([6, 8]);
-    ctx2d.strokeStyle = 'rgba(255, 224, 102, 0.35)';
-    ctx2d.lineWidth = 2;
-    ctx2d.moveTo(prevPos.x, prevPos.y);
-    ctx2d.lineTo(pos.x, pos.y);
-    ctx2d.stroke();
-    ctx2d.setLineDash([]);
-  }
-
-  ctx2d.restore();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// FULL REDRAW
-// ══════════════════════════════════════════════════════════════════
-function redrawCanvas() {
-  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-
-  // White background
-  ctx2d.save();
-  ctx2d.scale(dpr, dpr);
-  ctx2d.fillStyle = '#fffbf5';
-  ctx2d.beginPath();
-  // Rounded rectangle
-  const r = 20;
-  ctx2d.moveTo(r, 0);
-  ctx2d.lineTo(canvasW - r, 0);
-  ctx2d.quadraticCurveTo(canvasW, 0, canvasW, r);
-  ctx2d.lineTo(canvasW, canvasH - r);
-  ctx2d.quadraticCurveTo(canvasW, canvasH, canvasW - r, canvasH);
-  ctx2d.lineTo(r, canvasH);
-  ctx2d.quadraticCurveTo(0, canvasH, 0, canvasH - r);
-  ctx2d.lineTo(0, r);
-  ctx2d.quadraticCurveTo(0, 0, r, 0);
-  ctx2d.fill();
-  ctx2d.restore();
-
-  if (currentNumber < 0) return;
-
-  const cfg = LEVELS[level];
-  drawNumberOutline(currentNumber, cfg.outlineOpacity);
-  drawUserLine();
-  drawCheckpoints(currentNumber, level);
-  drawSparkleHint(currentNumber, level);
-}
-
-// Animation loop for sparkle
-function animLoop() {
-  sparklePhase += 0.05;
-  redrawCanvas();
-  sparkleAnim = requestAnimationFrame(animLoop);
-}
-
-// ══════════════════════════════════════════════════════════════════
-// TOUCH / MOUSE INPUT
-// ══════════════════════════════════════════════════════════════════
-function getPointerPos(e) {
+function getCanvasPos(e) {
   const rect = canvas.getBoundingClientRect();
-  let clientX, clientY;
-  if (e.touches && e.touches.length > 0) {
-    clientX = e.touches[0].clientX;
-    clientY = e.touches[0].clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
-  }
   return {
-    x: clientX - rect.left,
-    y: clientY - rect.top
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
   };
 }
 
-function handlePointerDown(e) {
-  if (!gameActive) return;
+function onTouchStart(e) {
   e.preventDefault();
+  const touch = e.touches[0];
+  onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onPointerDown(e) {
+  if (!gameActive || guideAnimating) return;
+  audio.unlock();
   isDrawing = true;
-  const pos = getPointerPos(e);
-  drawingPoints = [pos];
-  checkHit(pos);
+  drawPoints = [];
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  checkCheckpoint(pos);
 }
 
-function handlePointerMove(e) {
-  if (!isDrawing || !gameActive) return;
-  e.preventDefault();
-  const pos = getPointerPos(e);
-  drawingPoints.push(pos);
-  checkHit(pos);
+function onPointerMove(e) {
+  if (!isDrawing || !gameActive || guideAnimating) return;
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  drawTraceLine();
+  checkCheckpoint(pos);
 }
 
-function handlePointerUp(e) {
-  if (!isDrawing) return;
-  e.preventDefault();
+function onPointerUp() {
   isDrawing = false;
 }
 
-function checkHit(pos) {
-  const cps = CHECKPOINTS[currentNumber];
-  if (!cps || currentCheckpoint >= cps.length) return;
+// ══════════════════════════════════════════════════════════════════
+// DRAWING
+// ══════════════════════════════════════════════════════════════════
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+}
 
-  const cfg = LEVELS[level];
-  const nextCp = cps[currentCheckpoint];
-  const cpPos = cpToCanvas(nextCp);
+function drawNumberOutline(key, opacity) {
+  const cps = CHECKPOINTS[key];
+  if (!cps || cps.length < 2) return;
 
-  const dx = pos.x - cpPos.x;
-  const dy = pos.y - cpPos.y;
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.strokeStyle = '#f0c0ff';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(255,180,230,0.6)';
+  ctx.shadowBlur = 15;
+
+  ctx.beginPath();
+  const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+
+  ctx.moveTo(pts[0].x, pts[0].y);
+
+  if (pts.length === 2) {
+    ctx.lineTo(pts[1].x, pts[1].y);
+  } else {
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i+1].x) / 2;
+      const my = (pts[i].y + pts[i+1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  }
+
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCheckpointDots() {
+  const cps = traceCheckpoints;
+  for (let i = 0; i < cps.length; i++) {
+    const cp = cps[i];
+    const x = cp.x * canvasW;
+    const y = cp.y * canvasH;
+
+    if (i < nextCheckpoint) {
+      // Hit - glowing gold dot
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,215,0,0.9)';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawTraceLine() {
+  if (drawPoints.length < 2) return;
+
+  // Redraw everything
+  clearCanvas();
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const level = LEVELS[currentLevel];
+  drawNumberOutline(key, level.outlineOpacity);
+
+  // Draw the trace line (magical pink/gold sparkle trail)
+  ctx.save();
+  ctx.strokeStyle = '#ff7ab8';
+  ctx.lineWidth = 10;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(255,122,184,0.9)';
+  ctx.shadowBlur = 14;
+
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+
+  // Inner glow line - gold sparkle
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = 'rgba(255,215,0,0.7)';
+  ctx.shadowBlur = 9;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+
+  // Brightest white core
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.5;
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  drawCheckpointDots();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT CHECKING
+// ══════════════════════════════════════════════════════════════════
+function checkCheckpoint(pos) {
+  if (nextCheckpoint >= traceCheckpoints.length) return;
+
+  const cp = traceCheckpoints[nextCheckpoint];
+  const cpx = cp.x * canvasW;
+  const cpy = cp.y * canvasH;
+  const dx = pos.x - cpx;
+  const dy = pos.y - cpy;
   const dist = Math.sqrt(dx * dx + dy * dy);
 
-  if (dist <= cfg.tolerance) {
-    // Hit!
-    const hitIdx = currentCheckpoint;
-    currentCheckpoint++;
-    audio.checkpointTone(hitIdx, cps.length);
+  if (dist <= hitRadius) {
+    nextCheckpoint++;
+    audio.tone('checkpoint');
+    resetHints();
 
-    // Visual burst at checkpoint position
-    const rect = canvas.getBoundingClientRect();
-    starBurstAt(rect.left + cpPos.x, rect.top + cpPos.y);
+    // Redraw to show hit dot
+    clearCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+    drawTraceLine();
+    drawCheckpointDots();
 
-    if (currentCheckpoint >= cps.length) {
-      // All checkpoints hit — number complete!
-      numberComplete();
+    if (nextCheckpoint >= traceCheckpoints.length) {
+      onTraceComplete();
     }
   }
 }
 
-// Attach input handlers
-canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
-canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
-canvas.addEventListener('touchend', handlePointerUp, { passive: false });
-canvas.addEventListener('mousedown', handlePointerDown);
-canvas.addEventListener('mousemove', handlePointerMove);
-canvas.addEventListener('mouseup', handlePointerUp);
-canvas.addEventListener('mouseleave', handlePointerUp);
+// ══════════════════════════════════════════════════════════════════
+// ANIMATED GUIDE (Level 1)
+// ══════════════════════════════════════════════════════════════════
+function animateGuide(key) {
+  return new Promise(resolve => {
+    const cps = CHECKPOINTS[key];
+    if (!cps || cps.length < 2) { resolve(); return; }
+
+    guideAnimating = true;
+    const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+    const totalDuration = 2000;
+    const start = performance.now();
+
+    const densePoints = [];
+    const steps = 80;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const totalLen = pts.length - 1;
+      const segment = t * totalLen;
+      const i = Math.min(Math.floor(segment), totalLen - 1);
+      const localT = segment - i;
+
+      if (pts.length === 2) {
+        densePoints.push({
+          x: pts[0].x + (pts[1].x - pts[0].x) * t,
+          y: pts[0].y + (pts[1].y - pts[0].y) * t
+        });
+      } else {
+        const p0 = pts[i];
+        const p1 = pts[Math.min(i + 1, pts.length - 1)];
+        densePoints.push({
+          x: p0.x + (p1.x - p0.x) * localT,
+          y: p0.y + (p1.y - p0.y) * localT
+        });
+      }
+    }
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const idx = Math.floor(progress * (densePoints.length - 1));
+
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+
+      // Pink/gold sparkle trail
+      ctx.save();
+      const trailLen = 8;
+      for (let j = Math.max(0, idx - trailLen); j <= idx; j++) {
+        const p = densePoints[j];
+        const alpha = 1 - (idx - j) / trailLen;
+        ctx.fillStyle = `rgba(255,215,0,${alpha * 0.7})`;
+        ctx.shadowColor = `rgba(255,122,184,${alpha})`;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5 + alpha * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Sparkle head - bright white with pink halo
+      if (idx < densePoints.length) {
+        const p = densePoints[idx];
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(255,122,184,1)';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        guideAnimating = false;
+        clearCanvas();
+        drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(animate);
+  });
+}
 
 // ══════════════════════════════════════════════════════════════════
-// NUMBER COMPLETE
+// HINTS
 // ══════════════════════════════════════════════════════════════════
-async function numberComplete() {
+function resetHints() {
+  clearTimeout(hintTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    if (!gameActive || guideAnimating) return;
+    if (nextCheckpoint < traceCheckpoints.length) {
+      const cp = traceCheckpoints[nextCheckpoint];
+      const x = cp.x * canvasW;
+      const y = cp.y * canvasH;
+
+      const key = TRACE_SEQUENCE[currentTraceIndex];
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,122,184,0.35)';
+      ctx.shadowColor = 'rgba(255,122,184,0.9)';
+      ctx.shadowBlur = 25;
+      ctx.beginPath();
+      ctx.arc(x, y, hitRadius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      audio.tone('hint');
+      showCharBubble('Trace here! ✨', 2000);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRACE COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onTraceComplete() {
   gameActive = false;
   isDrawing = false;
-  $('btnTryAgain').style.display = 'none';
-
-  audio.tone('correct');
-  jumpChar();
-  showCharBubble(pick(BUBBLE_CORRECT), 2500);
+  clearTimeout(hintTimer);
 
   score++;
   $('hudScore').textContent = score;
-  markProg(numIdx);
 
-  // Confetti burst
-  confetti(20, ['💜','✨']);
+  // Sparkle burst on canvas center
+  const rect = canvas.getBoundingClientRect();
+  starBurstAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
+  // Light a wand star
+  lightWandStar();
+
+  audio.tone('correct');
+  jumpChar();
+
+  showCharBubble(pick(BUBBLE_CORRECT), 1800);
+
+  // Single cheer — do NOT re-speak the number
   await audio.play('correct');
-  await audio.speakNumber(currentNumber);
-  await delay(500);
+  await delay(400);
 
-  numIdx++;
-  if (numIdx >= NUMBERS_SEQ.length) {
-    await finishLevel();
+  // Advance
+  currentTraceIndex++;
+  markProgDone(currentTraceIndex - 1);
+
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) {
+    // Level complete
+    currentTraceIndex = 0;
+    currentLevel++;
+
+    if (currentLevel >= LEVELS.length) {
+      await onGameComplete();
+    } else {
+      await onLevelComplete();
+    }
   } else {
-    startNumber();
+    await startTrace();
   }
 }
 
 // ══════════════════════════════════════════════════════════════════
-// START A NUMBER
+// LEVEL COMPLETE
 // ══════════════════════════════════════════════════════════════════
-async function startNumber() {
-  currentNumber = NUMBERS_SEQ[numIdx];
-  currentCheckpoint = 0;
-  checkpointsHit = [];
-  drawingPoints = [];
-  isDrawing = false;
-  gameActive = true;
-
-  // Update HUD
-  $('hudFind').innerHTML = `<div class="hud-find-numeral">${currentNumber}</div><div class="hud-find-word-sub">${NUMBER_WORDS[currentNumber]}</div>`;
-
-  // Show Try Again
-  $('btnTryAgain').style.display = '';
-
-  // Speak number
-  audio.tone('reveal');
-  await audio.speakPhrase('tap_the_number');
-  await audio.speakNumber(currentNumber);
-
-  redrawCanvas();
-}
-
-// ══════════════════════════════════════════════════════════════════
-// TRY AGAIN — resets current number
-// ══════════════════════════════════════════════════════════════════
-function tryAgain() {
-  currentCheckpoint = 0;
-  checkpointsHit = [];
-  drawingPoints = [];
-  isDrawing = false;
-  gameActive = true;
-  redrawCanvas();
-  audio.tone('hint');
-}
-
-// ══════════════════════════════════════════════════════════════════
-// LEVEL TRANSITIONS
-// ══════════════════════════════════════════════════════════════════
-async function finishLevel() {
-  gameActive = false;
-  $('btnTryAgain').style.display = 'none';
-  $('canvasWrap').style.display = 'none';
-
+async function onLevelComplete() {
   audio.tone('roundDone');
-  confetti(30, ['💜','🌸','✨']);
-  level++;
+  confetti(30);
+  showCharBubble('Level complete! 👑', 2200);
 
-  if (level >= LEVELS.length) {
-    await delay(700);
-    celebrateFinish();
-    return;
-  }
-
-  // Level complete banner
-  $('roundTitle').textContent = '✨ Level Complete! ✨';
-  $('roundSub').textContent = '';
-  $('roundBanner').classList.add('show');
   await audio.play('round-complete');
-  await delay(1300);
-  $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(700);
 
-  // Next level intro
-  const cfg = LEVELS[level];
-  $('roundTitle').textContent = cfg.label;
-  $('roundSub').textContent = cfg.sub;
-  $('roundBanner').classList.add('show');
-  audio.tone('whoosh');
+  await showLevelBanner();
+}
+
+async function showLevelBanner() {
+  const level = LEVELS[currentLevel];
+  $('bannerTitle').textContent = level.label;
+  $('bannerSub').textContent = level.sub;
+  $('levelBanner').classList.add('show');
+
+  audio.tone('reveal');
   await audio.play('greetings');
-  await delay(1400);
-  $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(1200);
 
-  startLevel();
-}
+  $('levelBanner').classList.remove('show');
+  await delay(300);
 
-function startLevel() {
-  const cfg = LEVELS[level];
-  $('hudRound').textContent = `${level + 1}/4`;
-  numIdx = 0;
-  buildProg();
-
-  $('canvasWrap').style.display = '';
-  sizeCanvas();
-  startNumber();
+  await startLevel();
 }
 
 // ══════════════════════════════════════════════════════════════════
-// FINAL CELEBRATION
+// GAME COMPLETE
 // ══════════════════════════════════════════════════════════════════
-async function celebrateFinish() {
-  gameActive = false;
-  audio.stopMusic();
-  $('hud').style.display = 'none';
-  $('progBar').style.display = 'none';
-  $('charArea').style.display = 'none';
-  $('canvasWrap').style.display = 'none';
-  $('btnTryAgain').style.display = 'none';
-  $('roundBanner').classList.remove('show');
+async function onGameComplete() {
+  showGameUI(false);
 
-  if (sparkleAnim) { cancelAnimationFrame(sparkleAnim); sparkleAnim = null; }
+  document.body.style.background = '#fff';
+  await delay(100);
+  document.body.style.background = '';
 
   audio.tone('celeb');
-  await delay(350);
-  confetti(60, ['💜','🌸','✨','🌷','💖','🌟']);
+  confetti(60);
 
-  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 5)));
-  $('celebStars').textContent = '⭐'.repeat(stars);
-  $('celebTitle').textContent = '🌟 Amazing! 🌟';
-  $('celebMsg').textContent = `You traced ${score} numbers! You're a tracing star!`;
-  showScreen('scrCeleb');
+  $('finalScore').textContent = score + ' Stars!';
+  showScreen('screenCeleb');
+
+  await delay(500);
+  confetti(40);
 
   await audio.play('game-complete');
-  await delay(280);
+  await delay(1500);
   await audio.play('game-complete');
-
-  setTimeout(() => confetti(35, ['💜','🌸','🌟']), 2000);
+  confetti(40);
 }
 
 // ══════════════════════════════════════════════════════════════════
-// GAME START / RESET
+// START TRACE
+// ══════════════════════════════════════════════════════════════════
+async function startTrace() {
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const cps = CHECKPOINTS[key];
+  traceCheckpoints = cps;
+  nextCheckpoint = 0;
+  isDrawing = false;
+  drawPoints = [];
+  gameActive = true;
+
+  const level = LEVELS[currentLevel];
+  $('hudLevel').textContent = currentLevel + 1;
+
+  $('bigNum').textContent = key;
+  $('numSubLabel').textContent = '';
+  $('hudNumber').textContent = key;
+
+  updateProg();
+
+  clearCanvas();
+  drawNumberOutline(key, level.outlineOpacity);
+
+  // Speak the number ONCE at start
+  audio.speakNumber(key);
+
+  if (level.showGuide) {
+    await delay(300);
+    await animateGuide(key);
+    showCharBubble('Your turn! ✨', 1800);
+  } else {
+    showCharBubble(pick(BUBBLE_TRACE), 1800);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START LEVEL
+// ══════════════════════════════════════════════════════════════════
+async function startLevel() {
+  currentTraceIndex = 0;
+  buildProg();
+  await startTrace();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START
 // ══════════════════════════════════════════════════════════════════
 async function startGame() {
-  audio.stopMusic();
-  audio.clearQueue();
-  if (sparkleAnim) { cancelAnimationFrame(sparkleAnim); sparkleAnim = null; }
-
-  level = 0; score = 0; numIdx = 0;
-  currentNumber = -1; currentCheckpoint = 0;
-  drawingPoints = []; isDrawing = false;
+  audio.unlock();
+  showScreen(null);
+  currentLevel = 0;
+  currentTraceIndex = 0;
+  score = 0;
+  wandStarCount = 0;
 
   $('hudScore').textContent = '0';
-  $('hud').style.display = '';
-  $('charArea').style.display = '';
-  $('canvasWrap').style.display = '';
-  $('roundBanner').classList.remove('show');
+  showGameUI(true);
+  buildMagicWand();
+  setupCanvas();
 
-  showScreen(null);
   audio.startMusic();
-  sizeCanvas();
 
-  // Start animation loop
-  sparkleAnim = requestAnimationFrame(animLoop);
-
-  // Level 1 intro banner
-  const cfg = LEVELS[0];
-  $('roundTitle').textContent = cfg.label;
-  $('roundSub').textContent = cfg.sub;
-  $('roundBanner').classList.add('show');
-  audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(2000);
-  $('roundBanner').classList.remove('show');
-  await delay(280);
-
-  startLevel();
+  await showLevelBanner();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1202,26 +1269,14 @@ async function startGame() {
 // ══════════════════════════════════════════════════════════════════
 buildScenery();
 
-onTap($('btnStart'), () => {
-  audio.unlock();
-  audio.tone('whoosh');
-  startGame();
-});
+onTap($('btnStart'), () => startGame());
 onTap($('btnAgain'), () => {
-  audio.unlock();
+  showScreen(null);
   startGame();
-});
-onTap($('btnTryAgain'), () => {
-  tryAgain();
 });
 
-// Handle resize
-window.addEventListener('resize', () => {
-  if (gameActive || currentNumber >= 0) {
-    sizeCanvas();
-    redrawCanvas();
-  }
-});
+document.addEventListener('touchstart', () => audio.unlock(), { once: true, passive: true });
+document.addEventListener('click', () => audio.unlock(), { once: true });
 </script>
 </body>
 </html>

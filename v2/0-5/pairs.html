@@ -792,15 +792,15 @@ async function checkMatch() {
     starBurst(b);
 
     markProg(numA);
-    showCharBubble(pick(BUBBLE_CORRECT), 1800);
-    await audio.play('correct');
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    audio.play('correct'); // don't block — child can flip next card
 
     flippedCards = [];
     lockBoard = false;
 
     // Check round complete
     if (matches >= totalPairs) {
-      await delay(500);
+      await delay(650);
       advanceRound();
     } else {
       resetHints();
@@ -809,10 +809,10 @@ async function checkMatch() {
   } else {
     // ✗ NO MATCH
     audio.tone('wrong');
-    showCharBubble(pick(BUBBLE_WRONG), 1500);
-    await audio.play('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1400);
+    audio.play('wrong'); // don't block
 
-    await delay(400);
+    await delay(650);
     a.classList.remove('flipped');
     b.classList.remove('flipped');
     flippedCards = [];
@@ -842,21 +842,20 @@ async function advanceRound() {
   $('roundTitle').textContent = '✨ Round Complete! ✨';
   $('roundSub').textContent   = '';
   $('roundBanner').classList.add('show');
-  await audio.play('round-complete');
-  await delay(1500);
+  audio.play('round-complete'); // don't block
+  await delay(1400);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
-  // Next round banner
+  // Next round banner (snappy)
   const cfg = ROUNDS[round];
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(1400);
+  await delay(1100);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
   $('hudRound').textContent = `${round + 1}/4`;
 

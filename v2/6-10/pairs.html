@@ -974,15 +974,15 @@ async function checkMatch() {
     // Light a window on the haunted house
     lightWindow();
 
-    showCharBubble(pick(BUBBLE_CORRECT), 1800);
-    await audio.play('correct');
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    audio.play('correct'); // don't block — child can flip next card
 
     flippedCards = [];
     lockBoard = false;
 
     // Check round complete
     if (matches >= totalPairs) {
-      await delay(500);
+      await delay(650);
       advanceRound();
     } else {
       resetHints();
@@ -997,8 +997,8 @@ async function checkMatch() {
     a.style.animation = 'wrongShake 0.4s ease-in-out';
     b.style.animation = 'wrongShake 0.4s ease-in-out';
 
-    await audio.play('wrong');
-    await delay(400);
+    audio.play('wrong'); // don't block
+    await delay(650);
 
     a.style.animation = '';
     b.style.animation = '';
@@ -1031,24 +1031,23 @@ async function advanceRound() {
   $('roundTitle').textContent = '👻 Round Complete! 👻';
   $('roundSub').textContent   = '';
   $('roundBanner').classList.add('show');
-  await audio.play('round-complete');
-  await delay(1500);
+  audio.play('round-complete'); // don't await
+  await delay(1400);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
   // Reset house for next round
   resetHouse();
 
-  // Next round banner
+  // Next round banner (snappy)
   const cfg = ROUND_META[round];
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(1400);
+  await delay(1100);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
   $('hudRound').textContent = `${round + 1}/4`;
 

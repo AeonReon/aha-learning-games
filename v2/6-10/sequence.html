@@ -1358,30 +1358,16 @@ async function celebrateSequence() {
 
   audio.tone('celeb');
 
-  // Voice counts along
-  for (let i = 0; i < 5; i++) {
-    await audio.speakNumber(NUMBERS[i]);
-    await delay(60);
-  }
-
-  await delay(300);
-
-  // Potion brewed!
-  showCharBubble(pick(BUBBLE_POTION), 2500);
+  // Potion brewed! — confetti + bubble immediately, voice in background
+  showCharBubble(pick(BUBBLE_POTION), 2000);
   confetti(25, ['🧪','💜','✨','🌟','🫧']);
-  await audio.play('correct');
+  audio.play('correct'); // don't await — transition proceeds while voice plays
 
   markPotion(potionsBrewed);
   potionsBrewed++;
 
-  if (potionsBrewed >= 4) {
-    await delay(500);
-    await finishRound();
-  } else {
-    // Move to next round
-    await delay(500);
-    await finishRound();
-  }
+  await delay(700);
+  await finishRound();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1404,25 +1390,24 @@ async function finishRound() {
     return;
   }
 
-  // ── Round complete banner ──
+  // ── Round complete banner (snappy) ──
   $('roundTitle').textContent = '🧪 Potion Brewed! 🧪';
   $('roundSub').textContent   = 'Luna is delighted!';
   $('roundBanner').classList.add('show');
-  await audio.play('round-complete');
-  await delay(1300);
+  audio.play('round-complete'); // don't await — banner shows while voice plays
+  await delay(1400);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(200);
 
-  // ── Next round intro banner ──
+  // ── Next round intro banner (snappy) ──
   const cfg = ROUNDS[round];
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(1400);
+  await delay(1200);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(150);
 
   startRound();
 }
@@ -1524,16 +1509,16 @@ async function startGame() {
   $('hud').style.display     = '';
   $('charArea').style.display = '';
 
-  // First round intro
+  // First round intro (snappy)
   const cfg = ROUNDS[0];
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(1200);
+  audio.play('greetings'); // don't await — show banner while voice plays
+  await delay(1400);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(200);
 
   startRound();
 }

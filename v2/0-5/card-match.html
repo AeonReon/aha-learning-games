@@ -877,12 +877,11 @@ async function handleChoice(cardEl, num) {
     jumpChar();
     showCharBubble(pick(BUBBLE_CORRECT), 2200);
 
-    // Voice cheer + reinforce number twice
-    await audio.play('correct');
-    await audio.speakNumber(currentTarget);
-    await delay(140);
-    await audio.speakNumber(currentTarget);
-    await delay(380);
+    // Voice cheer + reinforce number once (snappy pacing — don't block child)
+    audio.play('correct');
+    await delay(280);
+    audio.speakNumber(currentTarget);
+    await delay(120);
 
     roundIdx++;
     if (roundIdx >= roundNumbers.length) {
@@ -928,25 +927,24 @@ async function finishRound() {
     return;
   }
 
-  // Round complete banner
+  // Round complete banner (snappy)
   const cfg = ROUNDS[round];
   $('roundTitle').textContent = '✨ Round Complete! ✨';
   $('roundSub').textContent   = '';
   $('roundBanner').classList.add('show');
-  await audio.play('round-complete');
-  await delay(1300);
+  audio.play('round-complete'); // don't block
+  await delay(1400);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
-  // Next round intro banner
+  // Next round intro banner (snappy)
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(1400);
+  await delay(1100);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
   startRound();
 }

@@ -920,20 +920,20 @@ async function handleOptionTap(cardEl, chosenNum) {
     score++;
     $('hudScore').textContent = score;
 
-    // Speak number
+    // Speak number (once — keep pacing snappy)
     audio.speakNumber(currentTarget);
 
     // Seal a page in spell book
     sealPage(cardEl);
 
     // Voice cheer
-    await delay(300);
+    await delay(220);
     audio.play('correct');
 
     // Mark progress
     markProg(currentTarget);
 
-    await delay(800);
+    await delay(450);
 
     // Next item or end round
     currentItemIndex++;
@@ -949,11 +949,9 @@ async function handleOptionTap(cardEl, chosenNum) {
     showCharBubble(pick(BUBBLE_WRONG));
     totalErrors++;
 
-    // Re-speak target number
-    await delay(200);
+    // Re-speak target number — don't block the child from retrying
     audio.play('wrong');
-    await delay(600);
-    audio.speakNumber(currentTarget);
+    setTimeout(() => { if (!lockBoard) audio.speakNumber(currentTarget); }, 500);
 
     cardEl.classList.remove('wrong-shake');
     lockBoard = false;
@@ -976,11 +974,10 @@ async function presentItem() {
   // Update HUD
   $('hudTarget').textContent = `Find ${currentTarget} ${EMOJI_MAP[currentTarget]}`;
 
-  // Speak the number
+  // Speak the number once — quickly
   audio.tone('reveal');
-  await delay(200);
-  await audio.speakNumber(currentTarget);
-  await delay(300);
+  audio.speakNumber(currentTarget);
+  await delay(250);
 
   lockBoard = false;
   resetHints();

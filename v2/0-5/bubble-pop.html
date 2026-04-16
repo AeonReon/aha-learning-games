@@ -729,8 +729,8 @@ const ROUNDS = [
     announceTarget: true,        // voice says "Find and pop the number X"
     targetCount: 3,
     distractorCount: 3,
-    floatSpeed: 0.35,            // px per frame (slow)
-    spawnInterval: 1200,         // ms between bubble spawns
+    floatSpeed: 0.85,            // px per frame (doubled from 0.35 — snappy!)
+    spawnInterval: 900,          // ms between bubble spawns
     wavesPerRound: 3,
   },
   {
@@ -741,8 +741,8 @@ const ROUNDS = [
     announceTarget: false,
     targetCount: 4,
     distractorCount: 4,
-    floatSpeed: 0.5,
-    spawnInterval: 900,
+    floatSpeed: 1.1,
+    spawnInterval: 750,
     wavesPerRound: 3,
   },
   {
@@ -753,8 +753,8 @@ const ROUNDS = [
     announceTarget: true,
     targetCount: 3,
     distractorCount: 5,
-    floatSpeed: 0.35,
-    spawnInterval: 1100,
+    floatSpeed: 0.85,
+    spawnInterval: 900,
     wavesPerRound: 3,
   },
   {
@@ -765,8 +765,8 @@ const ROUNDS = [
     announceTarget: false,
     targetCount: 4,
     distractorCount: 4,
-    floatSpeed: 0.55,
-    spawnInterval: 850,
+    floatSpeed: 1.25,
+    spawnInterval: 700,
     wavesPerRound: 3,
   },
 ];
@@ -1040,14 +1040,15 @@ async function startWave() {
   }
   $('hudTarget').innerHTML = hudHtml;
 
-  // Announce target
+  // Announce target — snappy, don't block bubble spawning
   audio.tone('reveal');
   if (cfg.announceTarget) {
-    await audio.speakPhrase('tap_the_number');
-    await audio.speakNumber(currentTarget);
+    audio.speakPhrase('tap_the_number');
+    audio.speakNumber(currentTarget);
   } else {
-    await audio.speakNumber(currentTarget);
+    audio.speakNumber(currentTarget);
   }
+  await delay(400); // brief breath before bubbles start
 
   // Build spawn queue: target bubbles + distractor bubbles, shuffled
   spawnQueue = [];
@@ -1156,25 +1157,24 @@ async function finishRound() {
     return;
   }
 
-  // ── Round complete banner ──
+  // ── Round complete banner (snappy) ──
   $('roundTitle').textContent = '✨ Round Complete! ✨';
   $('roundSub').textContent   = '';
   $('roundBanner').classList.add('show');
-  await audio.play('round-complete');
-  await delay(1300);
+  audio.play('round-complete'); // don't block
+  await delay(1400);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
-  // ── Next round intro banner ──
+  // ── Next round intro banner (snappy) ──
   const cfg = ROUNDS[round];
   $('roundTitle').textContent = cfg.label;
   $('roundSub').textContent   = cfg.sub;
   $('roundBanner').classList.add('show');
   audio.tone('whoosh');
-  await audio.play('greetings');
-  await delay(1400);
+  await delay(1100);
   $('roundBanner').classList.remove('show');
-  await delay(280);
+  await delay(180);
 
   startRound();
 }

@@ -69,6 +69,40 @@ let audioCtx=null;function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioC
 function playTapSound(){const c=ensureAudio();const now=c.currentTime;[698.46,880.00].forEach((f,i)=>{const osc=c.createOscillator();const g=c.createGain();osc.type='sine';osc.frequency.value=f;g.gain.setValueAtTime(0.0001,now);g.gain.exponentialRampToValueAtTime(0.1,now+0.02);g.gain.exponentialRampToValueAtTime(0.0001,now+0.3);osc.connect(g).connect(c.destination);osc.start(now+i*0.05);osc.stop(now+0.4)})}
 document.querySelectorAll('.game-card').forEach(card=>{card.addEventListener('click',function(e){e.preventDefault();const rect=card.getBoundingClientRect();const cx=rect.left+rect.width/2;const cy=rect.top+rect.height/2;const ring=document.createElement('div');ring.className='tap-ring';ring.style.left=cx+'px';ring.style.top=cy+'px';ring.style.transform='translate(-50%,-50%)';document.body.appendChild(ring);setTimeout(()=>ring.remove(),600);window.burstConfetti(cx,cy,35);playTapSound();const href=card.getAttribute('href');setTimeout(()=>{window.location.href=href},380)})});
 (function(){const btn=document.getElementById('musicBtn');let playing=false,nextNote=0,scheduler=null,master=null;const SCALE=[392.00,440.00,523.25,587.33,659.25,783.99];const CHORDS=[[196.00,261.63,392.00],[220.00,293.66,440.00],[246.94,329.63,493.88]];let ci=0,ni=0;function note(f,when,dur,gain=0.03,type='sine'){const o=audioCtx.createOscillator();const g=audioCtx.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0.0001,when);g.gain.exponentialRampToValueAtTime(gain,when+0.05);g.gain.exponentialRampToValueAtTime(0.0001,when+dur);o.connect(g).connect(master);o.start(when);o.stop(when+dur+0.05)}function sched(){while(nextNote<audioCtx.currentTime+0.25){note(SCALE[Math.floor(Math.random()*SCALE.length)],nextNote,0.9,0.022,'sine');if(ni%4===0){CHORDS[ci%CHORDS.length].forEach(f=>note(f,nextNote,3.0,0.018,'sine'));ci++}ni++;nextNote+=0.7}}function start(){ensureAudio();master=audioCtx.createGain();master.gain.value=0;master.gain.linearRampToValueAtTime(0.4,audioCtx.currentTime+1);master.connect(audioCtx.destination);nextNote=audioCtx.currentTime+0.1;ni=0;ci=0;scheduler=setInterval(sched,50);playing=true;btn.textContent='🎵';try{localStorage.setItem('aha_music','1')}catch(e){}}function stop(){if(master){const now=audioCtx.currentTime;master.gain.cancelScheduledValues(now);master.gain.setValueAtTime(master.gain.value,now);master.gain.linearRampToValueAtTime(0,now+0.4);setTimeout(()=>{try{master.disconnect()}catch(e){}master=null},500)}clearInterval(scheduler);playing=false;btn.textContent='🔇';try{localStorage.setItem('aha_music','0')}catch(e){}}btn.addEventListener('click',()=>{if(playing)stop();else start()});let auto=false;function tryAuto(){if(auto)return;auto=true;let pref=null;try{pref=localStorage.getItem('aha_music')}catch(e){}if(pref!=='0')start()}['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,tryAuto,{once:true}))})();
+
+/* ═══ AHA! PROGRESS TRACKING ═══ */
+(function(){
+  function getKey(){
+    var parts = location.pathname.split('/').filter(Boolean);
+    var last = parts[parts.length-1] || 'index.html';
+    var game = last.replace('.html','');
+    var theme = parts[parts.length-2] || 'root';
+    if (game === '') game = 'index';
+    return theme + '/' + game;
+  }
+  function load(){ try { return JSON.parse(localStorage.getItem('aha_progress')||'{}'); } catch(e){ return {}; } }
+  function save(p){ try { localStorage.setItem('aha_progress', JSON.stringify(p)); } catch(e){} }
+  function markAttempt(){
+    var p = load(), k = getKey();
+    if (!p[k]) p[k] = { attempted: true, attemptedAt: Date.now() };
+    save(p);
+  }
+  function markComplete(){
+    var p = load(), k = getKey();
+    if (!p[k]) p[k] = {};
+    p[k].completed = true;
+    p[k].completedAt = Date.now();
+    p[k].plays = (p[k].plays||0) + 1;
+    save(p);
+  }
+  var celeb = document.getElementById('scrCeleb');
+  if (celeb){
+    var obs = new MutationObserver(function(){ if (celeb.classList.contains('active')) markComplete(); });
+    obs.observe(celeb, { attributes: true, attributeFilter: ['class'] });
+  }
+  setTimeout(markAttempt, 3000);
+})();
+
 </script>
 </body>
 </html>

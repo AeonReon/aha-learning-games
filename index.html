@@ -212,6 +212,92 @@ body{
   z-index:1;
 }
 
+/* ── Progress indicator ── */
+.progress-badge{
+  position:absolute;
+  top:10px; right:10px;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  background:rgba(0,0,0,0.45);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  padding:4px 10px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:800;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.25);
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+.progress-badge.done{
+  background:linear-gradient(135deg,#FFD700,#F59E0B);
+  color:#4A1D00;
+  border-color:#FFE066;
+  box-shadow:0 0 18px rgba(255,215,0,0.7),0 2px 8px rgba(0,0,0,0.4);
+  animation:badgePulse 2.2s ease-in-out infinite;
+}
+@keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.progress-badge .pb-icon{font-size:12px}
+.progress-badge .pb-text{letter-spacing:0.04em}
+
+/* Theme card gets a subtle gold border when fully complete */
+.theme-card.completed{
+  box-shadow:0 0 0 2px rgba(255,215,0,0.6),0 8px 24px rgba(255,215,0,0.3),0 6px 18px rgba(0,0,0,0.3) !important;
+}
+.theme-card.started:not(.completed)::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;height:3px;
+  background:linear-gradient(90deg,#10B981,#34D399);
+  border-radius:22px 22px 0 0;
+  width:var(--progress-pct,0%);
+  z-index:2;
+  transition:width 0.6s ease;
+}
+
+/* Progress summary banner (shown at bottom when any progress exists) */
+.progress-summary{
+  max-width:560px;
+  margin:30px auto 10px;
+  padding:14px 20px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:18px;
+  text-align:center;
+  color:#fff;
+  font-size:14px;
+  font-weight:600;
+  display:none;
+}
+.progress-summary.visible{display:block}
+.progress-summary .ps-stars{font-size:20px;letter-spacing:4px;margin-bottom:4px}
+.progress-summary .ps-text{opacity:0.9;font-size:13px;font-weight:500}
+.progress-summary .ps-text strong{color:#FFD700}
+
+/* Reset button (subtle, parent-facing) */
+.reset-btn{
+  display:inline-block;
+  margin-left:12px;
+  padding:4px 10px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:12px;
+  color:rgba(255,255,255,0.55);
+  font-size:10px;
+  font-weight:600;
+  font-family:inherit;
+  cursor:pointer;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  transition:background 0.2s,color 0.2s;
+}
+.reset-btn:hover{background:rgba(239,68,68,0.2);color:#FCA5A5;border-color:rgba(239,68,68,0.4)}
+.reset-btn:active{transform:scale(0.96)}
+
 /* ── Coming soon state ── */
 .theme-card.soon{
   background:rgba(255,255,255,0.05) !important;
@@ -440,7 +526,11 @@ body{
     </div>
   </div>
 
-  <div class="footer">aha! Learning Games &copy; 2026 · Made with love</div>
+  <div class="progress-summary" id="progressSummary"></div>
+  <div class="footer">
+    aha! Learning Games &copy; 2026 · Made with love
+    <button type="button" id="resetProgressBtn" class="reset-btn" aria-label="Reset all progress">Reset progress</button>
+  </div>
 </div>
 
 <script>
@@ -636,6 +726,167 @@ function playTapSound(){
     osc.stop(now + 0.4);
   });
 }
+
+/* ═══════════════════════════════════════
+   PROGRESS TRACKING — reads localStorage
+   and renders badges on each theme card
+   ═══════════════════════════════════════ */
+(function(){
+  // How many games belong to each theme folder
+  const THEME_GAMES = {
+    '0-5': 5, '6-10': 5, '11-15': 5, '16-20': 5,
+    '10-50': 5, '60-100': 5,
+    'a-e': 5, 'f-j': 5, 'k-o': 5, 'p-t': 5, 'u-z': 5,
+    'number-carnival': 1, 'alphabet-arcade': 1
+  };
+  function loadProgress(){
+    try { return JSON.parse(localStorage.getItem('aha_progress') || '{}'); }
+    catch(e){ return {}; }
+  }
+  function saveProgress(p){
+    try { localStorage.setItem('aha_progress', JSON.stringify(p)); } catch(e){}
+  }
+  function getAnnounced(){
+    try { return JSON.parse(localStorage.getItem('aha_announced_complete') || '{}'); }
+    catch(e){ return {}; }
+  }
+  function setAnnounced(a){
+    try { localStorage.setItem('aha_announced_complete', JSON.stringify(a)); } catch(e){}
+  }
+
+  function render(){
+    const progress = loadProgress();
+    const announced = getAnnounced();
+    const cards = document.querySelectorAll('.theme-card:not(.soon)');
+    let newlyCompleted = [];
+
+    cards.forEach(card => {
+      const href = card.getAttribute('href') || '';
+      // href format: "v2/0-5/" or "v2/number-carnival/"
+      const match = href.match(/v2\/([^/]+)\/?$/);
+      if (!match) return;
+      const folder = match[1];
+      const total = THEME_GAMES[folder] || 5;
+
+      // Count completed games for this folder
+      const completedCount = Object.keys(progress).filter(k => {
+        const parts = k.split('/');
+        return parts[0] === folder && progress[k] && progress[k].completed;
+      }).length;
+      const startedCount = Object.keys(progress).filter(k => {
+        const parts = k.split('/');
+        return parts[0] === folder && progress[k];
+      }).length;
+
+      const isComplete = completedCount >= total;
+      const hasStarted = startedCount > 0 || completedCount > 0;
+
+      // Remove existing badge
+      const existingBadge = card.querySelector('.progress-badge');
+      if (existingBadge) existingBadge.remove();
+
+      // Add progress badge
+      if (hasStarted || completedCount > 0) {
+        const badge = document.createElement('div');
+        badge.className = 'progress-badge' + (isComplete ? ' done' : '');
+        if (isComplete) {
+          badge.innerHTML = '<span class="pb-icon">🏆</span><span class="pb-text">ALL DONE!</span>';
+        } else {
+          badge.innerHTML = '<span class="pb-icon">⭐</span><span class="pb-text">' + completedCount + '/' + total + '</span>';
+        }
+        card.appendChild(badge);
+      }
+
+      // Apply classes
+      card.classList.toggle('completed', isComplete);
+      card.classList.toggle('started', hasStarted && !isComplete);
+      card.style.setProperty('--progress-pct', (completedCount / total * 100) + '%');
+
+      // Detect newly-completed themes (for celebration)
+      if (isComplete && !announced[folder]) {
+        newlyCompleted.push({ card, folder });
+        announced[folder] = Date.now();
+      }
+    });
+
+    if (newlyCompleted.length) {
+      setAnnounced(announced);
+      // Trigger celebration for each newly-completed theme
+      newlyCompleted.forEach(nc => celebrateTheme(nc.card));
+    }
+
+    // Render overall summary banner
+    renderSummary(progress);
+  }
+
+  function renderSummary(progress){
+    const summary = document.getElementById('progressSummary');
+    if (!summary) return;
+    const totalCompleted = Object.values(progress).filter(p => p && p.completed).length;
+    const totalGames = Object.values(THEME_GAMES).reduce((a,b)=>a+b, 0);
+    if (totalCompleted === 0) { summary.classList.remove('visible'); return; }
+    const pct = Math.round(totalCompleted / totalGames * 100);
+    const stars = Math.min(5, Math.ceil(totalCompleted / (totalGames/5)));
+    summary.innerHTML =
+      '<div class="ps-stars">' + '⭐'.repeat(stars) + '<span style="opacity:0.2">' + '⭐'.repeat(5-stars) + '</span></div>' +
+      '<div class="ps-text">You\'ve finished <strong>' + totalCompleted + ' of ' + totalGames + '</strong> games · ' + pct + '% complete!</div>';
+    summary.classList.add('visible');
+  }
+
+  function celebrateTheme(card){
+    if (typeof window.burstConfetti !== 'function') return;
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    // Big confetti burst
+    window.burstConfetti(cx, cy, 80);
+    setTimeout(() => window.burstConfetti(cx, cy, 50), 400);
+    setTimeout(() => window.burstConfetti(cx, cy, 40), 800);
+    // Play a celebratory sound if audio function exists
+    try {
+      const c = (window.audioCtx || (window.audioCtx = new (window.AudioContext||window.webkitAudioContext)()));
+      const now = c.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = f;
+        g.gain.setValueAtTime(0, now + i * 0.15);
+        g.gain.linearRampToValueAtTime(0.2, now + i * 0.15 + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.15 + 0.4);
+        osc.connect(g).connect(c.destination);
+        osc.start(now + i * 0.15);
+        osc.stop(now + i * 0.15 + 0.45);
+      });
+    } catch(e){}
+  }
+
+  // Initial render
+  render();
+  // Re-render when user returns to the hub (e.g. after completing a game)
+  window.addEventListener('pageshow', render);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+
+  // Reset progress button (parent-facing, with confirmation)
+  const resetBtn = document.getElementById('resetProgressBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      const p = loadProgress();
+      const count = Object.values(p).filter(x => x && x.completed).length;
+      if (count === 0) {
+        alert('No progress to reset yet — go play some games!');
+        return;
+      }
+      if (confirm('Reset all progress? This will clear ' + count + ' completed game(s) and cannot be undone.')) {
+        try {
+          localStorage.removeItem('aha_progress');
+          localStorage.removeItem('aha_announced_complete');
+        } catch(e) {}
+        render();
+      }
+    });
+  }
+})();
 
 // Tap ring + confetti on theme-card clicks
 document.querySelectorAll('.theme-card:not(.soon)').forEach(card => {

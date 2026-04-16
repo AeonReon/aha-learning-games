@@ -1234,6 +1234,40 @@ onTap($('btnAgain'), () => {
   }, 400);
 });
 
+
+/* ═══ AHA! PROGRESS TRACKING ═══ */
+(function(){
+  function getKey(){
+    var parts = location.pathname.split('/').filter(Boolean);
+    var last = parts[parts.length-1] || 'index.html';
+    var game = last.replace('.html','');
+    var theme = parts[parts.length-2] || 'root';
+    if (game === '') game = 'index';
+    return theme + '/' + game;
+  }
+  function load(){ try { return JSON.parse(localStorage.getItem('aha_progress')||'{}'); } catch(e){ return {}; } }
+  function save(p){ try { localStorage.setItem('aha_progress', JSON.stringify(p)); } catch(e){} }
+  function markAttempt(){
+    var p = load(), k = getKey();
+    if (!p[k]) p[k] = { attempted: true, attemptedAt: Date.now() };
+    save(p);
+  }
+  function markComplete(){
+    var p = load(), k = getKey();
+    if (!p[k]) p[k] = {};
+    p[k].completed = true;
+    p[k].completedAt = Date.now();
+    p[k].plays = (p[k].plays||0) + 1;
+    save(p);
+  }
+  var celeb = document.getElementById('scrCeleb');
+  if (celeb){
+    var obs = new MutationObserver(function(){ if (celeb.classList.contains('active')) markComplete(); });
+    obs.observe(celeb, { attributes: true, attributeFilter: ['class'] });
+  }
+  setTimeout(markAttempt, 3000);
+})();
+
 </script>
 </body>
 </html>

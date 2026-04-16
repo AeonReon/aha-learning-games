@@ -9,7 +9,7 @@
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
   --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
-  --deep-teal: #053838; --teal: #0d5c5c; --amber: #ffb347; --fire peak: #d94a1f;
+  --deep-teal: #053838; --teal: #0d5c5c; --amber: #ffb347; --firepeak: #d94a1f;
   --gold: #ffd966; --fern: #4caf50; --white85: rgba(255,255,255,0.88);
   --bone: #f4ecd2;
 }
@@ -39,14 +39,14 @@ body {
   100% { transform: translateY(-60px) translateX(40px) rotate(15deg) scale(1.1); opacity: 0; }
 }
 
-.fire peak-glow {
+.firepeak-glow {
   position: fixed; bottom: 0; left: -5vw;
   width: 40vw; height: 35vh;
   pointer-events: none; z-index: var(--z-bg);
   background: radial-gradient(ellipse at 50% 100%, rgba(217,74,31,0.25), transparent 70%);
-  animation: fire peakPulse 4s ease-in-out infinite;
+  animation: firepeakPulse 4s ease-in-out infinite;
 }
-@keyframes fire peakPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+@keyframes firepeakPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
 
 /* ── Screen system ── */
 .screen {
@@ -151,11 +151,14 @@ body {
 /* ── Card Grid ── */
 .card-grid {
   position: fixed;
-  top: 55px; left: 50%; transform: translateX(-50%);
+  top: 0; left: 50%; transform: translateX(-50%);
   z-index: var(--z-game);
   display: grid;
   gap: clamp(6px,1.5vw,10px);
-  padding: 8px;
+  padding-top: clamp(80px, 14vh, 120px);
+  padding-bottom: clamp(60px, 10vh, 90px);
+  padding-left: 8px;
+  padding-right: 8px;
   justify-items: center; align-items: center;
 }
 .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
@@ -201,9 +204,8 @@ body {
 @keyframes eggWobble { 0%,100%{transform:rotate(-3deg) scale(1)} 50%{transform:rotate(3deg) scale(1.04)} }
 .card-back-sparkle { font-size: 10px; color: var(--amber); opacity: 0.7; }
 
-/* Card front — bone/parchment with HUGE content */
+/* Card front — HUGE numeral as hero, with style variant */
 .card-front {
-  background: linear-gradient(135deg, #1a3535, #0d2525);
   border: 3px solid rgba(255,179,71,0.55);
   transform: rotateY(180deg);
   padding: 2px;
@@ -211,12 +213,30 @@ body {
   overflow: hidden;
 }
 
+/* Style A — dark teal background, amber numeral */
+.card-front.style-a {
+  background: linear-gradient(135deg, #0d5c5c, #053838);
+  border-color: rgba(255,179,71,0.55);
+}
+.card-front.style-a .card-numeral {
+  color: var(--amber);
+  text-shadow: 0 0 18px rgba(255,179,71,0.7), 2px 2px 0 rgba(0,0,0,0.4);
+}
+
+/* Style B — amber gold background, deep teal numeral */
+.card-front.style-b {
+  background: linear-gradient(135deg, #ffb347, #d9851f);
+  border-color: rgba(5,56,56,0.65);
+}
+.card-front.style-b .card-numeral {
+  color: var(--deep-teal);
+  text-shadow: 0 0 12px rgba(255,255,255,0.35), 2px 2px 0 rgba(255,255,255,0.25);
+}
+
 /* ═══ HERO CONTENT — numerals FILL the card ═══ */
 .card-numeral {
   font-size: clamp(38px, 11vw, 64px);
   font-weight: 900;
-  color: var(--amber);
-  text-shadow: 0 0 18px rgba(255,179,71,0.7), 2px 2px 0 rgba(0,0,0,0.4);
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -225,43 +245,27 @@ body {
   font-size: clamp(30px, 8.5vw, 52px);
 }
 
-.card-word {
-  font-size: clamp(15px, 4.2vw, 24px);
-  font-weight: 900;
-  color: var(--fern);
-  text-shadow: 0 0 12px rgba(76,175,80,0.5), 1px 1px 0 rgba(0,0,0,0.3);
-  text-transform: uppercase;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  text-align: center;
-  padding: 0 2px;
-}
-/* Longer words (seventy, eighty, ninety, one hundred) need smaller */
-.card-word.long    { font-size: clamp(13px, 3.5vw, 20px); }
-.card-word.xlong   { font-size: clamp(11px, 3vw, 17px); }
-
 /* Tiny corner decoration — never competes with numeral */
 .card-deco {
   position: absolute;
-  top: 3px; right: 4px;
-  font-size: clamp(10px, 2.2vw, 13px);
-  opacity: 0.55;
+  font-size: clamp(11px, 2.4vw, 18px);
+  opacity: 0.4;
   pointer-events: none;
   line-height: 1;
 }
-.card-deco-bl {
-  position: absolute;
-  bottom: 3px; left: 4px;
-  font-size: clamp(9px, 2vw, 12px);
-  opacity: 0.5;
-  pointer-events: none;
-  line-height: 1;
-}
+.card-deco.tl { top: 4px; left: 5px; }
+.card-deco.tr { top: 4px; right: 5px; }
+.card-deco.bl { bottom: 4px; left: 5px; }
+.card-deco.br { bottom: 4px; right: 5px; }
 
 /* Matched cards — dragon emerges */
 .card.matched .card-front {
   background: linear-gradient(135deg, #1a4a1a, #0d3515);
   border-color: var(--fern);
+}
+.card.matched .card-front .card-numeral {
+  color: var(--gold);
+  text-shadow: 0 0 16px rgba(255,217,102,0.7), 2px 2px 0 rgba(0,0,0,0.4);
 }
 .card.matched .card-inner {
   animation: cardmatch 0.4s ease-out;
@@ -394,7 +398,7 @@ body {
 </head>
 <body>
 
-<div class="fire peak-glow"></div>
+<div class="firepeak-glow"></div>
 
 <!-- HUD -->
 <div class="hud" id="hud" style="display:none">
@@ -464,14 +468,13 @@ body {
 <script>
 // ╔══════════════════════════════════════════════════════════════════╗
 // ║  Aha! — Dragon Memory Pairs (60-100)  🐉                      ║
-// ║  Cross-representation memory matching — big numerals and words  ║
+// ║  Numeral-matching memory game — big numerals, different styles  ║
 // ║  Voice A (en-US-AnaNeural) · Mystic theme                     ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const AUDIO_BASE = '../../audio';
 
 const NUMBERS = [60,70,80,90,100];
-const NUMBER_WORDS = {60:'sixty',70:'seventy',80:'eighty',90:'ninety',100:'one hundred'};
 
 // ── Voice A clip pools ──
 const VOICE_A = {
@@ -609,9 +612,15 @@ function onTap(el, fn) {
 const BUBBLE_CORRECT = ['A match! 🐉','Flame-tastic! 🐲','That\'s it! 💎','Well done! 🥚','Treasure found! 💎','Mystic! 🔥'];
 const BUBBLE_WRONG   = ['Not a match!','Try again! 🐉','Almost! 🐲','Keep going! 🥚','Remember! 🌿'];
 
-// Decorative emojis (small, corner only)
-const DECOS = ['💎','🌿','🥚','🦶','🔥','💎'];
-const WORD_DECOS = ['🐉','🐲','💎','🌿'];
+// Decorations per card style — tiny corner-only visual variety
+// Style A (dark teal) — dragon-flavoured decorations
+const DECOS_A = ['🐉','🔥','💎','🌿'];
+// Style B (amber gold) — egg/treasure decorations
+const DECOS_B = ['🥚','✨','💫','🪶'];
+
+// Corner positions — Style A uses top-right, Style B uses bottom-left (always different)
+const CORNER_A = 'tr';
+const CORNER_B = 'bl';
 
 // ══════════════════════════════════════════════════════════════════
 // VISUAL EFFECTS
@@ -708,34 +717,25 @@ function renderTreasureGallery() {
 // ══════════════════════════════════════════════════════════════════
 // ROUND CONFIG — 4 rounds, progressive difficulty
 //
-// All cards show BIG numeral or BIG word as the HERO. Tiny corner decoration only.
+// All cards show BIG NUMERAL as the HERO.
+// Each pair = same numeral on two different visual styles (A vs B).
+// Child matches by recognising the NUMBER — style differences add variety.
 // ══════════════════════════════════════════════════════════════════
 
 function buildRoundPairs(roundIdx) {
   let pairs = [];
   if (roundIdx === 0) {
-    // 3 pairs: numeral ↔ word for 60, 70, 80
-    [60,70,80].forEach(n => {
-      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
-    });
+    // 3 pairs: 60, 70, 80
+    [60,70,80].forEach(n => pairs.push({ num: n }));
   } else if (roundIdx === 1) {
-    // 4 pairs: numeral ↔ word for 60, 70, 80, 90
-    [60,70,80,90].forEach(n => {
-      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
-    });
+    // 4 pairs: 60, 70, 80, 90
+    [60,70,80,90].forEach(n => pairs.push({ num: n }));
   } else if (roundIdx === 2) {
-    // 5 pairs: numeral ↔ word for 60-100
-    [60,70,80,90,100].forEach(n => {
-      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
-    });
+    // 5 pairs: 60-100
+    [60,70,80,90,100].forEach(n => pairs.push({ num: n }));
   } else {
-    // 6 pairs: all 5 numbers, one repeat (70) with reversed order
-    pairs.push({ num: 60,  typeA: 'numeral', typeB: 'word' });
-    pairs.push({ num: 70,  typeA: 'numeral', typeB: 'word' });
-    pairs.push({ num: 80,  typeA: 'word',    typeB: 'numeral' });
-    pairs.push({ num: 90,  typeA: 'numeral', typeB: 'word' });
-    pairs.push({ num: 100, typeA: 'word',    typeB: 'numeral' });
-    pairs.push({ num: 70,  typeA: 'word',    typeB: 'numeral' }); // second 70 — reversed rep
+    // 6 pairs: all 5 numbers + one repeat (70)
+    [60,70,80,90,100,70].forEach(n => pairs.push({ num: n }));
   }
   return pairs;
 }
@@ -802,40 +802,31 @@ function resetHints() {
 function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
 
 // ══════════════════════════════════════════════════════════════════
-// BUILD CARD CONTENT — BIG NUMERAL / BIG WORD as hero
+// BUILD CARD CONTENT — BIG NUMERAL as hero on every card
+// style: 'a' = dark teal + dragon decoration (top-right)
+// style: 'b' = amber gold + egg/treasure decoration (bottom-left)
 // ══════════════════════════════════════════════════════════════════
-function buildCardFront(num, type) {
+function buildCardFront(num, style) {
   const front = document.createElement('div');
-  front.className = 'card-front';
+  front.className = 'card-front style-' + style;
 
-  if (type === 'numeral') {
-    const numEl = document.createElement('div');
-    numEl.className = 'card-numeral';
-    if (num >= 100) numEl.classList.add('three-digit');
-    numEl.textContent = num;
-    front.appendChild(numEl);
+  // HERO — the numeral (always visible, large, unmissable)
+  const numEl = document.createElement('div');
+  numEl.className = 'card-numeral';
+  if (num >= 100) numEl.classList.add('three-digit');
+  numEl.textContent = num;
+  front.appendChild(numEl);
 
-    // Tiny corner decoration — never competes with numeral
-    const deco = document.createElement('div');
-    deco.className = 'card-deco';
-    deco.textContent = pick(DECOS);
-    front.appendChild(deco);
-  } else if (type === 'word') {
-    const wordEl = document.createElement('div');
-    wordEl.className = 'card-word';
-    const word = NUMBER_WORDS[num] || String(num);
-    // Adjust size class based on word length
-    if (word.length >= 10) wordEl.classList.add('xlong');
-    else if (word.length >= 7) wordEl.classList.add('long');
-    wordEl.textContent = word;
-    front.appendChild(wordEl);
-
-    // Tiny corner decoration
-    const deco = document.createElement('div');
-    deco.className = 'card-deco';
-    deco.textContent = pick(WORD_DECOS);
-    front.appendChild(deco);
+  // Tiny corner decoration — just for visual variety, never competes
+  const deco = document.createElement('div');
+  if (style === 'a') {
+    deco.className = 'card-deco ' + CORNER_A;
+    deco.textContent = pick(DECOS_A);
+  } else {
+    deco.className = 'card-deco ' + CORNER_B;
+    deco.textContent = pick(DECOS_B);
   }
+  front.appendChild(deco);
 
   return front;
 }
@@ -853,11 +844,11 @@ function buildGrid() {
   totalPairs = pairs.length;
   matches = 0;
 
-  // Create two cards per pair
+  // Create two cards per pair — same numeral, different visual style
   let cards = [];
   pairs.forEach((p, pairIdx) => {
-    cards.push({ num: p.num, type: p.typeA, pairIdx });
-    cards.push({ num: p.num, type: p.typeB, pairIdx });
+    cards.push({ num: p.num, style: 'a', pairIdx });
+    cards.push({ num: p.num, style: 'b', pairIdx });
   });
   shuffle(cards);
 
@@ -870,7 +861,7 @@ function buildGrid() {
     card.dataset.num = cardData.num;
     card.dataset.pairIdx = cardData.pairIdx;
     card.dataset.idx = idx;
-    card.dataset.type = cardData.type;
+    card.dataset.style = cardData.style;
 
     const inner = document.createElement('div');
     inner.className = 'card-inner';
@@ -880,8 +871,8 @@ function buildGrid() {
     back.className = 'card-back';
     back.innerHTML = '<div class="card-back-icon">🥚</div><div class="card-back-sparkle">💎💎💎</div>';
 
-    // Front (face up — BIG number or BIG word)
-    const front = buildCardFront(cardData.num, cardData.type);
+    // Front (face up — BIG numeral with style variant)
+    const front = buildCardFront(cardData.num, cardData.style);
 
     inner.appendChild(back);
     inner.appendChild(front);

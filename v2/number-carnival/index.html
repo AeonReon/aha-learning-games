@@ -229,6 +229,27 @@ body {
   text-align: center;
   line-height: 1.15;
 }
+.hud-target-label {
+  color: #fff;
+  font-size: clamp(11px, 2.4vw, 14px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+.hud-target-big {
+  color: var(--gold);
+  font-size: clamp(26px, 6.8vw, 40px);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    2px 2px 0 rgba(0,0,0,0.6),
+    0 0 18px rgba(251,191,36,0.7);
+  animation: targetPulse 1.2s ease-in-out infinite;
+}
+@keyframes targetPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
 
 /* ── Carny character ── */
 .char-area {
@@ -448,9 +469,15 @@ body {
     0 0 40px rgba(251,191,36,0.5),
     0 14px 40px rgba(0,0,0,0.5);
   transform: rotate(0deg);
-  transition: transform 0s;
   will-change: transform;
   touch-action: none;
+}
+.wheel.auto-spin {
+  animation: wheelAutoSpin 14s linear infinite;
+}
+@keyframes wheelAutoSpin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 .wheel-slice {
   position: absolute;
@@ -505,6 +532,8 @@ body {
   text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
   animation: pulse 1.2s ease-in-out infinite;
   white-space: nowrap;
+  max-width: 92vw;
+  text-align: center;
 }
 @keyframes pulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
 .wheel-slice.correct-slice {
@@ -513,6 +542,13 @@ body {
 @keyframes sliceFlash {
   0%,100% { filter: brightness(1); }
   50%     { filter: brightness(2) saturate(2); }
+}
+.wheel-slice.wrong-flash {
+  animation: sliceWrong 0.4s ease-out;
+}
+@keyframes sliceWrong {
+  0%,100% { filter: brightness(1); }
+  50%     { filter: brightness(0.5) saturate(0.5); }
 }
 
 /* ══════════════════════════════════════ */
@@ -796,7 +832,9 @@ body {
     <span class="hud-val" id="hudLevel">1/5</span>
   </div>
   <div class="hud-center">
-    <span class="hud-target-text" id="hudTarget">Step right up!</span>
+    <span class="hud-target-label" id="hudTargetLabel">STEP RIGHT UP!</span>
+    <span class="hud-target-big" id="hudTargetBig" style="display:none"></span>
+    <span class="hud-target-text" id="hudTarget" style="display:none">Step right up!</span>
   </div>
   <div class="hud-right hud-score">
     <span class="hud-label">STARS</span>
@@ -1144,7 +1182,20 @@ function updateHUD() {
 }
 
 function setHudTarget(text) {
+  // Legacy text-only target (kept for fallback greetings)
   $('hudTarget').textContent = text;
+  $('hudTarget').style.display = '';
+  $('hudTargetLabel').style.display = 'none';
+  $('hudTargetBig').style.display = 'none';
+}
+
+// Show: "TAP THE NUMBER:" (small label) + BIG target number underneath
+function setHudTargetNumber(number, label = 'TAP THE NUMBER:') {
+  $('hudTargetLabel').textContent = label;
+  $('hudTargetLabel').style.display = '';
+  $('hudTargetBig').textContent = number;
+  $('hudTargetBig').style.display = '';
+  $('hudTarget').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1204,7 +1255,8 @@ async function startLevel1() {
 
   function pickTarget() {
     state.target = pick(ALL_NUMBERS);
-    setHudTarget(`Pop the ${state.target}!`);
+    setHudTargetNumber(state.target, 'POP THE NUMBER:');
+    audio.clearQueue();
     audio.tone('reveal');
     audio.speakNumber(state.target);
   }
@@ -1254,6 +1306,7 @@ async function startLevel1() {
       stars++;
       state.popped++;
       updateHUD();
+      audio.clearQueue();
       audio.speakNumber(state.target);
       setTimeout(() => audio.play('correct'), 180);
       setTimeout(() => balloon.remove(), 420);
@@ -1317,13 +1370,16 @@ function endLevel1(state) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// LEVEL 2 — SPIN THE WHEEL
+// LEVEL 2 — SPIN THE WHEEL (auto-rotating)
+// Wheel slowly spins on its own. Child taps the slice showing the
+// target number as it passes by. 5 correct = done.
 // ══════════════════════════════════════════════════════════════════
 async function startLevel2() {
   const stage = $('levelStage');
   stage.innerHTML = '';
 
-  // Pick 8 numbers for the wheel
+  // Pick 8 numbers for the wheel — these are the ones the child will
+  // see and be asked about. Keeps the pool small and tappable.
   const wheelNums = pickN(ALL_NUMBERS, 8);
   const sliceCount = wheelNums.length;
   const sliceAngle = 360 / sliceCount;
@@ -1334,10 +1390,10 @@ async function startLevel2() {
   wrap.innerHTML = `
     <div class="wheel-pointer"></div>
     <div class="wheel-wrap">
-      <div class="wheel" id="theWheel"></div>
+      <div class="wheel auto-spin" id="theWheel"></div>
       <div class="wheel-hub">🎪</div>
     </div>
-    <div class="spin-hint" id="spinHint">TAP WHEEL TO SPIN!</div>
+    <div class="spin-hint" id="spinHint">Tap the number as it spins by!</div>
   `;
   stage.appendChild(wrap);
 
@@ -1387,53 +1443,26 @@ async function startLevel2() {
     target: null,
     correct: 0,
     needed: 5,
-    spinning: false,
-    currentRotation: 0,
-    wheelEl: wheel,
-    wrap,
     active: true,
   };
 
-  // Tap wheel-hub or wheel to spin
-  function tapToSpin() {
-    if (!state.active) return;
-    if (state.spinning) return;
-    if (state.target === null) return; // need a target first
-    doSpin();
-  }
-  onTap(wheel, tapToSpin);
-  onTap(document.querySelector('.wheel-hub'), tapToSpin);
-
   function pickTarget() {
+    if (!state.active) return;
     state.target = pick(wheelNums);
-    setHudTarget(`Spin! Find the ${state.target}!`);
+    // Big visible target number in the HUD — child can SEE what to look for
+    setHudTargetNumber(state.target, 'TAP THE NUMBER:');
+    $('spinHint').textContent = `Tap the ${state.target} as it spins past!`;
+    $('spinHint').style.opacity = '';
+    // CRITICAL: clear any pending voice before announcing the new target.
+    // Previously voices stacked up and overlapped ("all mixed up").
+    audio.clearQueue();
     audio.tone('reveal');
     audio.speakNumber(state.target);
-    $('spinHint').textContent = 'TAP WHEEL TO SPIN!';
-    $('spinHint').style.opacity = '';
-  }
-
-  function doSpin() {
-    state.spinning = true;
-    audio.tone('spin');
-    $('spinHint').style.opacity = '0';
-    const extraRot = 720 + Math.random() * 720; // 2-4 rotations
-    state.currentRotation += extraRot;
-    wheel.style.transition = 'transform 2.5s cubic-bezier(0.15, 0.8, 0.25, 1)';
-    wheel.style.transform = `rotate(${state.currentRotation}deg)`;
-    setTimeout(() => {
-      state.spinning = false;
-      $('spinHint').textContent = `TAP the ${state.target}!`;
-      $('spinHint').style.opacity = '';
-      audio.speakNumber(state.target);
-    }, 2600);
   }
 
   function handleSliceTap(slice, num) {
     if (!state.active) return;
-    if (state.spinning) return;
     if (state.target === null) return;
-    // Need to have spun at least once — but to be forgiving, allow tap anytime
     if (num === state.target) {
       audio.tone('correct');
       slice.classList.add('correct-slice');
@@ -1443,19 +1472,24 @@ async function startLevel2() {
       stars++;
       state.correct++;
       updateHUD();
+      audio.clearQueue();
       audio.speakNumber(num);
       setTimeout(() => audio.play('correct'), 180);
       setTimeout(() => slice.classList.remove('correct-slice'), 500);
+      // Prevent double-scoring the same tap
       state.target = null;
       if (state.correct >= state.needed) {
-        endLevel2(state);
+        setTimeout(() => endLevel2(state), 600);
       } else {
-        setTimeout(() => { if (state.active) pickTarget(); }, 900);
+        // New target after a brief pause so the child can hear the cheer
+        setTimeout(() => { if (state.active) pickTarget(); }, 1200);
       }
     } else {
       audio.tone('wrong');
+      slice.classList.add('wrong-flash');
       showCharBubble(pick(BUBBLE_WRONG), 1000);
-      audio.play('wrong');
+      setTimeout(() => slice.classList.remove('wrong-flash'), 400);
+      // Don't speak "wrong" voice — would stack on top of current target repeat
     }
   }
 
@@ -1511,7 +1545,11 @@ async function startLevel3() {
   function pickTarget() {
     // target must be in current grid
     state.target = pick(state.gridNums);
-    setHudTarget(`TAP: ${state.target}!`);
+    setHudTargetNumber(state.target, 'TAP THE NUMBER:');
+    // CRITICAL: clear voice queue BEFORE announcing new target, so
+    // lagging audio from previous rounds doesn't pile up and bounce
+    // behind the child's taps.
+    audio.clearQueue();
     audio.tone('reveal');
     audio.speakNumber(state.target);
     state.taps = 0;
@@ -1541,6 +1579,8 @@ async function startLevel3() {
       stars++;
       state.correct++;
       updateHUD();
+      // Flush any lingering target-repeat before the cheer
+      audio.clearQueue();
       audio.speakNumber(num);
       setTimeout(() => audio.play('correct'), 150);
       clearSlowPulse();
@@ -1620,7 +1660,8 @@ async function startLevel4() {
 
   function pickTarget() {
     state.target = pick(ALL_NUMBERS);
-    setHudTarget(`Find the ${state.target}!`);
+    setHudTargetNumber(state.target, 'FIND THE NUMBER:');
+    audio.clearQueue();
     audio.tone('reveal');
     audio.speakNumber(state.target);
     buildBoxes();
@@ -1644,6 +1685,7 @@ async function startLevel4() {
         stars++;
         state.correct++;
         updateHUD();
+        audio.clearQueue();
         audio.speakNumber(num);
         setTimeout(() => audio.play('correct'), 180);
         setTimeout(() => {
@@ -1699,7 +1741,8 @@ async function startLevel5() {
 
   function pickTarget() {
     state.target = pick(ALL_NUMBERS);
-    setHudTarget(`TAP the ${state.target}!`);
+    setHudTargetNumber(state.target, 'TAP THE NUMBER:');
+    audio.clearQueue();
     audio.tone('reveal');
     audio.speakNumber(state.target);
   }
@@ -1778,6 +1821,7 @@ async function startLevel5() {
       stars++;
       state.correct++;
       updateHUD();
+      audio.clearQueue();
       audio.speakNumber(num);
       setTimeout(() => audio.play('correct'), 150);
       setTimeout(() => rocket.remove(), 520);

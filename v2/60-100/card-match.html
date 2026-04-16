@@ -29,15 +29,15 @@ body {
 }
 
 /* ── Enchanted jungle scenery ── */
-.bg-fire peak {
+.bg-firepeak {
   position: fixed; bottom: 0;
   z-index: var(--z-bg); pointer-events: none;
   font-size: clamp(80px, 18vw, 140px);
   opacity: 0.35;
   filter: drop-shadow(0 0 20px rgba(220,38,38,0.4));
 }
-.bg-fire peak.v1 { left: -20px; bottom: 40px; transform: rotate(-5deg); }
-.bg-fire peak.v2 { right: -10px; bottom: 55px; transform: rotate(4deg) scale(0.85); opacity: 0.25; }
+.bg-firepeak.v1 { left: -20px; bottom: 40px; transform: rotate(-5deg); }
+.bg-firepeak.v2 { right: -10px; bottom: 55px; transform: rotate(4deg) scale(0.85); opacity: 0.25; }
 
 .bg-mystic tree {
   position: fixed; bottom: 40px;
@@ -772,10 +772,10 @@ function jumpChar() {
 function buildScenery() {
   // Fire Mountains
   const v1 = document.createElement('div');
-  v1.className = 'bg-fire peak v1'; v1.textContent = '🔥';
+  v1.className = 'bg-firepeak v1'; v1.textContent = '🔥';
   document.body.appendChild(v1);
   const v2 = document.createElement('div');
-  v2.className = 'bg-fire peak v2'; v2.textContent = '🔥';
+  v2.className = 'bg-firepeak v2'; v2.textContent = '🔥';
   document.body.appendChild(v2);
 
   // Mystic Trees

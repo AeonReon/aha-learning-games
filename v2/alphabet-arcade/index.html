@@ -977,6 +977,15 @@ class GameAudio {
       setTimeout(() => this.beep(440 + (i * 30), 0.05, 'square', 0.08), i * 100);
     }
   }
+  // Stop any currently playing voice — used before announcing a new target
+  clearQueue() {
+    if (this.currentVoiceAudio) {
+      try { this.currentVoiceAudio.pause(); } catch(e) {}
+      try { this.currentVoiceAudio.src = ''; } catch(e) {}
+      this.currentVoiceAudio = null;
+      this.unduckMusic();
+    }
+  }
   // Non-blocking speak via HTMLAudio
   speak(path, onEnd) {
     try {
@@ -1074,6 +1083,17 @@ function showSpeech(text) {
   bubble.classList.add('show');
   clearTimeout(showSpeech._t);
   showSpeech._t = setTimeout(() => bubble.classList.remove('show'), 1800);
+}
+
+// Shared helper — updates whatever target-letter element the current level exposes.
+// Every level's target-letter element has id ending with 'TargetL' (wheelTargetL,
+// speedTargetL, boxTargetL, fwTargetL), plus Level 1 balloon burst uses #balloonTargetL.
+function updateTargetHUD(letter) {
+  const ids = ['balloonTargetL','wheelTargetL','speedTargetL','boxTargetL','fwTargetL'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = letterInline(letter);
+  });
 }
 
 function updateHUD() {
@@ -1197,6 +1217,7 @@ function winGame() {
   clearGameArea();
   $('hud').classList.remove('active');
   $('alphieChar').classList.remove('active');
+  $('gameArea').classList.remove('active');
   audio.stopMusic();
   // Massive celebration
   const scoreDigits = String(state.stars * 1337).padStart(6, '0');
@@ -1228,6 +1249,12 @@ function startLevel1() {
   ga.innerHTML = '';
   state.busy = false;
 
+  // Visible target banner so the child always sees WHICH letter to pop.
+  const targetEl = document.createElement('div');
+  targetEl.className = 'speed-target';
+  targetEl.innerHTML = `POP <span class="big" id="balloonTargetL"></span>`;
+  ga.appendChild(targetEl);
+
   const colors = ['#ec4899','#3b82f6','#22c55e','#a855f7','#fbbf24','#f97316'];
   const activeBalloons = new Set();
   let spawnInterval;
@@ -1237,6 +1264,8 @@ function startLevel1() {
   function pickNewTarget() {
     targetLetter = randPick(LETTERS);
     state.currentTarget = targetLetter;
+    updateTargetHUD(targetLetter);
+    audio.clearQueue();
     setTimeout(() => { if (!stopped) audio.speakLetter(targetLetter); }, 150);
   }
 
@@ -1361,6 +1390,8 @@ function startLevel2() {
     audio.sfxSpin();
     currentRotation += 720 + randInt(360);
     wheel.style.transform = `rotate(${currentRotation}deg)`;
+    updateTargetHUD(targetLetter);
+    audio.clearQueue();
     setTimeout(() => { if (!state.busy) audio.speakLetter(targetLetter); }, 1400);
   }
 
@@ -1426,6 +1457,8 @@ function startLevel3() {
       grid.appendChild(card);
       cards.push(card);
     });
+    updateTargetHUD(targetLetter);
+    audio.clearQueue();
     setTimeout(() => { if (!state.busy) audio.speakLetter(targetLetter); }, 200);
   }
 
@@ -1494,6 +1527,8 @@ function startLevel4() {
       box.addEventListener('touchstart', (e) => { e.preventDefault(); onBoxTap(box, letter); }, { passive: false });
       grid.appendChild(box);
     });
+    updateTargetHUD(targetLetter);
+    audio.clearQueue();
     setTimeout(() => { if (!state.busy) audio.speakLetter(targetLetter); }, 300);
   }
 
@@ -1553,6 +1588,8 @@ function startLevel5() {
     targetLetter = randPick(LETTERS);
     state.currentTarget = targetLetter;
     $('fwTargetL').innerHTML = letterInline(targetLetter);
+    updateTargetHUD(targetLetter);
+    audio.clearQueue();
     setTimeout(() => { if (!stopped && !state.busy) audio.speakLetter(targetLetter); }, 200);
   }
 
@@ -1622,10 +1659,15 @@ async function startGame() {
   $('screenTitle').classList.remove('active');
   $('hud').classList.add('active');
   $('alphieChar').classList.add('active');
+  // CRITICAL — activate the game area so balloons, wheels, cards, boxes, fireworks are visible.
+  // Without this, .game-area stays display:none and nothing renders.
+  $('gameArea').classList.add('active');
+  $('celebration').classList.remove('show');
   state.level = 1;
   state.stars = 0;
   state.levelProgress = 0;
   state.levelTarget = LEVELS[0].target;
+  state.busy = false;
   updateHUD();
   audio.startMusic();
   audio.speakPhrase('greetings');
@@ -1668,15 +1710,26 @@ function addBackgroundDeco() {
 document.addEventListener('DOMContentLoaded', () => {
   addBackgroundDeco();
 
-  $('btnStart').addEventListener('click', async () => {
+  let starting = false;
+  const startHandler = async () => {
+    if (starting) return;
+    starting = true;
+    $('btnStart').disabled = true;
+    await audio.unlock();          // iOS: unlock audio ctx BEFORE startGame
+    startGame();
+  };
+  $('btnStart').addEventListener('click', startHandler);
+  $('btnStart').addEventListener('touchstart', (e) => { e.preventDefault(); startHandler(); }, { passive: false });
+
+  const againHandler = async () => {
+    $('btnAgain').disabled = true;
+    $('celebration').classList.remove('show');
     await audio.unlock();
     startGame();
-  });
-
-  $('btnAgain').addEventListener('click', () => {
-    $('celebration').classList.remove('show');
-    startGame();
-  });
+    setTimeout(() => { $('btnAgain').disabled = false; }, 1500);
+  };
+  $('btnAgain').addEventListener('click', againHandler);
+  $('btnAgain').addEventListener('touchstart', (e) => { e.preventDefault(); againHandler(); }, { passive: false });
 });
 </script>
 </body>

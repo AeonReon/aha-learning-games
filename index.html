@@ -15,35 +15,66 @@
 html{scroll-behavior:smooth}
 body{
   font-family:'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
-  background:#0a0e2e;
+  background:radial-gradient(ellipse at top,#1a1f4e 0%,#0a0e2e 60%,#05071a 100%);
   color:#fff;
   min-height:100vh;
   overflow-x:hidden;
   position:relative;
 }
 
-/* ── Stars ── */
+/* ── Stars canvas (background) ── */
 .stars-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 
+/* ── Confetti canvas (foreground) ── */
+.fx-canvas{position:fixed;inset:0;z-index:100;pointer-events:none}
+
 /* ── Main container ── */
-.main{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:40px 20px 60px}
+.main{position:relative;z-index:2;max-width:720px;margin:0 auto;padding:50px 20px 60px}
+
+/* ── Music toggle ── */
+.music-btn{
+  position:fixed;
+  top:16px;
+  right:16px;
+  z-index:50;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,0.1);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  color:#fff;
+  font-size:20px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform 0.2s,background 0.2s;
+  border:1px solid rgba(255,255,255,0.15);
+}
+.music-btn:hover{background:rgba(255,255,255,0.18);transform:scale(1.08)}
+.music-btn.playing{animation:musicPulse 1.5s ease-in-out infinite}
+@keyframes musicPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.4)}50%{box-shadow:0 0 0 8px rgba(255,215,0,0)}}
 
 /* ── Logo ── */
 .logo-wrap{text-align:center;margin-bottom:8px}
-.logo{font-size:clamp(72px,18vw,120px);font-weight:900;letter-spacing:-2px;line-height:1;display:inline-block}
+.logo{font-size:clamp(76px,19vw,130px);font-weight:900;letter-spacing:-2px;line-height:1;display:inline-block;position:relative}
 .logo .l-a{color:#FF6B6B}
 .logo .l-h{color:#FFD93D}
 .logo .l-a2{color:#FF6B6B}
 .logo .l-ex{color:#A855F7}
 .logo span{
   display:inline-block;
-  text-shadow:0 4px 0 rgba(0,0,0,0.25),0 0 30px rgba(255,255,255,0.15);
+  text-shadow:0 4px 0 rgba(0,0,0,0.25),0 0 40px rgba(255,255,255,0.2);
   animation:logoFloat 3s ease-in-out infinite;
 }
 .logo span:nth-child(2){animation-delay:0.15s}
 .logo span:nth-child(3){animation-delay:0.3s}
 .logo span:nth-child(4){animation-delay:0.45s}
-@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes logoFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-8px) rotate(-2deg)}}
+.logo span:nth-child(even){animation-name:logoFloatAlt}
+@keyframes logoFloatAlt{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-8px) rotate(2deg)}}
 
 /* ── Subtitle ── */
 .subtitle{
@@ -54,145 +85,202 @@ body{
   font-weight:700;
   margin-bottom:12px;
   text-transform:uppercase;
+  text-shadow:0 0 20px rgba(255,217,61,0.4);
 }
 
 /* ── Stars rating ── */
 .stars-row{
   text-align:center;
   font-size:clamp(22px,5vw,30px);
-  margin-bottom:40px;
-  filter:drop-shadow(0 0 6px rgba(255,215,0,0.5));
+  margin-bottom:44px;
+  filter:drop-shadow(0 0 8px rgba(255,215,0,0.6));
+  letter-spacing:4px;
 }
 
-/* ── Section headers ── */
-.section-header{
+/* ── Category block ── */
+.category{margin-bottom:40px}
+.category-title{
   display:flex;
   align-items:center;
-  gap:12px;
-  margin-bottom:20px;
-  margin-top:10px;
-}
-.section-header .emoji{font-size:28px}
-.section-header .label{
-  font-size:clamp(16px,4vw,20px);
+  justify-content:center;
+  gap:14px;
+  margin-bottom:24px;
+  font-size:clamp(20px,5vw,26px);
   font-weight:800;
-  color:#fff;
-  letter-spacing:0.04em;
-}
-.section-header .tag{
-  font-size:11px;
-  background:rgba(255,255,255,0.12);
-  color:rgba(255,255,255,0.7);
-  padding:3px 10px;
-  border-radius:20px;
-  font-weight:600;
-  letter-spacing:0.05em;
-}
-
-.pick-header{
-  text-align:center;
-  font-size:clamp(20px,5vw,28px);
-  font-weight:800;
-  margin-bottom:30px;
   color:#fff;
   letter-spacing:0.02em;
 }
+.category-title .big-emoji{
+  font-size:clamp(26px,6vw,34px);
+  filter:drop-shadow(0 0 12px rgba(255,255,255,0.3));
+}
+.category-subtle{
+  text-align:center;
+  color:rgba(255,255,255,0.55);
+  font-size:12px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  margin-bottom:20px;
+  font-weight:600;
+}
 
-/* ── Game grid ── */
-.game-grid{
+/* ── Theme grid ── */
+.theme-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:16px;
-  margin-bottom:36px;
 }
 
-/* ── Game card ── */
-.game-card{
-  border-radius:20px;
-  padding:24px 16px 20px;
+/* ── Theme card (big, tappable, leads to sub-page) ── */
+.theme-card{
+  border-radius:24px;
+  padding:28px 20px 24px;
   text-decoration:none;
   color:#fff;
   display:flex;
   flex-direction:column;
   align-items:center;
   text-align:center;
-  transition:transform 0.25s ease,box-shadow 0.25s ease;
+  transition:transform 0.28s ease,box-shadow 0.28s ease;
   cursor:pointer;
   position:relative;
   overflow:hidden;
+  min-height:200px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.3);
 }
-.game-card::before{
+.theme-card::before{
   content:'';
   position:absolute;
   inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.12) 0%,transparent 60%);
+  background:linear-gradient(135deg,rgba(255,255,255,0.18) 0%,transparent 55%);
   pointer-events:none;
 }
-.game-card:hover,.game-card:focus{
-  transform:translateY(-6px);
-  box-shadow:0 12px 32px rgba(0,0,0,0.35);
+.theme-card::after{
+  content:'';
+  position:absolute;
+  top:-40%;
+  left:-40%;
+  width:180%;
+  height:180%;
+  background:radial-gradient(circle,rgba(255,255,255,0.2) 0%,transparent 30%);
+  transform:translate(-100%,-100%);
+  transition:transform 0.6s ease;
+  pointer-events:none;
 }
-.game-card:active{transform:translateY(-2px)}
+.theme-card:hover::after,.theme-card:focus::after{transform:translate(0,0)}
+.theme-card:hover,.theme-card:focus{
+  transform:translateY(-8px) scale(1.02);
+  box-shadow:0 14px 36px rgba(0,0,0,0.4);
+}
+.theme-card:active{transform:translateY(-3px) scale(0.98)}
 
-.card-emoji{font-size:clamp(42px,10vw,56px);margin-bottom:10px;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2))}
-.card-title{font-size:clamp(14px,3.5vw,17px);font-weight:800;margin-bottom:8px;line-height:1.2}
-.card-tag{
+.theme-emoji{
+  font-size:clamp(52px,12vw,72px);
+  margin-bottom:12px;
+  display:block;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+  animation:emojiBob 4s ease-in-out infinite;
+}
+.theme-card:nth-child(even) .theme-emoji{animation-delay:1.5s}
+@keyframes emojiBob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-5px) rotate(4deg)}}
+
+.theme-name{
+  font-size:clamp(15px,4vw,19px);
+  font-weight:800;
+  margin-bottom:6px;
+  line-height:1.2;
+  position:relative;
+  z-index:1;
+}
+.theme-sub{
+  font-size:clamp(11px,3vw,13px);
+  opacity:0.85;
+  margin-bottom:10px;
+  position:relative;
+  z-index:1;
+}
+.theme-pill{
   font-size:10px;
   font-weight:700;
-  padding:3px 12px;
+  padding:4px 12px;
   border-radius:20px;
-  background:rgba(255,255,255,0.2);
-  color:rgba(255,255,255,0.9);
+  background:rgba(255,255,255,0.22);
+  color:#fff;
   letter-spacing:0.06em;
   text-transform:uppercase;
+  position:relative;
+  z-index:1;
 }
 
-/* Card colours — Princess & Friends (Ages 0-5) */
-.card-coral{background:linear-gradient(145deg,#FF6B6B,#ee5a5a)}
-.card-orange{background:linear-gradient(145deg,#FF8C42,#e67a35)}
-.card-green{background:linear-gradient(145deg,#4ECB71,#3bb85e)}
-.card-teal{background:linear-gradient(145deg,#26C6DA,#1bb5c8)}
-.card-purple{background:linear-gradient(145deg,#A855F7,#9333ea)}
-.card-pink{background:linear-gradient(145deg,#F472B6,#e25da0)}
+/* ── Coming soon state ── */
+.theme-card.soon{
+  background:rgba(255,255,255,0.05) !important;
+  border:1px dashed rgba(255,255,255,0.2);
+  cursor:not-allowed;
+}
+.theme-card.soon::before,.theme-card.soon::after{display:none}
+.theme-card.soon:hover{transform:none;box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+.theme-card.soon .theme-emoji{opacity:0.4;animation:none}
+.theme-card.soon .theme-name{opacity:0.5}
+.theme-card.soon .theme-sub{opacity:0.4}
+.theme-card.soon .theme-pill{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)}
 
-/* Card colours — Spooky Halloween (Ages 6-10) */
-.card-spooky-purple{background:linear-gradient(145deg,#7C3AED,#6d28d9)}
-.card-spooky-green{background:linear-gradient(145deg,#10B981,#059669)}
-.card-spooky-orange{background:linear-gradient(145deg,#F59E0B,#d97706)}
-.card-spooky-red{background:linear-gradient(145deg,#EF4444,#dc2626)}
-.card-spooky-teal{background:linear-gradient(145deg,#14B8A6,#0d9488)}
+/* ── Theme card colours ── */
+.th-princess{background:linear-gradient(145deg,#F472B6,#DB2777)}
+.th-spooky{background:linear-gradient(145deg,#7C3AED,#F59E0B)}
+.th-ocean{background:linear-gradient(145deg,#06B6D4,#0E7490)}
+.th-space{background:linear-gradient(145deg,#3B82F6,#1E3A8A)}
+.th-jungle{background:linear-gradient(145deg,#10B981,#047857)}
+.th-dino{background:linear-gradient(145deg,#F97316,#9A3412)}
 
 /* ── Divider ── */
 .section-divider{
   border:none;
   height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
   margin:10px 0 28px;
 }
 
 /* ── Footer ── */
 .footer{
   text-align:center;
-  padding:30px 20px 20px;
+  padding:36px 20px 20px;
   color:rgba(255,255,255,0.35);
   font-size:12px;
   letter-spacing:0.05em;
 }
 
+/* ── Tap burst (sparkle ring) ── */
+.tap-ring{
+  position:fixed;
+  border-radius:50%;
+  border:3px solid rgba(255,215,0,0.8);
+  pointer-events:none;
+  z-index:99;
+  animation:tapRing 0.6s ease-out forwards;
+}
+@keyframes tapRing{
+  0%{width:0;height:0;opacity:1}
+  100%{width:120px;height:120px;opacity:0;border-width:1px}
+}
+
 /* ── Responsive ── */
 @media(max-width:480px){
-  .game-grid{grid-template-columns:1fr;gap:14px}
-  .main{padding:30px 16px 50px}
-  .game-card{padding:20px 14px 18px;flex-direction:row;gap:14px;text-align:left}
-  .card-emoji{font-size:38px;margin-bottom:0;flex-shrink:0}
-  .card-info{display:flex;flex-direction:column;align-items:flex-start}
-  .card-title{margin-bottom:6px}
+  .theme-grid{grid-template-columns:1fr;gap:14px}
+  .main{padding:40px 16px 50px}
+  .theme-card{min-height:140px;padding:24px 16px;flex-direction:row;gap:16px;text-align:left;align-items:center}
+  .theme-emoji{font-size:54px;margin-bottom:0;flex-shrink:0}
+  .theme-info{display:flex;flex-direction:column;align-items:flex-start}
+  .theme-name{margin-bottom:4px}
 }
 </style>
 </head>
 <body>
 
 <canvas class="stars-canvas" id="starsCanvas"></canvas>
+<canvas class="fx-canvas" id="fxCanvas"></canvas>
+
+<button class="music-btn" id="musicBtn" aria-label="Toggle music">🔇</button>
 
 <div class="main">
   <!-- Logo -->
@@ -208,118 +296,115 @@ body{
   <!-- Stars -->
   <div class="stars-row">⭐⭐⭐⭐⭐</div>
 
-  <!-- Pick a game -->
-  <div class="pick-header">Pick a Game</div>
+  <!-- Numbers Category -->
+  <div class="category">
+    <div class="category-title">
+      <span class="big-emoji">🔢</span>
+      <span>Numbers</span>
+    </div>
+    <div class="category-subtle">Pick a world to explore</div>
+    <hr class="section-divider">
 
-  <!-- Ages 0-5 Section -->
-  <div class="section-header">
-    <span class="emoji">✨</span>
-    <span class="label">Princess &amp; Friends</span>
-    <span class="tag">Ages 0–5</span>
-  </div>
-  <hr class="section-divider">
+    <div class="theme-grid">
+      <a href="v2/0-5/" class="theme-card th-princess" data-theme="princess">
+        <span class="theme-emoji">👑</span>
+        <div class="theme-info">
+          <div class="theme-name">Princess &amp; Friends</div>
+          <div class="theme-sub">Numbers 0–5</div>
+          <span class="theme-pill">5 Games</span>
+        </div>
+      </a>
 
-  <div class="game-grid">
-    <a href="v2/0-5/card-match.html" class="game-card card-coral">
-      <span class="card-emoji">🃏</span>
-      <div class="card-info">
-        <div class="card-title">Card Match</div>
-        <span class="card-tag">Ages 0–5</span>
-      </div>
-    </a>
-    <a href="v2/0-5/pairs.html" class="game-card card-orange">
-      <span class="card-emoji">🎴</span>
-      <div class="card-info">
-        <div class="card-title">Pairs</div>
-        <span class="card-tag">Ages 0–5</span>
-      </div>
-    </a>
-    <a href="v2/0-5/bubble-pop.html" class="game-card card-green">
-      <span class="card-emoji">🫧</span>
-      <div class="card-info">
-        <div class="card-title">Bubble Pop</div>
-        <span class="card-tag">Ages 0–5</span>
-      </div>
-    </a>
-    <a href="v2/0-5/sequence.html" class="game-card card-teal">
-      <span class="card-emoji">🔢</span>
-      <div class="card-info">
-        <div class="card-title">Sequence</div>
-        <span class="card-tag">Ages 0–5</span>
-      </div>
-    </a>
-    <a href="v2/0-5/tracing.html" class="game-card card-purple">
-      <span class="card-emoji">✏️</span>
-      <div class="card-info">
-        <div class="card-title">Tracing</div>
-        <span class="card-tag">Ages 0–5</span>
-      </div>
-    </a>
-    <a href="v2/0-5/number-recognition.html" class="game-card card-pink">
-      <span class="card-emoji">👑</span>
-      <div class="card-info">
-        <div class="card-title">Number Recognition</div>
-        <span class="card-tag">Ages 0–5</span>
-      </div>
-    </a>
-  </div>
+      <a href="v2/6-10/" class="theme-card th-spooky" data-theme="spooky">
+        <span class="theme-emoji">🎃</span>
+        <div class="theme-info">
+          <div class="theme-name">Spooky Halloween</div>
+          <div class="theme-sub">Numbers 6–10</div>
+          <span class="theme-pill">5 Games</span>
+        </div>
+      </a>
 
-  <!-- Ages 6-10 Section -->
-  <div class="section-header">
-    <span class="emoji">🎃</span>
-    <span class="label">Spooky Halloween</span>
-    <span class="tag">Ages 6–10</span>
-  </div>
-  <hr class="section-divider">
+      <div class="theme-card th-ocean soon">
+        <span class="theme-emoji">🐠</span>
+        <div class="theme-info">
+          <div class="theme-name">Ocean Adventure</div>
+          <div class="theme-sub">Numbers 11–15</div>
+          <span class="theme-pill">Coming Soon</span>
+        </div>
+      </div>
 
-  <div class="game-grid">
-    <a href="v2/6-10/card-match.html" class="game-card card-spooky-purple">
-      <span class="card-emoji">🧙</span>
-      <div class="card-info">
-        <div class="card-title">Card Match</div>
-        <span class="card-tag">Ages 6–10</span>
+      <div class="theme-card th-space soon">
+        <span class="theme-emoji">🚀</span>
+        <div class="theme-info">
+          <div class="theme-name">Space Explorer</div>
+          <div class="theme-sub">Numbers 16–20</div>
+          <span class="theme-pill">Coming Soon</span>
+        </div>
       </div>
-    </a>
-    <a href="v2/6-10/pairs.html" class="game-card card-spooky-green">
-      <span class="card-emoji">👻</span>
-      <div class="card-info">
-        <div class="card-title">Pairs</div>
-        <span class="card-tag">Ages 6–10</span>
+
+      <div class="theme-card th-jungle soon">
+        <span class="theme-emoji">🦁</span>
+        <div class="theme-info">
+          <div class="theme-name">Jungle Safari</div>
+          <div class="theme-sub">Numbers 21–25</div>
+          <span class="theme-pill">Coming Soon</span>
+        </div>
       </div>
-    </a>
-    <a href="v2/6-10/bubble-pop.html" class="game-card card-spooky-orange">
-      <span class="card-emoji">💀</span>
-      <div class="card-info">
-        <div class="card-title">Bubble Pop</div>
-        <span class="card-tag">Ages 6–10</span>
+
+      <div class="theme-card th-dino soon">
+        <span class="theme-emoji">🦖</span>
+        <div class="theme-info">
+          <div class="theme-name">Dino World</div>
+          <div class="theme-sub">Numbers 26–30</div>
+          <span class="theme-pill">Coming Soon</span>
+        </div>
       </div>
-    </a>
-    <a href="v2/6-10/sequence.html" class="game-card card-spooky-red">
-      <span class="card-emoji">🧪</span>
-      <div class="card-info">
-        <div class="card-title">Sequence</div>
-        <span class="card-tag">Ages 6–10</span>
-      </div>
-    </a>
-    <a href="v2/6-10/tracing.html" class="game-card card-spooky-teal">
-      <span class="card-emoji">🔮</span>
-      <div class="card-info">
-        <div class="card-title">Tracing</div>
-        <span class="card-tag">Ages 6–10</span>
-      </div>
-    </a>
+    </div>
   </div>
 
-  <div class="footer">aha! Learning Games &copy; 2026</div>
+  <!-- Letters Category -->
+  <div class="category">
+    <div class="category-title">
+      <span class="big-emoji">🔤</span>
+      <span>Letters</span>
+    </div>
+    <div class="category-subtle">Alphabet adventures — coming soon</div>
+    <hr class="section-divider">
+
+    <div class="theme-grid">
+      <div class="theme-card th-princess soon">
+        <span class="theme-emoji">🏰</span>
+        <div class="theme-info">
+          <div class="theme-name">A–F Kingdom</div>
+          <div class="theme-sub">Letters A to F</div>
+          <span class="theme-pill">Coming Soon</span>
+        </div>
+      </div>
+
+      <div class="theme-card th-jungle soon">
+        <span class="theme-emoji">🌳</span>
+        <div class="theme-info">
+          <div class="theme-name">G–L Forest</div>
+          <div class="theme-sub">Letters G to L</div>
+          <span class="theme-pill">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">aha! Learning Games &copy; 2026 · Made with love</div>
 </div>
 
 <script>
-// Twinkling stars on canvas
+/* ═══════════════════════════════════════
+   STAR BACKGROUND (twinkle + shooting stars)
+   ═══════════════════════════════════════ */
 (function(){
   const canvas = document.getElementById('starsCanvas');
   const ctx = canvas.getContext('2d');
   let stars = [];
-  const COUNT = 120;
+  let shootingStars = [];
+  const STAR_COUNT = 140;
 
   function resize(){
     canvas.width = window.innerWidth;
@@ -329,43 +414,324 @@ body{
   function init(){
     resize();
     stars = [];
-    for(let i = 0; i < COUNT; i++){
+    for(let i = 0; i < STAR_COUNT; i++){
       stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.8 + 0.4,
-        alpha: Math.random(),
-        speed: Math.random() * 0.008 + 0.003,
-        dir: Math.random() > 0.5 ? 1 : -1
+        x:Math.random() * canvas.width,
+        y:Math.random() * canvas.height,
+        r:Math.random() * 1.8 + 0.4,
+        alpha:Math.random(),
+        speed:Math.random() * 0.008 + 0.003,
+        dir:Math.random() > 0.5 ? 1 : -1,
+        hue:Math.random() > 0.85 ? (Math.random() > 0.5 ? 'gold' : 'pink') : 'white'
       });
     }
   }
 
+  function spawnShootingStar(){
+    shootingStars.push({
+      x:Math.random() * canvas.width,
+      y:Math.random() * canvas.height * 0.5,
+      vx:(Math.random() * 4 + 4),
+      vy:(Math.random() * 2 + 1),
+      life:1,
+      len:Math.random() * 80 + 40
+    });
+  }
+
   function draw(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // twinkle stars
     for(const s of stars){
       s.alpha += s.speed * s.dir;
       if(s.alpha >= 1){ s.alpha = 1; s.dir = -1; }
       if(s.alpha <= 0.1){ s.alpha = 0.1; s.dir = 1; }
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+      let color = `rgba(255,255,255,${s.alpha})`;
+      if(s.hue === 'gold') color = `rgba(255,215,100,${s.alpha})`;
+      if(s.hue === 'pink') color = `rgba(255,182,213,${s.alpha})`;
+      ctx.fillStyle = color;
       ctx.fill();
     }
+
+    // shooting stars
+    for(let i = shootingStars.length - 1; i >= 0; i--){
+      const s = shootingStars[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life -= 0.015;
+      if(s.life <= 0){ shootingStars.splice(i, 1); continue; }
+      const grad = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * s.len / 5, s.y - s.vy * s.len / 5);
+      grad.addColorStop(0, `rgba(255,255,255,${s.life})`);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(s.x - s.vx * s.len / 5, s.y - s.vy * s.len / 5);
+      ctx.stroke();
+    }
+
     requestAnimationFrame(draw);
   }
 
   window.addEventListener('resize', () => {
     resize();
-    // reposition stars that are now off-screen
     for(const s of stars){
       if(s.x > canvas.width) s.x = Math.random() * canvas.width;
       if(s.y > canvas.height) s.y = Math.random() * canvas.height;
     }
   });
 
+  // Random shooting stars every 4-9s
+  setInterval(() => { if(Math.random() > 0.3) spawnShootingStar(); }, 5000);
+
   init();
   draw();
+})();
+
+
+/* ═══════════════════════════════════════
+   CONFETTI BURST ON TAP
+   ═══════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('fxCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COLORS = ['#FF6B6B','#FFD93D','#A855F7','#4ECB71','#26C6DA','#F472B6','#FF8C42'];
+
+  window.burstConfetti = function(x, y, count = 40){
+    for(let i = 0; i < count; i++){
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+      const speed = Math.random() * 7 + 3;
+      particles.push({
+        x, y,
+        vx:Math.cos(angle) * speed,
+        vy:Math.sin(angle) * speed - 2,
+        color:COLORS[Math.floor(Math.random() * COLORS.length)],
+        size:Math.random() * 6 + 4,
+        rot:Math.random() * Math.PI * 2,
+        vr:(Math.random() - 0.5) * 0.3,
+        life:1,
+        shape:Math.random() > 0.5 ? 'rect' : 'circle'
+      });
+    }
+  };
+
+  function loop(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for(let i = particles.length - 1; i >= 0; i--){
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.25; // gravity
+      p.vx *= 0.99;
+      p.rot += p.vr;
+      p.life -= 0.012;
+      if(p.life <= 0){ particles.splice(i, 1); continue; }
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      if(p.shape === 'rect'){
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+
+/* ═══════════════════════════════════════
+   TAP SOUND + NAVIGATION
+   ═══════════════════════════════════════ */
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTapSound(){
+  const ctx = ensureAudio();
+  const now = ctx.currentTime;
+  // sparkle chime - two overlapping tones
+  const freqs = [880, 1320];
+  freqs.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.15);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.15, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now + i * 0.03);
+    osc.stop(now + 0.4);
+  });
+}
+
+// Tap ring + confetti on theme-card clicks
+document.querySelectorAll('.theme-card:not(.soon)').forEach(card => {
+  card.addEventListener('click', function(e){
+    e.preventDefault();
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    // Spawn tap ring
+    const ring = document.createElement('div');
+    ring.className = 'tap-ring';
+    ring.style.left = (cx - 0) + 'px';
+    ring.style.top = (cy - 0) + 'px';
+    ring.style.transform = 'translate(-50%,-50%)';
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), 600);
+
+    // Confetti
+    window.burstConfetti(cx, cy, 40);
+    playTapSound();
+
+    // Navigate after a tiny delay so the user sees the burst
+    const href = card.getAttribute('href');
+    setTimeout(() => { window.location.href = href; }, 380);
+  });
+});
+
+// Gentle shake on "coming soon" tap
+document.querySelectorAll('.theme-card.soon').forEach(card => {
+  card.addEventListener('click', function(){
+    card.animate([
+      { transform:'translateX(0)' },
+      { transform:'translateX(-6px)' },
+      { transform:'translateX(6px)' },
+      { transform:'translateX(-4px)' },
+      { transform:'translateX(0)' }
+    ], { duration:400, easing:'ease-in-out' });
+    playTapSound();
+  });
+});
+
+
+/* ═══════════════════════════════════════
+   AMBIENT BACKGROUND MUSIC (Web Audio API)
+   Gentle procedural melody — no asset needed
+   ═══════════════════════════════════════ */
+(function(){
+  const btn = document.getElementById('musicBtn');
+  let playing = false;
+  let nextNoteTime = 0;
+  let scheduler = null;
+  let masterGain = null;
+
+  // Pentatonic C major — always sounds pleasant
+  const SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+  const CHORD_PROG = [
+    [261.63, 329.63, 392.00], // C
+    [220.00, 277.18, 329.63], // Am
+    [174.61, 220.00, 261.63], // F
+    [196.00, 246.94, 293.66]  // G
+  ];
+  let chordIdx = 0;
+  let noteIdx = 0;
+
+  function playNote(freq, when, duration, gain = 0.05, type = 'sine'){
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(gain, when + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+    osc.connect(g).connect(masterGain);
+    osc.start(when);
+    osc.stop(when + duration + 0.05);
+  }
+
+  function scheduleNotes(){
+    const lookahead = 0.25;
+    while(nextNoteTime < audioCtx.currentTime + lookahead){
+      // melody note from scale
+      const melodyFreq = SCALE[Math.floor(Math.random() * SCALE.length)];
+      playNote(melodyFreq, nextNoteTime, 0.6, 0.035, 'triangle');
+
+      // on beat 1 of every 4, play chord
+      if(noteIdx % 4 === 0){
+        const chord = CHORD_PROG[chordIdx % CHORD_PROG.length];
+        chord.forEach(f => playNote(f, nextNoteTime, 2.0, 0.02, 'sine'));
+        chordIdx++;
+      }
+
+      noteIdx++;
+      nextNoteTime += 0.5; // eighth-note pace at 120bpm feel
+    }
+  }
+
+  function start(){
+    ensureAudio();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 1.2);
+    masterGain.connect(audioCtx.destination);
+    nextNoteTime = audioCtx.currentTime + 0.1;
+    noteIdx = 0;
+    chordIdx = 0;
+    scheduler = setInterval(scheduleNotes, 50);
+    playing = true;
+    btn.textContent = '🎵';
+    btn.classList.add('playing');
+    try { localStorage.setItem('aha_music', '1'); } catch(e){}
+  }
+
+  function stop(){
+    if(masterGain){
+      const now = audioCtx.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+      masterGain.gain.linearRampToValueAtTime(0, now + 0.4);
+      setTimeout(() => { try { masterGain.disconnect(); } catch(e){} masterGain = null; }, 500);
+    }
+    clearInterval(scheduler);
+    playing = false;
+    btn.textContent = '🔇';
+    btn.classList.remove('playing');
+    try { localStorage.setItem('aha_music', '0'); } catch(e){}
+  }
+
+  btn.addEventListener('click', () => {
+    if(playing) stop(); else start();
+  });
+
+  // Try to auto-start on first user interaction (autoplay-friendly)
+  let autoStarted = false;
+  function tryAutoStart(){
+    if(autoStarted) return;
+    autoStarted = true;
+    let pref = null;
+    try { pref = localStorage.getItem('aha_music'); } catch(e){}
+    if(pref !== '0'){ start(); }
+  }
+  ['pointerdown','keydown','touchstart'].forEach(ev => {
+    document.addEventListener(ev, tryAutoStart, { once:true });
+  });
 })();
 </script>
 </body>

@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Build the Rainbow U–Z — Stella's Sky! 🦄</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --pink: #ff69b4; --orange: #ff8c00; --yellow: #ffd93d;
+  --green: #6bcf3f; --blue: #4da6ff; --purple: #b16cea;
+  --sky-top: #b3e5ff; --sky-mid: #ffd8ec; --sky-low: #fff3cf;
+  --gold: #ffe066; --deep: #1a1a3e;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Background sky ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(180deg, #b3e5ff 0%, #ffd8ec 50%, #fff3cf 100%);
+}
+.bg-element {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(14px, 2.8vw, 22px);
+  opacity: 0.55;
+  animation: bgFloat linear infinite;
+}
+@keyframes bgFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.55; }
+  92%  { opacity: 0.55; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 14px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 68px); }
+.screen-title h1 {
+  font-size: clamp(24px, 6vw, 42px);
+  color: #b13a8e;
+  text-shadow: 0 0 30px rgba(255,105,180,0.6), 2px 2px 0 rgba(255,255,255,0.6);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(13px, 3.2vw, 19px);
+  color: var(--deep);
+  font-weight: bold;
+  max-width: 380px; line-height: 1.45;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg,#ff69b4,#b16cea);
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg,#ff69b4,#b16cea); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(177,108,234,0.25);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(26,26,62,0.48); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: #b13a8e; }
+.hud-score .hud-val { color: #e67e22; }
+.hud-center .hud-val { color: #b13a8e; font-size: clamp(13px,3vw,18px); }
+
+/* ── Stella character (bottom-left) ── */
+.char-area {
+  position: fixed; bottom: 130px; left: 8px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(44px,10vw,66px); filter: drop-shadow(0 2px 8px rgba(177,108,234,0.4)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: #b13a8e;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(11px,2.4vw,15px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+  border: 2px solid rgba(255,105,180,0.4);
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Play area (letter clouds) ── */
+.play-area {
+  position: fixed;
+  top: 180px; left: 0; right: 0; bottom: 180px;
+  z-index: var(--z-game);
+  pointer-events: none;
+}
+.play-area.active { pointer-events: auto; }
+
+/* Timer background shift (round 4) */
+.play-area.timer-warning { animation: timerShift 30s ease-in-out forwards; }
+@keyframes timerShift {
+  0%   { background: transparent; }
+  50%  { background: rgba(255,140,0,0.05); }
+  100% { background: rgba(255,80,80,0.07); }
+}
+
+/* ── Letter Clouds ── */
+.letter-cloud {
+  position: absolute;
+  width: clamp(78px, 20vw, 112px);
+  min-height: clamp(72px, 18vw, 104px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  border: 4px solid rgba(255,255,255,0.7);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12), inset 0 -6px 15px rgba(0,0,0,0.08);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.3s, opacity 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  z-index: 2;
+  opacity: 0; transform: scale(0.5);
+  padding: 8px 6px 10px;
+  border-radius: 50% 50% 45% 45% / 55% 55% 45% 45%;
+}
+/* Cloud puffs */
+.letter-cloud::before {
+  content: '';
+  position: absolute; bottom: -6px; left: 20%;
+  width: 24%; height: 22%;
+  background: inherit;
+  border-radius: 50%;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.08);
+}
+.letter-cloud::after {
+  content: '';
+  position: absolute; bottom: -6px; right: 20%;
+  width: 24%; height: 22%;
+  background: inherit;
+  border-radius: 50%;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.08);
+}
+.letter-cloud.show { opacity: 1; transform: scale(1); }
+.letter-cloud:active { transform: scale(0.93) !important; }
+.letter-cloud.r4-size {
+  width: clamp(66px, 16vw, 92px);
+  min-height: clamp(62px, 15vw, 88px);
+}
+.letter-cloud.r4-size .cloud-upper { font-size: clamp(22px, 5vw, 32px); }
+.letter-cloud.r4-size .cloud-lower { font-size: clamp(14px, 3.2vw, 20px); }
+
+.cloud-upper {
+  font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.22), 0 0 6px rgba(255,255,255,0.4);
+  font-size: clamp(26px, 6.5vw, 40px);
+  line-height: 1;
+}
+.cloud-lower {
+  font-weight: 900; color: rgba(255,255,255,0.92);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  font-size: clamp(16px, 4vw, 24px);
+  line-height: 1; margin-top: 2px;
+}
+.cloud-emoji {
+  font-size: clamp(20px, 4.5vw, 28px);
+  line-height: 1; margin-top: 2px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+}
+.cloud-pictureHero {
+  font-size: clamp(30px, 7vw, 44px);
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
+}
+.cloud-smallLetter {
+  font-weight: 900; color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.25);
+  font-size: clamp(14px, 3vw, 18px);
+  line-height: 1; margin-top: 2px;
+}
+
+/* Cloud states */
+.letter-cloud.activated {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 30px rgba(255,224,102,0.7), 0 0 60px rgba(255,224,102,0.4), 0 4px 20px rgba(0,0,0,0.15) !important;
+  transform: scale(1.08) !important;
+}
+.letter-cloud.next-hint { animation: pulseHint 1.5s ease-in-out infinite; }
+@keyframes pulseHint {
+  0%,100% { box-shadow: 0 0 12px rgba(255,224,102,0.4), 0 4px 20px rgba(0,0,0,0.15); }
+  50%     { box-shadow: 0 0 32px rgba(255,224,102,0.8), 0 0 55px rgba(255,224,102,0.4), 0 4px 20px rgba(0,0,0,0.15); }
+}
+.letter-cloud.wrong-tap { animation: wrongShake 0.45s ease-in-out; }
+.letter-cloud.wiggle { animation: wiggleHint 0.6s ease-in-out; }
+@keyframes wiggleHint {
+  0%,100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-5deg); }
+  80% { transform: rotate(5deg); }
+}
+
+/* Flying to sky */
+.letter-cloud.flying {
+  transition: none !important;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── RAINBOW (sky center-top) ── */
+.rainbow-area {
+  position: fixed;
+  top: 52px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-ui);
+  pointer-events: none;
+  width: clamp(240px, 80vw, 520px);
+  height: clamp(80px, 20vw, 130px);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.rainbow-svg {
+  width: 100%; height: 100%;
+  overflow: visible;
+}
+.rainbow-arc {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 14;
+  opacity: 0;
+  transition: opacity 0.8s, stroke-width 0.4s;
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+}
+.rainbow-arc.painted {
+  opacity: 1;
+  animation: paintArc 1.0s ease-out forwards;
+}
+@keyframes paintArc {
+  0%   { stroke-dashoffset: 800; opacity: 0; }
+  10%  { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+.rainbow-arc.shimmer {
+  animation: paintArc 1.0s ease-out forwards, arcShimmer 2s ease-in-out 1.0s infinite;
+}
+@keyframes arcShimmer {
+  0%,100% { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15)); }
+  50%     { filter: drop-shadow(0 2px 10px currentColor) brightness(1.2); }
+}
+.rainbow-sparkle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 16px;
+  animation: rbSparkle 0.8s ease-out forwards;
+}
+@keyframes rbSparkle {
+  0%   { transform: scale(0) rotate(0); opacity: 1; }
+  50%  { transform: scale(1.3) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0.5) rotate(360deg); opacity: 0; }
+}
+
+/* Rainbow counter (4 pips = arcs made) */
+.rainbow-counter {
+  display: flex; gap: 5px; justify-content: center;
+  margin-top: 6px;
+}
+.rainbow-pip {
+  width: clamp(20px, 5vw, 28px);
+  height: clamp(12px, 3vw, 16px);
+  border-radius: 16px 16px 0 0;
+  background: rgba(255,255,255,0.35);
+  border: 2px solid rgba(255,255,255,0.5);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+}
+.rainbow-pip.filled {
+  border-color: var(--gold);
+  animation: pipFill 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.rainbow-pip.filled:nth-child(1) { background: linear-gradient(180deg,#ff69b4,#b16cea); }
+.rainbow-pip.filled:nth-child(2) { background: linear-gradient(180deg,#ff8c00,#ffd93d); }
+.rainbow-pip.filled:nth-child(3) { background: linear-gradient(180deg,#6bcf3f,#4da6ff); }
+.rainbow-pip.filled:nth-child(4) { background: linear-gradient(180deg,#4da6ff,#b16cea); }
+@keyframes pipFill { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.3)} 100%{transform:scale(1.15)} }
+
+/* ── Stella gallop trail ── */
+.gallop-stella {
+  position: fixed;
+  font-size: clamp(50px,13vw,80px);
+  z-index: calc(var(--z-celeb) + 4);
+  pointer-events: none;
+  left: -120px;
+  top: 40%;
+  filter: drop-shadow(0 4px 12px rgba(177,108,234,0.5));
+}
+.gallop-stella.run {
+  animation: gallop 3s ease-in-out forwards;
+}
+@keyframes gallop {
+  0%   { left: -120px; transform: translateY(0) rotate(-5deg); }
+  25%  { transform: translateY(-20px) rotate(3deg); }
+  50%  { transform: translateY(0) rotate(-3deg); }
+  75%  { transform: translateY(-15px) rotate(2deg); }
+  100% { left: 110vw; transform: translateY(0) rotate(0deg); }
+}
+.trail-sparkle {
+  position: fixed;
+  font-size: 22px;
+  pointer-events: none;
+  z-index: calc(var(--z-celeb) + 2);
+  animation: trailSparkle 1.2s ease-out forwards;
+}
+@keyframes trailSparkle {
+  0%   { transform: scale(1) rotate(0); opacity: 1; }
+  100% { transform: scale(0.3) translateY(30px) rotate(360deg); opacity: 0; }
+}
+
+/* Sparkle trail during fly */
+.sparkle-trail {
+  position: fixed;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 55;
+  animation: trailFade 0.4s ease-out forwards;
+}
+@keyframes trailFade {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.3) translateY(-10px); opacity: 0; }
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: calc(var(--z-ui) + 5);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px);
+  padding: 4px 8px 6px;
+  background: rgba(255,255,255,0.88); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(26px,5vw,36px);
+  height: clamp(26px,5vw,36px);
+  border-radius: 50%;
+  background: rgba(177,108,234,0.1);
+  border: 2px solid rgba(177,108,234,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: rgba(26,26,62,0.3);
+  transition: all 0.3s;
+}
+.prog-dot.current {
+  border-color: #b13a8e;
+  color: #b13a8e;
+  background: rgba(255,105,180,0.12);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--gold),#e67e22);
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 48%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(255,255,255,0.96); backdrop-filter: blur(12px);
+  border: 3px solid rgba(177,108,234,0.35); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 10px 40px rgba(177,108,234,0.25);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: #b13a8e; text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(26,26,62,0.72); margin-top: 5px; font-weight: bold;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: linear-gradient(180deg, rgba(179,229,255,0.95) 0%, rgba(255,216,236,0.95) 50%, rgba(255,243,207,0.95) 100%);
+  backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(24px,6vw,44px); color: #b13a8e;
+  text-shadow: 3px 3px 0 rgba(255,255,255,0.65);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(13px,3.2vw,20px); color: var(--deep); font-weight: bold; margin: 6px 0; }
+.celeb-stars { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:14px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-unicorn { font-size: clamp(60px, 16vw, 100px); animation: unicornBob 2s ease-in-out infinite; }
+.celeb-baby-unicorn {
+  font-size: clamp(40px, 10vw, 62px);
+  animation: babyBob 1.6s ease-in-out infinite;
+  margin: 6px 0;
+}
+.celeb-unicorn-text {
+  font-size: clamp(14px, 3.5vw, 22px);
+  color: #b13a8e; font-weight: bold;
+  margin: 8px 0;
+  animation: fadeInUp 1s ease-out 0.5s both;
+}
+@keyframes unicornBob {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-12px) scale(1.05); }
+}
+@keyframes babyBob {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%     { transform: translateY(-8px) rotate(3deg); }
+}
+@keyframes fadeInUp {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Rainbow eruption — sky bursts */
+.rainbow-erupt {
+  position: fixed; z-index: calc(var(--z-celeb) + 3);
+  pointer-events: none;
+}
+.erupt-particle {
+  position: fixed;
+  font-size: 20px;
+  pointer-events: none;
+  animation: erupt 1.5s ease-out forwards;
+}
+@keyframes erupt {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(var(--ey)) translateX(var(--ex)) scale(0.3); opacity: 0; }
+}
+
+/* ── Particles & shared ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">TAP NEXT</div>
+    <div class="hud-val" id="hudFind">--</div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Rainbow (sky center-top) -->
+<div class="rainbow-area" id="rainbowArea" style="display:none">
+  <svg class="rainbow-svg" viewBox="0 0 400 130" preserveAspectRatio="xMidYMax meet">
+    <!-- 6 arcs, outer to inner — pink, orange, yellow, green, blue, purple -->
+    <path class="rainbow-arc" id="arc0" d="M 30 125 Q 200 -55 370 125" stroke="#ff69b4" stroke-width="16"/>
+    <path class="rainbow-arc" id="arc1" d="M 50 125 Q 200 -35 350 125" stroke="#ff8c00" stroke-width="15"/>
+    <path class="rainbow-arc" id="arc2" d="M 70 125 Q 200 -15 330 125" stroke="#ffd93d" stroke-width="14"/>
+    <path class="rainbow-arc" id="arc3" d="M 90 125 Q 200 5 310 125"   stroke="#6bcf3f" stroke-width="13"/>
+    <path class="rainbow-arc" id="arc4" d="M 110 125 Q 200 25 290 125" stroke="#4da6ff" stroke-width="12"/>
+    <path class="rainbow-arc" id="arc5" d="M 130 125 Q 200 45 270 125" stroke="#b16cea" stroke-width="11"/>
+  </svg>
+</div>
+
+<!-- Rainbow counter (4 rainbows) -->
+<div class="rainbow-counter" id="rainbowCounter" style="display:none; position:fixed; bottom:52px; left:50%; transform:translateX(-50%); z-index:var(--z-ui);">
+  <div class="rainbow-pip" id="pip0"></div>
+  <div class="rainbow-pip" id="pip1"></div>
+  <div class="rainbow-pip" id="pip2"></div>
+  <div class="rainbow-pip" id="pip3"></div>
+</div>
+
+<!-- Play area — letter clouds -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Stella character (bottom-left) + speech bubble -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🦄</div>
+</div>
+
+<!-- Progress bar (6 letters per sequence) -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round transition banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🦄</span>
+    <span>🌈</span>
+    <span>✨</span>
+  </div>
+  <h1>Build the Rainbow! 🌈</h1>
+  <p>Stella the unicorn needs you!<br>Tap letter-clouds in order<br>U, V, W, X, Y, Z to paint the rainbow!</p>
+  <button class="btn btn-start" id="btnStart">Let's Paint! 🦄</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-unicorn">🦄</div>
+  <div class="celeb-baby-unicorn">🦄✨</div>
+  <div class="celeb-unicorn-text">"Thank you, little rainbow painter!"</div>
+  <h2 id="celebTitle">A Full Rainbow!</h2>
+  <p  id="celebMsg">You painted all 4 rainbows!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🌈</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Sequence U–Z: Build the Rainbow!  🌈                    ║
+// ║  Tap letter-clouds in order to paint rainbow arcs.               ║
+// ║  Voice B (en-GB-SoniaNeural) · Stella the unicorn               ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+// ── Voice B clip pools ─────────────────────────────────────────────
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+const LETTERS = ['u','v','w','x','y','z'];
+const LETTER_WORDS = { u:'umbrella', v:'violin', w:'whale', x:'box', y:'yo-yo', z:'zebra' };
+const LETTER_EMOJI = { u:'☂️', v:'🎻', w:'🐋', x:'📦', y:'🪀', z:'🦓' };
+
+// Cloud gradient colours per letter (matches rainbow arc colours)
+const CLOUD_COLORS = {
+  u: 'linear-gradient(135deg,#ff8fc4,#ff69b4)',     // pink
+  v: 'linear-gradient(135deg,#ffb060,#ff8c00)',     // orange
+  w: 'linear-gradient(135deg,#ffe680,#ffd93d)',     // yellow
+  x: 'linear-gradient(135deg,#9be070,#6bcf3f)',     // green
+  y: 'linear-gradient(135deg,#7fc4ff,#4da6ff)',     // blue
+  z: 'linear-gradient(135deg,#d19cff,#b16cea)',     // purple
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first with iOS fallback)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08; this.sfxVol = 0.3; this.musicDucked = 0.025;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Dreamy major pentatonic — magical/sky atmosphere
+    const notes = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99]; // G A C D E G
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 2 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 800 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(523.25,t,0.15,0.2); p(659.25,t+0.1,0.18,0.25); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='shimmer') {
+      // High sparkle arpeggio — arc painting
+      p(880, t, 0.08, 0.22, 'triangle');
+      p(1108, t+0.06, 0.08, 0.22, 'triangle');
+      p(1318, t+0.12, 0.1, 0.22, 'triangle');
+      p(1760, t+0.18, 0.14, 0.18, 'sine');
+    }
+    else if (type==='sparkle') {
+      p(1200, t, 0.06, 0.15, 'sine');
+      p(1500, t+0.04, 0.08, 0.12, 'sine');
+    }
+  }
+  // Ascending sequence chime — pitch rises with each letter (0=U low, 5=Z high)
+  toneSequence(idx) {
+    this._init(); const t = this.ctx.currentTime;
+    // 6 ascending steps — C D E G A C'
+    const freqs = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const f = freqs[Math.min(idx, freqs.length-1)];
+    const p = (freq, s, d, v, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    p(f, t, 0.25, 0.4);
+    p(f * 1.5, t + 0.05, 0.2, 0.15);
+    p(f * 2, t + 0.08, 0.15, 0.1, 'triangle');
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(l)   { return this.speak(`${AUDIO_BASE}/letters/${l}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['Into the sky! 🌈','Magic! ✨','Shimmer shimmer! 💫','Splendid! 🦄','Stella loves it! 💖','Beautiful arc! 🌟'];
+const BUBBLE_WRONG   = ['Not that one! 🌈','Try another! ✨','Check the order! 💫','Almost! 🌟'];
+const BUBBLE_RAINBOW = ['Rainbow done! 🌈','Full arc! ✨','So pretty! 💖','Gorgeous sky! 🦄'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🎉','🌈','💖','🦄','🌸','🫧', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🌟','🌈','💖']);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.15) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// Sparkle trail effect during fly animation
+function spawnTrail(x, y) {
+  const t = document.createElement('div');
+  t.className = 'sparkle-trail';
+  t.textContent = pick(['✨','💫','⭐','🌟','💖']);
+  t.style.left = (x + (Math.random()-0.5)*20) + 'px';
+  t.style.top  = (y + (Math.random()-0.5)*20) + 'px';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 500);
+}
+
+// Shimmer sparkles across an arc when it paints
+function arcShimmerBurst(arcIdx) {
+  const area = $('rainbowArea');
+  const r = area.getBoundingClientRect();
+  const colors = ['💖','🧡','💛','💚','💙','💜'];
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement('div');
+    s.className = 'rainbow-sparkle';
+    s.textContent = pick(['✨','💫','⭐', colors[arcIdx]]);
+    const t = 0.1 + (i / 10) * 0.8;
+    // Approximate arc position — symmetric around centre
+    const x = r.left + r.width * t;
+    // Parabolic Y based on arc index (outer arcs reach higher)
+    const arcHeight = r.height * (0.92 - arcIdx * 0.08);
+    const y = r.top + r.height - arcHeight * 4 * t * (1 - t);
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
+    s.style.animationDelay = (Math.random() * 0.4) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1400);
+  }
+}
+
+// Rainbow eruption burst for final celebration
+function rainbowErupt() {
+  const area = $('rainbowArea');
+  const r = area.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  const emojis = ['🌈','💖','🧡','💛','💚','💙','💜','✨','💫','⭐','🌟','🎉','🦄','🌸'];
+  for (let i = 0; i < 36; i++) {
+    const p = document.createElement('div');
+    p.className = 'erupt-particle';
+    p.textContent = pick(emojis);
+    p.style.left = cx + 'px';
+    p.style.top  = cy + 'px';
+    p.style.fontSize = (16 + Math.random()*18) + 'px';
+    p.style.setProperty('--ex', ((Math.random()-0.5)*400) + 'px');
+    p.style.setProperty('--ey', (-120 - Math.random()*260) + 'px');
+    p.style.animationDelay = (Math.random()*0.5) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2500);
+  }
+}
+
+// Stella gallops across sky with sparkle trail
+function stellaGallop() {
+  const s = document.createElement('div');
+  s.className = 'gallop-stella run';
+  s.textContent = '🦄';
+  document.body.appendChild(s);
+
+  // Sparkle trail as she gallops
+  const trailInterval = setInterval(() => {
+    const rect = s.getBoundingClientRect();
+    if (rect.left > window.innerWidth || rect.left < -100) return;
+    const sp = document.createElement('div');
+    sp.className = 'trail-sparkle';
+    sp.textContent = pick(['✨','💫','⭐','🌈','💖']);
+    sp.style.left = (rect.left + Math.random()*rect.width) + 'px';
+    sp.style.top  = (rect.top + rect.height/2 + (Math.random()-0.5)*40) + 'px';
+    document.body.appendChild(sp);
+    setTimeout(() => sp.remove(), 1300);
+  }, 60);
+
+  setTimeout(() => { clearInterval(trailInterval); s.remove(); }, 3100);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RAINBOW MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+let arcsPainted = 0;     // 0-6 per sequence
+let rainbowsDone = 0;    // 0-4 total
+
+function resetRainbow() {
+  arcsPainted = 0;
+  for (let i = 0; i < 6; i++) {
+    const arc = $('arc' + i);
+    if (arc) {
+      arc.classList.remove('painted','shimmer');
+      // Force reflow so animation replays next time
+      void arc.offsetWidth;
+    }
+  }
+}
+
+function paintArc(idx) {
+  const arc = $('arc' + idx);
+  if (!arc) return;
+  arc.classList.add('painted','shimmer');
+  arcShimmerBurst(idx);
+}
+
+function markRainbow(idx) {
+  const pip = $('pip' + idx);
+  if (pip) pip.classList.add('filled');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — floating clouds, stars, sparkles
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['☁️','⭐','✨','🌸','💫','🌟','🦋','💖'];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-element';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*20) + 's';
+    el.style.animationDuration = (14 + Math.random()*16) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG (6 letters)
+// ══════════════════════════════════════════════════════════════════
+const ROUNDS = [
+  { label:'Round 1 — Paint the Rainbow! 🌈', sub:'Tap clouds U to Z in order! Hints will help.',   display:'full',    hintMode:'strong' },
+  { label:'Round 2 — Paint Again! 🦄',        sub:'No hints this time! Remember the order.',        display:'full',    hintMode:'none'   },
+  { label:'Round 3 — Picture Clouds! ✨',     sub:'Find the letters by their pictures!',            display:'picture', hintMode:'none'   },
+  { label:'Round 4 — Quick Rainbow! 🏆',      sub:'Quick! The sky is waiting!',                     display:'full',    hintMode:'none',  timer:true, smaller:true },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let nextTapIdx = 0; // index into LETTERS (0-5)
+let cloudEls = {};  // keyed by letter
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR — 6 letters per sequence
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  for (let i = 0; i < 6; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'pdot' + i;
+    d.textContent = LETTERS[i].toUpperCase();
+    bar.appendChild(d);
+  }
+}
+function markProg(idx) {
+  const d = $('pdot' + idx);
+  if (d) {
+    d.textContent = LETTER_EMOJI[LETTERS[idx]];
+    d.classList.add('done');
+  }
+}
+function highlightProg(idx) {
+  for (let i = 0; i < 6; i++) {
+    const d = $('pdot' + i);
+    if (d) d.classList.toggle('current', i === idx);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function clearHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+function resetHints() {
+  clearHints();
+  if (!gameActive) return;
+  const cfg = ROUNDS[round];
+  if (cfg.hintMode === 'none') return;
+
+  hintTimer = setTimeout(() => {
+    const targetLet = LETTERS[nextTapIdx];
+    const cloud = cloudEls[targetLet];
+    if (cloud && gameActive) {
+      cloud.classList.add('wiggle');
+      audio.tone('hint');
+      setTimeout(() => cloud.classList.remove('wiggle'), 700);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) {
+      audio.play('thinking');
+      setTimeout(() => { if (gameActive) audio.speakLetter(LETTERS[nextTapIdx]); }, 1200);
+    }
+  }, 7000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// POSITION GENERATION — random positions with minimum spacing
+// ══════════════════════════════════════════════════════════════════
+function generatePositions(count, smaller) {
+  const area = $('playArea');
+  const areaW = area.clientWidth;
+  const areaH = area.clientHeight;
+  const cloudW = smaller ? Math.min(Math.max(66, areaW * 0.16), 92) : Math.min(Math.max(78, areaW * 0.20), 112);
+  const cloudH = cloudW * 0.9;
+  const margin = cloudW * 0.45;
+  const minDist = cloudW * 1.15;
+
+  const positions = [];
+  for (let i = 0; i < count; i++) {
+    let tries = 0;
+    let x, y;
+    do {
+      x = margin + Math.random() * (areaW - margin * 2 - cloudW);
+      y = margin + 10 + Math.random() * (areaH - margin * 2 - cloudH);
+      tries++;
+      if (tries > 300) break;
+    } while (positions.some(p => {
+      const dx = p.x - x, dy = p.y - y;
+      return Math.sqrt(dx*dx + dy*dy) < minDist;
+    }));
+    positions.push({ x, y });
+  }
+  return positions;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER LETTER CLOUDS
+// ══════════════════════════════════════════════════════════════════
+function renderClouds() {
+  const area = $('playArea');
+  const cfg = ROUNDS[round];
+
+  area.querySelectorAll('.letter-cloud').forEach(n => n.remove());
+  cloudEls = {};
+
+  const positions = generatePositions(6, cfg.smaller);
+  const shuffledOrder = shuffle([...Array(6).keys()]); // random placement order
+
+  shuffledOrder.forEach((seqIdx, posIdx) => {
+    const let_ = LETTERS[seqIdx];
+    const cloud = document.createElement('div');
+    cloud.className = 'letter-cloud';
+    if (cfg.smaller) cloud.classList.add('r4-size');
+    cloud.style.background = CLOUD_COLORS[let_];
+    cloud.style.left = positions[posIdx].x + 'px';
+    cloud.style.top  = positions[posIdx].y + 'px';
+    cloud.dataset.let = let_;
+
+    let inner = '';
+    if (cfg.display === 'full') {
+      inner = `<div class="cloud-upper">${let_.toUpperCase()}</div>
+               <div class="cloud-lower">${let_}</div>
+               <div class="cloud-emoji">${LETTER_EMOJI[let_]}</div>`;
+    } else if (cfg.display === 'picture') {
+      // Big picture, small letter
+      inner = `<div class="cloud-pictureHero">${LETTER_EMOJI[let_]}</div>
+               <div class="cloud-smallLetter">${let_.toUpperCase()} ${let_}</div>`;
+    }
+    cloud.innerHTML = inner;
+
+    onTap(cloud, () => handleCloudTap(cloud, let_));
+    area.appendChild(cloud);
+    cloudEls[let_] = cloud;
+
+    setTimeout(() => cloud.classList.add('show'), 100 + posIdx * 110);
+  });
+
+  area.classList.add('active');
+
+  // Initial hint for round 1
+  setTimeout(() => {
+    if (cfg.hintMode === 'strong') {
+      const firstCloud = cloudEls[LETTERS[0]];
+      if (firstCloud) firstCloud.classList.add('next-hint');
+    }
+  }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLY-TO-SKY ANIMATION (cloud flies up into rainbow)
+// ══════════════════════════════════════════════════════════════════
+function flyToSky(cloud, arcIdx) {
+  return new Promise(resolve => {
+    const cRect = cloud.getBoundingClientRect();
+    const rainbowArea = $('rainbowArea');
+    const rbRect = rainbowArea.getBoundingClientRect();
+
+    const startX = cRect.left;
+    const startY = cRect.top;
+    // Target point on the arc — spread along width
+    const t = 0.2 + (arcIdx / 6) * 0.6;
+    const endX = rbRect.left + rbRect.width * t - cRect.width/2;
+    const arcHeightPx = rbRect.height * (0.9 - arcIdx * 0.08);
+    const endY = rbRect.top + rbRect.height - arcHeightPx * 4 * t * (1 - t) - cRect.height/2;
+
+    cloud.classList.add('flying');
+    cloud.style.position = 'fixed';
+    cloud.style.left = startX + 'px';
+    cloud.style.top  = startY + 'px';
+    cloud.style.zIndex = '55';
+
+    const duration = 350;  // per brief
+    const startTime = performance.now();
+    let lastTrail = 0;
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease-out for upward float
+      const ease = 1 - Math.pow(1 - progress, 2);
+
+      const curX = startX + (endX - startX) * ease;
+      // Arc upward with slight overshoot
+      const arcUp = -40;
+      const curY = startY + (endY - startY) * ease + arcUp * Math.sin(progress * Math.PI);
+
+      const scale = 1 - progress * 0.5;
+      cloud.style.left = curX + 'px';
+      cloud.style.top  = curY + 'px';
+      cloud.style.transform = `scale(${scale}) rotate(${progress * 180}deg)`;
+
+      // Sparkle trail every ~40ms
+      if (now - lastTrail > 40) {
+        spawnTrail(curX + cRect.width/2, curY + cRect.height/2);
+        lastTrail = now;
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Arrived at sky — fade and paint arc
+        cloud.style.opacity = '0';
+        cloud.style.display = 'none';
+        audio.tone('shimmer');
+        resolve();
+      }
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════════════════════
+function updateHud() {
+  const targetLet = LETTERS[nextTapIdx];
+  if (nextTapIdx < 6) {
+    $('hudFind').textContent = `Tap ${targetLet.toUpperCase()}`;
+  } else {
+    $('hudFind').textContent = '🌈 Done!';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HANDLE CLOUD TAP
+// ══════════════════════════════════════════════════════════════════
+async function handleCloudTap(cloudEl, let_) {
+  if (!gameActive) return;
+  clearHints();
+
+  const targetLet = LETTERS[nextTapIdx];
+
+  if (let_ === targetLet) {
+    // ✓ CORRECT
+    gameActive = false;
+
+    cloudEl.classList.remove('next-hint', 'wiggle');
+    cloudEl.classList.add('activated');
+    starBurst(cloudEl);
+
+    // Ascending chime
+    audio.toneSequence(nextTapIdx);
+
+    score++;
+    $('hudScore').textContent = score;
+
+    // Character reacts
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+
+    // Voice: speak letter ONCE per correct tap
+    audio.speakLetter(let_);
+
+    // Mark progress
+    markProg(nextTapIdx);
+
+    await delay(250);
+
+    // Fly cloud up to sky!
+    const arcIdx = nextTapIdx;
+    await flyToSky(cloudEl, arcIdx);
+
+    // Paint the rainbow arc
+    arcsPainted++;
+    paintArc(arcIdx);
+    audio.tone('sparkle');
+
+    await delay(200);
+
+    nextTapIdx++;
+    highlightProg(nextTapIdx);
+    updateHud();
+
+    if (nextTapIdx >= 6) {
+      // Sequence complete! Rainbow painted!
+      await celebrateSequence();
+    } else {
+      // Highlight next cloud hint (round 1 only)
+      const cfg = ROUNDS[round];
+      if (cfg.hintMode === 'strong') {
+        const nextCloud = cloudEls[LETTERS[nextTapIdx]];
+        if (nextCloud) nextCloud.classList.add('next-hint');
+      }
+      gameActive = true;
+      resetHints();
+    }
+
+  } else {
+    // ✗ WRONG
+    cloudEl.classList.add('wrong-tap');
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1900);
+
+    audio.play('wrong');
+    // Speak the correct target letter after a beat
+    setTimeout(() => audio.speakLetter(targetLet), 600);
+    setTimeout(() => {
+      cloudEl.classList.remove('wrong-tap');
+      resetHints();
+    }, 480);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CELEBRATE SEQUENCE COMPLETION — FULL RAINBOW!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateSequence() {
+  $('playArea').classList.remove('timer-warning');
+
+  audio.tone('celeb');
+
+  // Rainbow complete! — confetti + bubble
+  showCharBubble(pick(BUBBLE_RAINBOW), 2000);
+  confetti(28, ['🌈','💖','🦄','✨','🌟']);
+  audio.play('correct'); // don't await
+
+  markRainbow(rainbowsDone);
+  rainbowsDone++;
+
+  await delay(700);
+  await finishRound();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND TRANSITIONS
+// ══════════════════════════════════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearHints();
+
+  $('playArea').querySelectorAll('.letter-cloud').forEach(n => n.remove());
+  $('playArea').classList.remove('active', 'timer-warning');
+
+  audio.tone('roundDone');
+  confetti(30, ['🌈','🫧','✨','💖','🦄']);
+  round++;
+
+  if (round >= ROUNDS.length) {
+    await delay(700);
+    celebrateFinish();
+    return;
+  }
+
+  // ── Round complete banner (snappy) ──
+  $('roundTitle').textContent = '🌈 Rainbow Painted! 🌈';
+  $('roundSub').textContent   = 'Stella is twirling with joy!';
+  $('roundBanner').classList.add('show');
+  audio.play('round-complete'); // don't await
+  await delay(1500);
+  $('roundBanner').classList.remove('show');
+  await delay(300);
+
+  // ── Next round intro banner (snappy) ──
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1200);
+  $('roundBanner').classList.remove('show');
+  await delay(150);
+
+  startRound();
+}
+
+function startRound() {
+  const cfg = ROUNDS[round];
+  $('hudRound').textContent = `${round + 1}/4`;
+  resetRainbow();
+  buildProg();
+  startAttempt();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START ATTEMPT (each round = 1 sequence = 1 rainbow)
+// ══════════════════════════════════════════════════════════════════
+async function startAttempt() {
+  nextTapIdx = 0;
+  updateHud();
+  highlightProg(0);
+  renderClouds();
+  gameActive = true;
+
+  audio.tone('reveal');
+  await audio.speakLetter('u');
+
+  resetHints();
+
+  if (ROUNDS[round].timer) {
+    $('playArea').classList.remove('timer-warning');
+    void $('playArea').offsetWidth;
+    $('playArea').classList.add('timer-warning');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION — FULL RAINBOW + STELLA GALLOPS!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display       = 'none';
+  $('progBar').style.display   = 'none';
+  $('roundBanner').classList.remove('show');
+  $('playArea').classList.remove('active');
+
+  // Make sure rainbow shows FULL
+  resetRainbow();
+  for (let i = 0; i < 6; i++) {
+    await delay(120);
+    paintArc(i);
+    audio.tone('shimmer');
+  }
+
+  // Rainbow erupts with sparkles
+  rainbowErupt();
+  audio.tone('celeb');
+  await delay(500);
+
+  // Stella gallops across sky with sparkle trail!
+  stellaGallop();
+  audio.tone('whoosh');
+  await delay(2000);
+
+  // Hide rainbow and char
+  $('rainbowArea').style.display = 'none';
+  $('rainbowCounter').style.display = 'none';
+  $('charArea').style.display    = 'none';
+
+  confetti(60, ['🦄','🌈','💖','✨','🌟','🌸','🫧','🎉']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 6)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+
+  showScreen('scrCeleb');
+  audio.tone('celeb');
+  await delay(200);
+
+  // Two celebration voice clips
+  await audio.play('game-complete');
+  await delay(400);
+  confetti(50, ['🦄','💖','🌈','🌟']);
+  await audio.play('game-complete');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT & START
+// ══════════════════════════════════════════════════════════════════
+function resetGame() {
+  round = 0; score = 0; rainbowsDone = 0;
+  nextTapIdx = 0;
+  arcsPainted = 0;
+  $('hudScore').textContent = '0';
+
+  // Reset rainbow pips
+  for (let i = 0; i < 4; i++) {
+    const pip = $('pip' + i);
+    if (pip) pip.classList.remove('filled');
+  }
+
+  // Show rainbow area + counter
+  $('rainbowArea').style.display = '';
+  $('rainbowCounter').style.display = '';
+  resetRainbow();
+}
+
+async function startGame() {
+  audio.startMusic();
+
+  resetGame();
+  showScreen(null);
+
+  $('hud').style.display     = '';
+  $('charArea').style.display = '';
+
+  // First round intro (snappy)
+  const cfg = ROUNDS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  audio.play('greetings'); // don't await — show banner while voice plays
+  await delay(1500);
+  $('roundBanner').classList.remove('show');
+  await delay(300);
+
+  startRound();
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────
+buildScenery();
+
+onTap($('btnStart'), () => { audio.unlock(); startGame(); });
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+</script>
+</body>
+</html>

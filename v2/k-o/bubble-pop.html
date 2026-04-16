@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catch the Snowflakes!</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --icy-blue: #a8d8f0;
+  --deep-blue: #1a3a5c;
+  --midnight: #0d1b3a;
+  --lavender: #c4b5e0;
+  --silver: #e8eef5;
+  --white: #ffffff;
+  --aurora-green: #7cf0c4;
+  --aurora-pink: #f0a8d8;
+  --gold: #ffe066;
+  --white85: rgba(255,255,255,0.85);
+  --glow-icy: rgba(168,216,240,0.8);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(180deg, #0d1b3a 0%, #1a3a5c 25%, #3d5a8a 55%, #6c8bb0 80%, #a8c8e0 100%);
+  position: relative;
+}
+
+/* Aurora in sky */
+.aurora {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 45vh;
+  z-index: var(--z-bg);
+  pointer-events: none;
+  opacity: 0.45;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 20%, rgba(124,240,196,0.4), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 70% 25%, rgba(240,168,216,0.35), transparent 70%),
+    radial-gradient(ellipse 70% 30% at 50% 10%, rgba(196,181,224,0.35), transparent 70%);
+  animation: auroraShift 12s ease-in-out infinite;
+}
+@keyframes auroraShift {
+  0%,100% { opacity: 0.35; transform: translateX(0); }
+  50%     { opacity: 0.55; transform: translateX(20px); }
+}
+
+/* Mountain peaks */
+.mountain {
+  position: fixed;
+  bottom: 48px;
+  width: 0;
+  height: 0;
+  z-index: var(--z-bg);
+  pointer-events: none;
+}
+.mountain.m1 {
+  left: -5vw;
+  border-left: 40vw solid transparent;
+  border-right: 40vw solid transparent;
+  border-bottom: 45vh solid #2a4770;
+  opacity: 0.75;
+}
+.mountain.m2 {
+  right: -5vw;
+  border-left: 38vw solid transparent;
+  border-right: 38vw solid transparent;
+  border-bottom: 52vh solid #1e3659;
+  opacity: 0.85;
+}
+.mountain.m3 {
+  left: 25vw;
+  border-left: 30vw solid transparent;
+  border-right: 30vw solid transparent;
+  border-bottom: 60vh solid #152947;
+  opacity: 0.95;
+}
+/* Snow cap on mountains */
+.mountain::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 60%;
+  left: -30%;
+  height: 0;
+  border-left: 12vw solid transparent;
+  border-right: 12vw solid transparent;
+  border-bottom: 14vh solid rgba(255,255,255,0.85);
+}
+
+/* Background snow */
+.bg-snow {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(8px, 1.6vw, 14px);
+  color: rgba(255,255,255,0.65);
+  animation: snowFall linear infinite;
+}
+@keyframes snowFall {
+  0%   { transform: translateY(-30px) translateX(0) rotate(0); opacity: 0; }
+  10%  { opacity: 0.8; }
+  90%  { opacity: 0.8; }
+  100% { transform: translateY(105vh) translateX(40px) rotate(360deg); opacity: 0; }
+}
+
+/* Screen system */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* Title screen */
+.screen-title {
+  background: linear-gradient(180deg, rgba(13,27,58,0.82) 0%, rgba(26,58,92,0.82) 100%);
+  backdrop-filter: blur(4px);
+}
+.screen-title .icon-row {
+  display: flex; gap: 12px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 70px); }
+.screen-title h1 {
+  font-size: clamp(30px, 7.5vw, 54px);
+  color: var(--icy-blue);
+  text-shadow: 0 0 30px var(--glow-icy), 2px 2px 0 rgba(0,0,0,0.6);
+  margin: 8px 0 10px;
+  font-weight: 900;
+}
+.screen-title p {
+  font-size: clamp(15px, 3.5vw, 21px);
+  color: var(--white);
+  max-width: 420px; line-height: 1.45;
+  font-weight: bold;
+}
+
+/* Buttons */
+.btn {
+  min-width: var(--tap); min-height: 60px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, #4da8e0, #2a7fb8);
+  margin-top: 22px;
+  animation: glow 2.4s ease-in-out infinite;
+  border: 2px solid var(--silver);
+}
+.btn-again {
+  background: linear-gradient(135deg, #4da8e0, #2a7fb8);
+  margin-top: 18px;
+  border: 2px solid var(--silver);
+}
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.25)} }
+
+/* HUD */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(13,27,58,0.94); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(168,216,240,0.25);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label {
+  font-size: clamp(10px,2.2vw,13px);
+  color: rgba(255,255,255,0.5);
+  font-weight: bold; letter-spacing: 0.05em;
+}
+.hud-val { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--icy-blue); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-target { display: flex; flex-direction: column; align-items: center; }
+.hud-target-label {
+  font-size: clamp(10px,2.2vw,12px);
+  color: rgba(255,255,255,0.55);
+  font-weight: bold;
+}
+.hud-target-big {
+  display: flex; align-items: baseline; gap: 4px;
+  line-height: 1;
+}
+.hud-target-upper {
+  font-size: clamp(32px,7vw,48px);
+  font-weight: 900;
+  color: var(--icy-blue);
+  text-shadow: 0 0 18px var(--glow-icy), 0 0 34px var(--glow-icy);
+}
+.hud-target-lower {
+  font-size: clamp(22px,5vw,34px);
+  font-weight: 900;
+  color: var(--lavender);
+  text-shadow: 0 0 14px rgba(196,181,224,0.7);
+}
+.hud-target-emoji {
+  font-size: clamp(20px,4.5vw,30px);
+  margin-left: 4px;
+}
+
+/* Igloo area (right) */
+.igloo-area {
+  position: fixed; bottom: 56px; right: 10px;
+  z-index: var(--z-char);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.igloo-emoji {
+  font-size: clamp(42px, 10vw, 68px);
+  filter: drop-shadow(0 0 6px rgba(168,216,240,0.35));
+  transition: filter 0.5s;
+}
+.igloo-emoji.glow-1 { filter: drop-shadow(0 0 12px rgba(168,216,240,0.55)); }
+.igloo-emoji.glow-2 { filter: drop-shadow(0 0 18px rgba(168,216,240,0.75)); }
+.igloo-emoji.glow-3 { filter: drop-shadow(0 0 26px rgba(196,181,224,0.9)); }
+.igloo-emoji.glow-4 { filter: drop-shadow(0 0 36px rgba(255,224,102,1)); }
+.igloo-emoji.glow-full {
+  filter: drop-shadow(0 0 42px rgba(255,224,102,1)) drop-shadow(0 0 60px rgba(124,240,196,0.8));
+  animation: iglooPulse 0.8s ease-in-out infinite;
+}
+@keyframes iglooPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+.igloo-count {
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: var(--gold); margin-top: 2px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Bramble character (left) */
+.char-area {
+  position: fixed; bottom: 56px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(42px,10vw,64px);
+  filter: drop-shadow(0 0 8px rgba(168,216,240,0.4));
+}
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.97); color: var(--deep-blue);
+  padding: 7px 15px; border-radius: 20px;
+  font-size: clamp(13px,2.7vw,17px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 8px;
+  border: 2px solid var(--icy-blue);
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-top: 9px solid var(--icy-blue);
+}
+.char-bubble::before {
+  content: ''; position: absolute; bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 7px solid rgba(255,255,255,0.97);
+  z-index: 1;
+}
+
+/* Play area */
+.play-area {
+  position: fixed;
+  top: 70px; left: 0; right: 0; bottom: 50px;
+  z-index: var(--z-game);
+  overflow: hidden;
+}
+
+/* Snowflake */
+.snowflake {
+  position: absolute;
+  width: clamp(78px, 20vw, 110px);
+  height: clamp(88px, 22vw, 120px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: var(--z-game);
+  transition: transform 0.1s;
+  pointer-events: auto;
+}
+.snowflake:active { transform: scale(0.92); }
+
+.flake-body {
+  position: relative;
+  width: 100%; height: 100%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,0.98) 0%, rgba(232,238,245,0.95) 50%, rgba(168,216,240,0.9) 100%);
+  /* Hexagon clip */
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow: 0 0 18px rgba(168,216,240,0.75), inset 0 0 12px rgba(255,255,255,0.9);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border: 2px solid rgba(255,255,255,0.7);
+}
+
+/* Sparkle overlay */
+.flake-body::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 15%;
+  width: 22%; height: 22%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.flake-body::after {
+  content: '';
+  position: absolute;
+  bottom: 12%; right: 18%;
+  width: 15%; height: 15%;
+  background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Letter display inside flake */
+.flake-upper {
+  font-size: clamp(30px, 7.5vw, 46px);
+  font-weight: 900;
+  color: var(--deep-blue);
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+}
+.flake-lower {
+  font-size: clamp(20px, 4.5vw, 30px);
+  font-weight: 900;
+  color: var(--lavender);
+  line-height: 1;
+  margin-top: 3px;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+}
+.flake-emoji {
+  font-size: clamp(28px, 7vw, 42px);
+  line-height: 1;
+}
+.flake-emoji-sub {
+  font-size: clamp(18px, 4vw, 26px);
+  font-weight: 900;
+  color: var(--lavender);
+  line-height: 1;
+  margin-top: 2px;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.9);
+}
+
+/* Snowflake rise animation */
+.flake-rising {
+  animation: flakeRise linear forwards;
+}
+@keyframes flakeRise {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  4%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(calc(-100vh - 140px)) rotate(22deg); opacity: 0; }
+}
+
+/* Wrong wiggle */
+.flake-wrong {
+  animation: flakeWiggle 0.55s ease-in-out;
+}
+@keyframes flakeWiggle {
+  0%,100% { transform: rotate(0) scale(1); }
+  20%     { transform: rotate(-14deg) scale(1.05); }
+  40%     { transform: rotate(12deg) scale(1.05); }
+  60%     { transform: rotate(-9deg) scale(1.02); }
+  80%     { transform: rotate(7deg) scale(1.02); }
+}
+
+/* Captured flake flies to igloo */
+.flake-captured {
+  transition: all 0.65s cubic-bezier(0.25,0.46,0.45,0.94);
+  opacity: 0 !important;
+  transform: scale(0.3) rotate(180deg) !important;
+}
+
+/* Brrr text */
+.brrr-text {
+  position: absolute;
+  font-size: clamp(16px,4vw,24px);
+  font-weight: 900;
+  color: var(--white);
+  text-shadow: 0 0 12px rgba(168,216,240,0.9), 0 2px 4px rgba(0,0,0,0.6);
+  pointer-events: none;
+  animation: brrrFloat 0.9s ease-out forwards;
+  z-index: calc(var(--z-game) + 5);
+}
+@keyframes brrrFloat {
+  0%   { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-45px) scale(1.25); opacity: 0; }
+}
+
+/* Progress bar */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 6px 10px 9px;
+  background: rgba(13,27,58,0.94); backdrop-filter: blur(5px);
+  border-top: 1px solid rgba(168,216,240,0.2);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,2.8vw,18px);
+  color: rgba(255,255,255,0.28);
+  font-weight: 900;
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--icy-blue), var(--lavender));
+  border-color: var(--silver); color: var(--deep-blue);
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom {
+  0%{transform:scale(0.4);opacity:0.5}
+  70%{transform:scale(1.25)}
+  100%{transform:scale(1.15)}
+}
+
+/* Round banner */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(13,27,58,0.95); backdrop-filter: blur(12px);
+  border: 2px solid rgba(168,216,240,0.4); border-radius: 26px;
+  padding: 24px 44px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s;
+  box-shadow: 0 0 40px rgba(168,216,240,0.3);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(22px,5.5vw,38px); font-weight: 900;
+  color: var(--icy-blue);
+  text-shadow: 0 0 18px var(--glow-icy);
+}
+.round-banner p {
+  font-size: clamp(13px,3vw,18px);
+  color: rgba(255,255,255,0.7); margin-top: 6px;
+  font-weight: bold;
+}
+
+/* Celebration screen */
+.screen-celeb {
+  background: rgba(13,27,58,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(28px,7vw,50px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+  font-weight: 900;
+}
+.screen-celeb p {
+  font-size: clamp(14px,3.5vw,22px);
+  color: var(--white); margin: 6px 0;
+  font-weight: bold;
+}
+.celeb-stars { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row {
+  display:flex; gap:12px;
+  justify-content:center; align-items:center;
+  margin-bottom:10px;
+}
+.celeb-icon-row span { font-size: clamp(52px,14vw,88px); }
+.celeb-bramble-dance { animation: twirl 1.2s ease-in-out infinite; display: inline-block; }
+
+/* Particles */
+.confetti {
+  position:fixed; z-index:calc(var(--z-celeb)+5);
+  pointer-events:none; font-size:22px;
+  animation:cfall linear forwards;
+}
+.starburst {
+  position:fixed; pointer-events:none;
+  z-index:calc(var(--z-celeb)+2);
+  font-size:28px;
+  animation:starpop 0.8s ease-out forwards;
+}
+
+/* Celebration aurora overlay */
+.celeb-aurora {
+  position: fixed; inset: 0;
+  z-index: calc(var(--z-celeb)+1);
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 30% 20%, rgba(124,240,196,0.55), transparent 70%),
+    radial-gradient(ellipse 70% 35% at 70% 25%, rgba(240,168,216,0.5), transparent 70%),
+    radial-gradient(ellipse 90% 30% at 50% 15%, rgba(196,181,224,0.5), transparent 70%);
+  animation: celebAurora 2s ease-in-out infinite;
+}
+@keyframes celebAurora {
+  0%,100% { opacity: 0.4; transform: translateX(0); }
+  50%     { opacity: 0.75; transform: translateX(30px); }
+}
+
+/* Keyframes */
+@keyframes bounce {
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-10px)}
+}
+@keyframes twirl {
+  0%,100%{transform:rotate(0) translateY(0) scale(1)}
+  25%{transform:rotate(180deg) translateY(-12px) scale(1.1)}
+  50%{transform:rotate(360deg) translateY(0) scale(1)}
+  75%{transform:rotate(540deg) translateY(-8px) scale(1.08)}
+}
+@keyframes charJump {
+  0%,100%{transform:translateY(0) scale(1)}
+  35%{transform:translateY(-22px) scale(1.08)}
+  70%{transform:translateY(-8px) scale(1.03)}
+}
+@keyframes cfall {
+  0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1}
+  100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4}
+}
+@keyframes starpop {
+  0%{transform:scale(0) rotate(0);opacity:1}
+  60%{transform:scale(1.4) rotate(200deg);opacity:1}
+  100%{transform:scale(0) rotate(360deg);opacity:0}
+}
+</style>
+</head>
+<body>
+
+<!-- Aurora + mountains backdrop -->
+<div class="aurora"></div>
+<div class="mountain m1"></div>
+<div class="mountain m3"></div>
+<div class="mountain m2"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center hud-target">
+    <span class="hud-target-label">CATCH THE</span>
+    <div class="hud-target-big">
+      <span class="hud-target-upper" id="hudTargetUpper">K</span>
+      <span class="hud-target-lower" id="hudTargetLower">k</span>
+      <span class="hud-target-emoji" id="hudTargetEmoji" style="display:none"></span>
+    </div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">SCORE</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Bramble character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji">&#x1F9CA;</div>
+</div>
+
+<!-- Igloo -->
+<div class="igloo-area" id="iglooArea" style="display:none">
+  <div class="igloo-emoji" id="iglooEmoji">&#x1F3D4;&#xFE0F;</div>
+  <div class="igloo-count" id="iglooCount">0/5</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>&#x2744;&#xFE0F;</span>
+    <span>&#x1F9CA;</span>
+    <span>&#x2744;&#xFE0F;</span>
+  </div>
+  <h1>Catch the Snowflakes!</h1>
+  <p>Help Bramble the yeti fill his igloo! Tap the right letter snowflakes as they drift up the magic mountain!</p>
+  <button class="btn btn-start" id="btnStart">Let's Play!</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="celeb-aurora" id="celebAurora" style="display:none"></div>
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>&#x2744;&#xFE0F;</span>
+    <span class="celeb-bramble-dance">&#x1F9CA;</span>
+    <span>&#x2744;&#xFE0F;</span>
+  </div>
+  <h2 id="celebTitle">Igloo Full!</h2>
+  <p id="celebMsg">Bramble is so happy!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ====================================================================
+//  Aha! -- Magic Mountain Snowflake Catch (K-O)
+//  Help Bramble the yeti fill his icy igloo with letter snowflakes!
+//  Voice B (en-GB-SoniaNeural) -- Warm British teacher
+// ====================================================================
+
+const AUDIO_BASE = '../../audio';
+
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+const LETTERS = ['k','l','m','n','o'];
+const LETTER_EMOJI = {k:'🪁', l:'🦁', m:'🌙', n:'🪺', o:'🦉'};
+
+// ====================================================================
+// AUDIO CLASS (AudioContext-first for iOS)
+// ====================================================================
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.055; this.sfxVol = 0.3; this.musicDucked = 0.015;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+    this._lastLetterAt = 0;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Icy, airy chimes - pentatonic in higher register
+    const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.3);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 700 + Math.random() * 1500);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(659.25,t,0.12,0.35); p(880,t+0.1,0.14,0.4); p(1174.66,t+0.22,0.2,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(659.25,t,0.15,0.35); p(880,t+0.15,0.15,0.4); p(1046.5,t+0.3,0.18,0.45); p(1318.51,t+0.48,0.4,0.5); }
+    else if (type==='roundDone') { p(523.25,t,0.12,0.3); p(659.25,t+0.12,0.12,0.35); p(783.99,t+0.24,0.15,0.4); p(1046.5,t+0.38,0.22,0.45); }
+    else if (type==='sparkle')   { p(1046.5,t,0.08,0.25,'triangle'); p(1318.51,t+0.04,0.1,0.2,'triangle'); p(1568,t+0.08,0.12,0.18,'triangle'); }
+    else if (type==='reveal')    { p(523.25,t,0.1,0.2); p(659.25,t+0.08,0.12,0.25); p(880,t+0.16,0.18,0.3); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(letter) {
+    return this.speak(`${AUDIO_BASE}/letters/${letter.toLowerCase()}.mp3`);
+  }
+  // Throttled letter speak - avoid spamming
+  speakLetterThrottled(letter, minGap = 600) {
+    const now = Date.now();
+    if (now - this._lastLetterAt < minGap) return Promise.resolve();
+    this._lastLetterAt = now;
+    return this.speakLetter(letter);
+  }
+  clearQueue() {
+    this.voiceQueue.forEach(q => q.resolve());
+    this.voiceQueue = [];
+    this.speaking = false;
+    if (this.musicGain && this.ctx) this._unduck();
+  }
+}
+
+// ====================================================================
+// UTILITIES
+// ====================================================================
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['Caught it!','Yes!','Frosty!','Into the igloo!','Lovely!','Snowy good!'];
+const BUBBLE_WRONG   = ['Brrr no!','Not that one!','Try again!','Wrong flake!','Keep looking!'];
+
+// ====================================================================
+// VISUAL EFFECTS
+// ====================================================================
+function confetti(count = 40, extra = []) {
+  const all = ['❄️','✨','💫','⭐','🌟','💠','🔹','🩵', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','❄️','🌟','💠']);
+    s.style.left = (x + (Math.random()-0.5)*110) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*110) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charArea');
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'charJump 0.55s ease-out';
+}
+
+// ====================================================================
+// BACKGROUND SNOW
+// ====================================================================
+function createBackground() {
+  const snowChars = ['❄','❅','❆','•','∗'];
+  for (let i = 0; i < 32; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-snow';
+    s.textContent = pick(snowChars);
+    s.style.left = (Math.random()*100)+'vw';
+    s.style.top  = (Math.random()*-50)+'vh';
+    s.style.animationDelay = (Math.random()*8)+'s';
+    s.style.animationDuration = (8+Math.random()*10)+'s';
+    s.style.fontSize = (8 + Math.random()*12)+'px';
+    document.body.appendChild(s);
+  }
+}
+
+// ====================================================================
+// PROGRESS BAR
+// ====================================================================
+function buildProgBar() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'progDot'+i;
+    d.textContent = (i+1);
+    bar.appendChild(d);
+  }
+}
+
+function markProgDone(round) {
+  const d = $('progDot'+round);
+  if (d) d.classList.add('done');
+}
+
+// ====================================================================
+// IGLOO GLOW
+// ====================================================================
+function updateIgloo(caught, needed) {
+  $('iglooCount').textContent = caught + '/' + needed;
+  const ratio = caught / needed;
+  const emoji = $('iglooEmoji');
+  emoji.className = 'igloo-emoji';
+  if (ratio >= 1)        emoji.classList.add('glow-full');
+  else if (ratio >= 0.8) emoji.classList.add('glow-4');
+  else if (ratio >= 0.6) emoji.classList.add('glow-3');
+  else if (ratio >= 0.4) emoji.classList.add('glow-2');
+  else if (ratio >= 0.2) emoji.classList.add('glow-1');
+}
+
+// ====================================================================
+// SNOWFLAKE CREATION
+// ====================================================================
+function createSnowflake(letter, displayMode, floatDuration) {
+  const flake = document.createElement('div');
+  flake.className = 'snowflake';
+  flake.dataset.letter = letter;
+
+  const body = document.createElement('div');
+  body.className = 'flake-body';
+
+  if (displayMode === 'letter') {
+    // Rounds 1, 2, 4 (main): uppercase + lowercase letter pair
+    const upper = document.createElement('div');
+    upper.className = 'flake-upper';
+    upper.textContent = letter.toUpperCase();
+    body.appendChild(upper);
+    const lower = document.createElement('div');
+    lower.className = 'flake-lower';
+    lower.textContent = letter.toLowerCase();
+    body.appendChild(lower);
+  } else if (displayMode === 'picture') {
+    // Round 3: picture emoji + small lowercase letter
+    const emojiEl = document.createElement('div');
+    emojiEl.className = 'flake-emoji';
+    emojiEl.textContent = LETTER_EMOJI[letter];
+    body.appendChild(emojiEl);
+    const sub = document.createElement('div');
+    sub.className = 'flake-emoji-sub';
+    sub.textContent = letter.toLowerCase();
+    body.appendChild(sub);
+  } else if (displayMode === 'mixed') {
+    // Round 4: alternate between letter and picture
+    if (Math.random() < 0.5) {
+      const upper = document.createElement('div');
+      upper.className = 'flake-upper';
+      upper.textContent = letter.toUpperCase();
+      body.appendChild(upper);
+      const lower = document.createElement('div');
+      lower.className = 'flake-lower';
+      lower.textContent = letter.toLowerCase();
+      body.appendChild(lower);
+    } else {
+      const emojiEl = document.createElement('div');
+      emojiEl.className = 'flake-emoji';
+      emojiEl.textContent = LETTER_EMOJI[letter];
+      body.appendChild(emojiEl);
+      const sub = document.createElement('div');
+      sub.className = 'flake-emoji-sub';
+      sub.textContent = letter.toLowerCase();
+      body.appendChild(sub);
+    }
+  }
+
+  flake.appendChild(body);
+
+  // Position at bottom, random x
+  const areaW = $('playArea').clientWidth;
+  const flakeW = 100;
+  const maxX = areaW - flakeW - 20;
+  const x = 10 + Math.random() * Math.max(50, maxX);
+
+  flake.style.left = x + 'px';
+  flake.style.bottom = '-140px';
+  flake.style.animationDuration = floatDuration + 's';
+  flake.classList.add('flake-rising');
+
+  return flake;
+}
+
+// ====================================================================
+// GAME STATE
+// ====================================================================
+const audio = new GameAudio();
+let currentRound = 0;
+let totalScore = 0;
+let roundCaught = 0;
+const NEEDED_PER_ROUND = 5;
+let targetLetter = '';
+let roundActive = false;
+let spawnTimer = null;
+let thinkTimer = null;
+let flakesOnScreen = [];
+let spawnCount = 0;
+const MAX_SPAWNS = 30;
+
+// Round configs - rising mechanic (slow -> fast, letters -> pictures -> mixed)
+const ROUNDS = [
+  { display: 'letter',  speed: 16, targetDisplay: 'letter',  label: 'CATCH THE' },
+  { display: 'letter',  speed: 12, targetDisplay: 'letter',  label: 'CATCH THE' },
+  { display: 'picture', speed: 14, targetDisplay: 'picture', label: 'STARTS WITH' },
+  { display: 'mixed',   speed: 9,  targetDisplay: 'letter',  label: 'CATCH THE' },
+];
+
+// ====================================================================
+// GAME FLOW
+// ====================================================================
+async function startGame() {
+  $('scrTitle').classList.remove('active');
+  $('hud').style.display = 'flex';
+  $('charArea').style.display = 'block';
+  $('iglooArea').style.display = 'flex';
+  $('progBar').style.display = 'flex';
+  buildProgBar();
+  currentRound = 0;
+  totalScore = 0;
+  $('hudScore').textContent = '0';
+  audio.startMusic();
+  await audio.play('greetings');
+  await delay(400);
+  startRound();
+}
+
+async function startRound() {
+  roundCaught = 0;
+  spawnCount = 0;
+  flakesOnScreen = [];
+  $('playArea').innerHTML = '';
+
+  // Pick target - avoid repeating last round's target
+  const available = LETTERS.filter(l => l !== targetLetter || LETTERS.length <= 1);
+  targetLetter = pick(available);
+
+  const cfg = ROUNDS[currentRound];
+
+  // Update HUD
+  $('hudRound').textContent = (currentRound+1)+'/4';
+  $('hudTargetUpper').textContent = targetLetter.toUpperCase();
+  $('hudTargetLower').textContent = targetLetter.toLowerCase();
+  const emojiEl = $('hudTargetEmoji');
+  if (cfg.targetDisplay === 'picture') {
+    emojiEl.textContent = LETTER_EMOJI[targetLetter];
+    emojiEl.style.display = 'inline-block';
+  } else {
+    emojiEl.style.display = 'none';
+  }
+  // Update HUD label
+  const hudLabel = document.querySelector('.hud-target-label');
+  if (hudLabel) hudLabel.textContent = cfg.label;
+
+  updateIgloo(0, NEEDED_PER_ROUND);
+
+  // Show round banner
+  const banner = $('roundBanner');
+  $('roundTitle').textContent = 'Round ' + (currentRound+1);
+  if (cfg.display === 'picture') {
+    $('roundSub').textContent = 'Catch pictures that start with ' + targetLetter.toUpperCase() + '!';
+  } else {
+    $('roundSub').textContent = 'Catch the ' + targetLetter.toUpperCase() + ' ' + targetLetter.toLowerCase() + ' snowflakes!';
+  }
+  banner.classList.add('show');
+  audio.tone('reveal');
+  await delay(700);
+
+  // Speak the target letter
+  await audio.speakLetter(targetLetter);
+  await delay(1200);
+  banner.classList.remove('show');
+  await delay(400);
+
+  showCharBubble('Catch the ' + targetLetter.toUpperCase() + '!', 3000);
+
+  roundActive = true;
+  startSpawning();
+  startThinkingPrompts();
+}
+
+function startSpawning() {
+  const cfg = ROUNDS[currentRound];
+  const spawnFlake = () => {
+    if (!roundActive) return;
+    if (spawnCount >= MAX_SPAWNS && roundCaught < NEEDED_PER_ROUND) {
+      spawnCount = 0;
+    }
+
+    // ~40% chance target
+    const isTarget = Math.random() < 0.4;
+    let letter;
+    if (isTarget) {
+      letter = targetLetter;
+    } else {
+      const distractors = LETTERS.filter(l => l !== targetLetter);
+      letter = pick(distractors);
+    }
+
+    const flake = createSnowflake(letter, cfg.display, cfg.speed);
+    $('playArea').appendChild(flake);
+    flakesOnScreen.push(flake);
+    spawnCount++;
+
+    onTap(flake, (e) => {
+      e.stopPropagation();
+      if (!roundActive) return;
+      if (flake.dataset.tapped) return;
+      handleFlakeTap(flake, flake.dataset.letter);
+    });
+
+    flake.addEventListener('animationend', () => {
+      if (!flake.dataset.tapped) {
+        flake.remove();
+        flakesOnScreen = flakesOnScreen.filter(f => f !== flake);
+      }
+    });
+
+    if (roundActive) {
+      // Spawn intervals tuned per round - faster rounds spawn faster too
+      let base, variance;
+      if (currentRound === 0)      { base = 1100; variance = 900; }
+      else if (currentRound === 1) { base = 850;  variance = 800; }
+      else if (currentRound === 2) { base = 1000; variance = 800; }
+      else                         { base = 700;  variance = 600; }
+      spawnTimer = setTimeout(spawnFlake, base + Math.random() * variance);
+    }
+  };
+
+  spawnFlake();
+}
+
+function startThinkingPrompts() {
+  const prompt = () => {
+    if (!roundActive) return;
+    // Re-announce target (5-6s cadence)
+    audio.speakLetterThrottled(targetLetter, 400);
+    showCharBubble('Find the ' + targetLetter.toUpperCase() + '!', 2500);
+    thinkTimer = setTimeout(prompt, 5000 + Math.random() * 1200);
+  };
+  thinkTimer = setTimeout(prompt, 5500);
+}
+
+function stopTimers() {
+  roundActive = false;
+  clearTimeout(spawnTimer);
+  clearTimeout(thinkTimer);
+}
+
+async function handleFlakeTap(flake, letter) {
+  flake.dataset.tapped = 'true';
+
+  if (letter === targetLetter) {
+    // CORRECT
+    roundCaught++;
+    totalScore += 10;
+    $('hudScore').textContent = totalScore;
+
+    audio.tone('sparkle');
+    const rect = flake.getBoundingClientRect();
+    starBurst(rect.left + rect.width/2, rect.top + rect.height/2);
+
+    // Fly to igloo
+    const iglooRect = $('iglooEmoji').getBoundingClientRect();
+    flake.style.position = 'fixed';
+    flake.style.left = rect.left + 'px';
+    flake.style.top = rect.top + 'px';
+    flake.style.bottom = 'auto';
+    flake.classList.remove('flake-rising');
+    flake.style.animation = 'none';
+
+    flake.offsetHeight;
+    flake.classList.add('flake-captured');
+    flake.style.left = iglooRect.left + 'px';
+    flake.style.top = iglooRect.top + 'px';
+
+    updateIgloo(roundCaught, NEEDED_PER_ROUND);
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+    jumpChar();
+
+    // Speak letter once per catch (throttled)
+    audio.speakLetterThrottled(letter, 500);
+    audio.play('correct');
+
+    setTimeout(() => {
+      flake.remove();
+      flakesOnScreen = flakesOnScreen.filter(f => f !== flake);
+    }, 750);
+
+    if (roundCaught >= NEEDED_PER_ROUND) {
+      await delay(600);
+      endRound();
+    }
+  } else {
+    // WRONG - stays, wiggles
+    audio.tone('wrong');
+
+    const brrr = document.createElement('div');
+    brrr.className = 'brrr-text';
+    brrr.textContent = 'Brrr!';
+    const rect = flake.getBoundingClientRect();
+    brrr.style.left = (rect.left + rect.width/2 - 22) + 'px';
+    brrr.style.top = (rect.top - 12) + 'px';
+    document.body.appendChild(brrr);
+    setTimeout(() => brrr.remove(), 1000);
+
+    flake.classList.remove('flake-rising');
+    flake.style.animation = 'none';
+    flake.offsetHeight;
+    flake.classList.add('flake-wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    setTimeout(() => {
+      flake.dataset.tapped = '';
+      flake.classList.remove('flake-wrong');
+      if (flake.parentNode) {
+        flake.classList.add('flake-rising');
+      }
+    }, 600);
+
+    audio.play('wrong');
+  }
+}
+
+async function endRound() {
+  stopTimers();
+
+  $('playArea').innerHTML = '';
+  flakesOnScreen = [];
+
+  markProgDone(currentRound);
+  audio.tone('roundDone');
+  confetti(28, ['❄️','⭐','💠']);
+
+  if (currentRound < 3) {
+    const banner = $('roundBanner');
+    $('roundTitle').textContent = 'Round Complete!';
+    $('roundSub').textContent = 'Bramble is happy!';
+    banner.classList.add('show');
+    await audio.play('round-complete');
+    await delay(1400);
+    banner.classList.remove('show');
+    await delay(500);
+    currentRound++;
+    startRound();
+  } else {
+    await delay(700);
+    showCelebration();
+  }
+}
+
+async function showCelebration() {
+  audio.tone('celeb');
+  confetti(70, ['❄️','⭐','💠','✨','🌟','🩵']);
+
+  // Show aurora celebration
+  $('celebAurora').style.display = 'block';
+
+  const stars = Math.min(5, Math.max(3, Math.floor(totalScore / 40)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = 'Igloo is Full!';
+  $('celebMsg').textContent = 'Bramble is twirling with joy! Score: ' + totalScore;
+
+  $('scrCeleb').classList.add('active');
+
+  await audio.play('game-complete');
+  await delay(800);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(40, ['❄️','⭐','✨','💠']), 2000);
+}
+
+function resetGame() {
+  $('scrCeleb').classList.remove('active');
+  $('celebAurora').style.display = 'none';
+  $('hud').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('iglooArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('playArea').innerHTML = '';
+  audio.stopMusic();
+  audio.clearQueue();
+  $('scrTitle').classList.add('active');
+}
+
+// ====================================================================
+// INIT
+// ====================================================================
+createBackground();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.clearQueue();
+  resetGame();
+  setTimeout(() => {
+    audio.unlock();
+    startGame();
+  }, 300);
+});
+</script>
+</body>
+</html>

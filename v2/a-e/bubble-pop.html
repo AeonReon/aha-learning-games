@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catch the Royal Letters!</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --royal-purple: #4a1a5e; --deep-purple: #2d0d3d; --pink: #ff7ab8; --rose: #ff4b93;
+  --gold: #ffd86b; --cream: #fff1db; --white85: rgba(255,255,255,0.9); --glow-pink: rgba(255,122,184,0.6);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(180deg, #2d0d3d 0%, #4a1a5e 30%, #6b2a85 60%, #8a3ba5 100%);
+}
+
+/* Castle silhouette */
+.castle-silhouette {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 35vh;
+  z-index: var(--z-bg);
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, transparent 0%, transparent 40%, rgba(20,5,30,0.5) 100%);
+}
+.castle-silhouette::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 180px;
+  background-image:
+    radial-gradient(ellipse at 10% 100%, rgba(20,5,30,0.85) 0, rgba(20,5,30,0.85) 90px, transparent 91px),
+    radial-gradient(ellipse at 30% 100%, rgba(20,5,30,0.85) 0, rgba(20,5,30,0.85) 120px, transparent 121px),
+    radial-gradient(ellipse at 55% 100%, rgba(20,5,30,0.85) 0, rgba(20,5,30,0.85) 140px, transparent 141px),
+    radial-gradient(ellipse at 80% 100%, rgba(20,5,30,0.85) 0, rgba(20,5,30,0.85) 100px, transparent 101px),
+    linear-gradient(180deg, transparent 0%, rgba(20,5,30,0.75) 50%);
+}
+
+/* Floating rose petals */
+.bg-petal {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.55;
+  animation: petalFall linear infinite;
+}
+@keyframes petalFall {
+  0%   { transform: translateY(-60px) translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.55; }
+  90%  { opacity: 0.55; }
+  100% { transform: translateY(110vh) translateX(40px) rotate(360deg); opacity: 0; }
+}
+
+/* Sparkle stars */
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(8px, 1.6vw, 14px);
+  opacity: 0.4;
+  animation: sparkleTwinkle 2.8s ease-in-out infinite;
+}
+@keyframes sparkleTwinkle { 0%,100%{opacity:0.2;transform:scale(0.8)} 50%{opacity:0.7;transform:scale(1.15)} }
+
+/* Screen system */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* Title screen */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 65px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--gold);
+  text-shadow: 0 0 30px var(--glow-pink), 2px 2px 0 rgba(30,0,50,0.6);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--cream);
+  max-width: 400px; line-height: 1.45;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Buttons */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start { background: linear-gradient(135deg, var(--pink), var(--rose)); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again { background: linear-gradient(135deg, var(--pink), var(--rose)); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* HUD */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(45,13,61,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,216,107,0.3);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,241,219,0.55); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--pink); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-target {
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-target-label { font-size: clamp(10px,2.2vw,12px); color: rgba(255,241,219,0.6); font-weight: bold; }
+.hud-target-letter {
+  font-size: clamp(34px,7.5vw,52px); font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 20px var(--glow-pink), 0 0 40px var(--glow-pink);
+  line-height: 1;
+}
+.hud-target-word {
+  font-size: clamp(11px,2.4vw,15px); font-weight: bold;
+  color: var(--pink); opacity: 0.9;
+}
+
+/* Royal basket area */
+.basket-area {
+  position: fixed; bottom: 60px; right: 10px;
+  z-index: var(--z-char);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.basket-emoji {
+  font-size: clamp(42px, 10vw, 68px);
+  filter: drop-shadow(0 0 8px rgba(255,216,107,0.4));
+  transition: filter 0.5s;
+}
+.basket-emoji.fill-1 { filter: drop-shadow(0 0 12px rgba(255,216,107,0.55)); }
+.basket-emoji.fill-2 { filter: drop-shadow(0 0 18px rgba(255,216,107,0.7)); }
+.basket-emoji.fill-3 { filter: drop-shadow(0 0 25px rgba(255,216,107,0.85)); }
+.basket-emoji.fill-4 { filter: drop-shadow(0 0 35px rgba(255,216,107,1)); }
+.basket-emoji.fill-full {
+  filter: drop-shadow(0 0 40px rgba(255,216,107,1));
+  animation: basketPulse 0.8s ease-in-out infinite;
+}
+@keyframes basketPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+.basket-count {
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: var(--gold); margin-top: 2px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* Queen Ella character */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(42px,10vw,66px); filter: drop-shadow(0 0 10px rgba(255,122,184,0.4)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,241,219,0.97); color: var(--royal-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.3);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,241,219,0.97);
+}
+
+/* Bubble play area */
+.play-area {
+  position: fixed;
+  top: 65px; left: 0; right: 0; bottom: 50px;
+  z-index: var(--z-game);
+  overflow: hidden;
+}
+
+/* Royal Bubble */
+.bubble {
+  position: absolute;
+  width: clamp(72px, 18vw, 100px);
+  height: clamp(72px, 18vw, 100px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: var(--z-game);
+  transition: transform 0.1s;
+}
+.bubble:active { transform: scale(0.92); }
+.bubble-body {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 8%, rgba(255,255,255,0) 22%),
+    radial-gradient(circle at 70% 75%, rgba(255,216,107,0.5) 0%, rgba(255,216,107,0) 30%),
+    radial-gradient(circle at 50% 50%, rgba(255,122,184,0.55) 0%, rgba(255,180,220,0.35) 60%, rgba(255,216,107,0.25) 100%);
+  box-shadow:
+    0 0 18px rgba(255,122,184,0.4),
+    inset 0 -6px 15px rgba(255,216,107,0.3),
+    inset 0 4px 10px rgba(255,255,255,0.4);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+  animation: bubbleShimmer 3s ease-in-out infinite;
+}
+@keyframes bubbleShimmer {
+  0%,100% { filter: hue-rotate(0deg) brightness(1); }
+  50%     { filter: hue-rotate(15deg) brightness(1.1); }
+}
+/* Shiny highlight */
+.bubble-body::before {
+  content: '';
+  position: absolute;
+  top: 12%; left: 22%;
+  width: 28%; height: 22%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.bubble-upper {
+  font-size: clamp(28px, 7vw, 42px);
+  font-weight: 900;
+  color: var(--cream);
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(74,26,94,0.6), 0 0 10px rgba(255,216,107,0.4);
+}
+.bubble-lower {
+  font-size: clamp(14px, 3.2vw, 20px);
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+  margin-top: 2px;
+  text-shadow: 0 1px 3px rgba(74,26,94,0.7);
+}
+.bubble-emoji {
+  font-size: clamp(30px, 8vw, 46px);
+  line-height: 1;
+}
+.bubble-small-letters {
+  font-size: clamp(10px, 2.2vw, 13px);
+  font-weight: bold;
+  color: var(--cream);
+  line-height: 1;
+  margin-top: 2px;
+  text-shadow: 0 1px 2px rgba(74,26,94,0.7);
+}
+
+/* Bubble rise animation */
+.bubble-floating {
+  animation: bubbleRise linear forwards;
+}
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  4%   { opacity: 1; }
+  50%  { transform: translateY(-40vh) translateX(18px); }
+  92%  { opacity: 1; }
+  100% { transform: translateY(calc(-100vh - 140px)) translateX(-12px); opacity: 0; }
+}
+
+/* Wiggle wrong */
+.bubble-wrong {
+  animation: bubbleWiggle 0.5s ease-in-out;
+}
+@keyframes bubbleWiggle {
+  0%,100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-12deg) scale(1.05); }
+  40% { transform: rotate(10deg) scale(1.05); }
+  60% { transform: rotate(-8deg) scale(1.02); }
+  80% { transform: rotate(6deg) scale(1.02); }
+}
+
+/* Bubble captured - fly to basket */
+.bubble-captured {
+  transition: all 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  opacity: 0 !important;
+  transform: scale(0.3) !important;
+}
+
+/* "No no!" text */
+.nono-text {
+  position: absolute;
+  font-size: clamp(16px,4vw,24px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,75,147,0.9);
+  pointer-events: none;
+  animation: nonoFloat 0.8s ease-out forwards;
+  z-index: calc(var(--z-game) + 5);
+}
+@keyframes nonoFloat {
+  0% { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+}
+
+/* Progress bar */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(45,13,61,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,216,107,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,2.8vw,18px);
+  color: rgba(255,241,219,0.3);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--pink), var(--rose));
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* Round banner */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(45,13,61,0.95); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,216,107,0.35); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--gold); text-shadow: 0 0 15px var(--glow-pink);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: var(--cream); margin-top: 5px;
+}
+
+/* Celebration screen */
+.screen-celeb {
+  background: rgba(45,13,61,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: var(--cream); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-ella-twirl { animation: twirl 1.2s ease-in-out infinite; display: inline-block; }
+
+/* Particles */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* Keyframes */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes twirl       { 0%{transform:rotate(0) scale(1)} 25%{transform:rotate(90deg) scale(1.1)} 50%{transform:rotate(180deg) scale(1)} 75%{transform:rotate(270deg) scale(1.1)} 100%{transform:rotate(360deg) scale(1)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Castle silhouette background -->
+<div class="castle-silhouette"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center hud-target">
+    <span class="hud-target-label">CATCH THE</span>
+    <span class="hud-target-letter" id="hudTargetLetter">A</span>
+    <span class="hud-target-word" id="hudTargetWord">apple</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">JEWELS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Queen Ella character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji">&#x1F478;</div>
+</div>
+
+<!-- Royal basket -->
+<div class="basket-area" id="basketArea" style="display:none">
+  <div class="basket-emoji" id="basketEmoji">&#x1F9FA;</div>
+  <div class="basket-count" id="basketCount">0/5</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>&#x1F3F0;</span>
+    <span>&#x1F478;</span>
+    <span>&#x1F338;</span>
+  </div>
+  <h1>Catch the Royal Letters!</h1>
+  <p>Shiny royal bubbles float up from Queen Ella's castle! Tap the ones with the right letter to catch them in her royal basket!</p>
+  <button class="btn btn-start" id="btnStart">Let's Play!</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>&#x1F3F0;</span>
+    <span class="celeb-ella-twirl">&#x1F478;</span>
+    <span>&#x1F338;</span>
+  </div>
+  <h2 id="celebTitle">All Royal Letters Caught!</h2>
+  <p id="celebMsg">Queen Ella's basket is full of magic!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ====================================================================
+//  Aha! -- Castle Kingdom Bubble Pop (A-E)
+//  Catch royal letter-bubbles for Queen Ella!
+//  Voice B (en-GB-SoniaNeural) -- Warm royal theme
+// ====================================================================
+
+const AUDIO_BASE = '../../audio';
+
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+const LETTERS = ['a','b','c','d','e'];
+const LETTER_WORDS = {a:'apple',b:'balloon',c:'crown',d:'dragon',e:'egg'};
+const LETTER_EMOJI = {a:'\u{1F34E}',b:'\u{1F388}',c:'\u{1F451}',d:'\u{1F409}',e:'\u{1F95A}'};
+// Full a-z distractor pool
+const ALL_DISTRACTORS = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+
+// ====================================================================
+// AUDIO CLASS (AudioContext-first for iOS)
+// ====================================================================
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+    this._lastCheerAt = 0;
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Royal major feel: C major-ish pentatonic
+    const notes = [261.63, 329.63, 392.00, 440.00, 523.25, 659.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.6 ? 'triangle' : 'sine';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.2);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.4);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.7);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 600 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='pop')       { p(900,t,0.08,0.28); p(1200,t+0.04,0.1,0.22); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='reveal')    { p(440,t,0.1,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  // Throttled cheer - only play if enough time has passed
+  playCheerThrottled(category, minGapMs = 1400) {
+    const now = Date.now();
+    if (now - this._lastCheerAt < minGapMs) return Promise.resolve();
+    this._lastCheerAt = now;
+    return this.play(category);
+  }
+  speakLetter(l) { return this.speak(`${AUDIO_BASE}/letters/${l.toLowerCase()}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ====================================================================
+// UTILITIES
+// ====================================================================
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['Caught one!','Yes!','Royal catch!','Into the basket!','Splendid!','Lovely!'];
+const BUBBLE_WRONG   = ['No no!','Not that one!','Try again!','Keep looking!','Another bubble!'];
+
+// ====================================================================
+// VISUAL EFFECTS
+// ====================================================================
+function confetti(count = 40, extra = []) {
+  const all = ['\u2728','\u{1F338}','\u{1F4AB}','\u{1F451}','\u{1F48E}','\u{1F49D}','\u{1F380}','\u{1F490}', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(x, y) {
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['\u2728','\u{1F4AB}','\u2B50','\u{1F451}','\u{1F48E}','\u{1F338}']);
+    s.style.left = (x + (Math.random()-0.5)*100) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*100) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charArea');
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'charJump 0.5s ease-out';
+}
+
+// ====================================================================
+// BACKGROUND (rose petals + sparkles)
+// ====================================================================
+function createBackground() {
+  // Rose petals falling
+  const petals = ['\u{1F338}','\u{1F339}','\u{1F490}','\u{1F33A}'];
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-petal';
+    p.textContent = pick(petals);
+    p.style.left = (Math.random()*100)+'vw';
+    p.style.top = '-40px';
+    p.style.animationDelay = (Math.random()*8)+'s';
+    p.style.animationDuration = (8+Math.random()*6)+'s';
+    document.body.appendChild(p);
+  }
+  // Sparkles
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-sparkle';
+    s.textContent = pick(['\u2728','\u2B50','\u{1F4AB}']);
+    s.style.left = (Math.random()*100)+'vw';
+    s.style.top  = (Math.random()*85)+'vh';
+    s.style.animationDelay = (Math.random()*4)+'s';
+    s.style.animationDuration = (2+Math.random()*3)+'s';
+    document.body.appendChild(s);
+  }
+}
+
+// ====================================================================
+// PROGRESS BAR
+// ====================================================================
+function buildProgBar() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'progDot'+i;
+    d.textContent = (i+1);
+    bar.appendChild(d);
+  }
+}
+
+function markProgDone(round) {
+  const d = $('progDot'+round);
+  if (d) d.classList.add('done');
+}
+
+// ====================================================================
+// BASKET
+// ====================================================================
+function updateBasket(caught, needed) {
+  $('basketCount').textContent = caught + '/' + needed;
+  const ratio = caught / needed;
+  const emoji = $('basketEmoji');
+  emoji.className = 'basket-emoji';
+  if (ratio >= 1)        emoji.classList.add('fill-full');
+  else if (ratio >= 0.8) emoji.classList.add('fill-4');
+  else if (ratio >= 0.6) emoji.classList.add('fill-3');
+  else if (ratio >= 0.4) emoji.classList.add('fill-2');
+  else if (ratio >= 0.2) emoji.classList.add('fill-1');
+}
+
+// ====================================================================
+// BUBBLE CREATION
+// ====================================================================
+function createBubble(letter, displayMode, floatDuration) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.dataset.letter = letter;
+
+  const body = document.createElement('div');
+  body.className = 'bubble-body';
+
+  if (displayMode === 'both') {
+    // Round 1 & 2: BIG uppercase + small lowercase
+    const upper = document.createElement('div');
+    upper.className = 'bubble-upper';
+    upper.textContent = letter.toUpperCase();
+    body.appendChild(upper);
+    const lower = document.createElement('div');
+    lower.className = 'bubble-lower';
+    lower.textContent = letter.toLowerCase();
+    body.appendChild(lower);
+  } else if (displayMode === 'picture') {
+    // Round 3: picture + small uppercase+lowercase
+    const emoji = document.createElement('div');
+    emoji.className = 'bubble-emoji';
+    emoji.textContent = LETTER_EMOJI[letter] || LETTER_EMOJI[letter.toLowerCase()] || '';
+    body.appendChild(emoji);
+    const small = document.createElement('div');
+    small.className = 'bubble-small-letters';
+    small.textContent = letter.toUpperCase() + letter.toLowerCase();
+    body.appendChild(small);
+  } else if (displayMode === 'mixed') {
+    // Round 4: random mix
+    const style = pick(['upper','lower','picture','both']);
+    if (style === 'upper') {
+      const upper = document.createElement('div');
+      upper.className = 'bubble-upper';
+      upper.textContent = letter.toUpperCase();
+      body.appendChild(upper);
+    } else if (style === 'lower') {
+      const upper = document.createElement('div');
+      upper.className = 'bubble-upper';
+      upper.textContent = letter.toLowerCase();
+      body.appendChild(upper);
+    } else if (style === 'picture') {
+      const emoji = document.createElement('div');
+      emoji.className = 'bubble-emoji';
+      emoji.textContent = LETTER_EMOJI[letter] || LETTER_EMOJI[letter.toLowerCase()] || '';
+      body.appendChild(emoji);
+      const small = document.createElement('div');
+      small.className = 'bubble-small-letters';
+      small.textContent = letter.toUpperCase() + letter.toLowerCase();
+      body.appendChild(small);
+    } else {
+      const upper = document.createElement('div');
+      upper.className = 'bubble-upper';
+      upper.textContent = letter.toUpperCase();
+      body.appendChild(upper);
+      const lower = document.createElement('div');
+      lower.className = 'bubble-lower';
+      lower.textContent = letter.toLowerCase();
+      body.appendChild(lower);
+    }
+  }
+
+  bubble.appendChild(body);
+
+  // Position at bottom, random x
+  const areaW = $('playArea').clientWidth;
+  const bubbleW = 100;
+  const maxX = Math.max(20, areaW - bubbleW - 10);
+  const x = 10 + Math.random() * maxX;
+
+  bubble.style.left = x + 'px';
+  bubble.style.bottom = '-130px';
+  bubble.style.animationDuration = floatDuration + 's';
+  bubble.classList.add('bubble-floating');
+
+  return bubble;
+}
+
+// ====================================================================
+// GAME STATE
+// ====================================================================
+const audio = new GameAudio();
+let currentRound = 0;
+let totalScore = 0;
+let roundCaught = 0;
+const NEEDED_PER_ROUND = 5;
+let targetLetter = '';
+let roundActive = false;
+let spawnTimer = null;
+let thinkTimer = null;
+let bubblesOnScreen = [];
+let spawnCount = 0;
+const MAX_SPAWNS = 25;
+
+// Round configs
+// Round 1: both (uppercase+lowercase). 15s (slow)
+// Round 2: both. 12s (faster)
+// Round 3: picture + small letters. 15s
+// Round 4: mixed. 10s (fast)
+const ROUNDS = [
+  { display: 'both',    speed: 15, targetDisplay: 'both' },
+  { display: 'both',    speed: 12, targetDisplay: 'both' },
+  { display: 'picture', speed: 15, targetDisplay: 'both' },
+  { display: 'mixed',   speed: 10, targetDisplay: 'upper' },
+];
+
+// ====================================================================
+// GAME FLOW
+// ====================================================================
+async function startGame() {
+  $('scrTitle').classList.remove('active');
+  $('hud').style.display = 'flex';
+  $('charArea').style.display = 'block';
+  $('basketArea').style.display = 'flex';
+  $('progBar').style.display = 'flex';
+  buildProgBar();
+  currentRound = 0;
+  totalScore = 0;
+  $('hudScore').textContent = '0';
+  audio.startMusic();
+  await audio.play('greetings');
+  await delay(400);
+  startRound();
+}
+
+async function startRound() {
+  roundCaught = 0;
+  spawnCount = 0;
+  bubblesOnScreen = [];
+  $('playArea').innerHTML = '';
+
+  // Pick target - avoid repeating last round
+  const available = LETTERS.filter(l => l !== targetLetter || LETTERS.length <= 1);
+  targetLetter = pick(available);
+
+  const cfg = ROUNDS[currentRound];
+
+  // Update HUD
+  $('hudRound').textContent = (currentRound+1)+'/4';
+  $('hudTargetLetter').textContent = targetLetter.toUpperCase();
+  if (cfg.targetDisplay === 'both') {
+    $('hudTargetWord').textContent = LETTER_WORDS[targetLetter];
+    $('hudTargetWord').style.display = 'block';
+  } else {
+    $('hudTargetWord').style.display = 'none';
+  }
+
+  updateBasket(0, NEEDED_PER_ROUND);
+
+  // Show round banner
+  const banner = $('roundBanner');
+  $('roundTitle').textContent = 'Round ' + (currentRound+1);
+  const subtext = currentRound === 2
+    ? 'Catch the ' + targetLetter.toUpperCase() + ' pictures!'
+    : 'Catch the ' + targetLetter.toUpperCase() + 's!';
+  $('roundSub').textContent = subtext;
+  banner.classList.add('show');
+  audio.tone('reveal');
+  await delay(600);
+
+  // Speak the target letter
+  await audio.speakLetter(targetLetter);
+  await delay(600);
+  banner.classList.remove('show');
+  await delay(300);
+
+  showCharBubble('Catch the ' + targetLetter.toUpperCase() + '!', 2600);
+
+  roundActive = true;
+  startSpawning();
+  startThinkingPrompts();
+}
+
+function startSpawning() {
+  const cfg = ROUNDS[currentRound];
+  const spawnBubble = () => {
+    if (!roundActive) return;
+    if (spawnCount >= MAX_SPAWNS && roundCaught < NEEDED_PER_ROUND) {
+      spawnCount = 0;
+    }
+
+    // Decide if target (~42%) or distractor
+    const isTarget = Math.random() < 0.42;
+    let letter;
+    if (isTarget) {
+      letter = targetLetter;
+    } else {
+      // Distractor from a-z pool, not target
+      const pool = ALL_DISTRACTORS.filter(l => l !== targetLetter);
+      letter = pick(pool);
+    }
+
+    const bubble = createBubble(letter, cfg.display, cfg.speed);
+    $('playArea').appendChild(bubble);
+    bubblesOnScreen.push(bubble);
+    spawnCount++;
+
+    // Tap handler
+    onTap(bubble, (e) => {
+      e.stopPropagation();
+      if (!roundActive) return;
+      if (bubble.dataset.tapped) return;
+      handleBubbleTap(bubble, bubble.dataset.letter);
+    });
+
+    // Remove bubble when animation ends
+    bubble.addEventListener('animationend', (ev) => {
+      // Only care about the rise animation ending, not shimmer
+      if (ev.animationName !== 'bubbleRise') return;
+      if (!bubble.dataset.tapped) {
+        bubble.remove();
+        bubblesOnScreen = bubblesOnScreen.filter(g => g !== bubble);
+      }
+    });
+
+    // Schedule next spawn (fast-pacing)
+    if (roundActive) {
+      const baseGap = cfg.speed <= 10 ? 700 : cfg.speed <= 12 ? 800 : 900;
+      const interval = baseGap + Math.random() * 700;
+      spawnTimer = setTimeout(spawnBubble, interval);
+    }
+  };
+
+  spawnBubble();
+}
+
+function startThinkingPrompts() {
+  const prompt = () => {
+    if (!roundActive) return;
+    // Re-announce target letter (throttled cheer style but for letter)
+    audio.speakLetter(targetLetter);
+    showCharBubble('Find the ' + targetLetter.toUpperCase() + '!', 2400);
+    thinkTimer = setTimeout(prompt, 5000 + Math.random() * 1200);
+  };
+  thinkTimer = setTimeout(prompt, 5200);
+}
+
+function stopTimers() {
+  roundActive = false;
+  clearTimeout(spawnTimer);
+  clearTimeout(thinkTimer);
+}
+
+async function handleBubbleTap(bubble, letter) {
+  bubble.dataset.tapped = 'true';
+  const isCorrect = letter.toLowerCase() === targetLetter.toLowerCase();
+
+  if (isCorrect) {
+    // CORRECT
+    roundCaught++;
+    totalScore += 10;
+    $('hudScore').textContent = totalScore;
+
+    audio.tone('pop');
+    const rect = bubble.getBoundingClientRect();
+    starBurst(rect.left + rect.width/2, rect.top + rect.height/2);
+
+    // Animate to basket
+    const basketRect = $('basketEmoji').getBoundingClientRect();
+    bubble.style.position = 'fixed';
+    bubble.style.left = rect.left + 'px';
+    bubble.style.top = rect.top + 'px';
+    bubble.style.bottom = 'auto';
+    bubble.classList.remove('bubble-floating');
+    bubble.style.animation = 'none';
+
+    bubble.offsetHeight;
+    bubble.classList.add('bubble-captured');
+    bubble.style.left = basketRect.left + 'px';
+    bubble.style.top = basketRect.top + 'px';
+
+    updateBasket(roundCaught, NEEDED_PER_ROUND);
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    jumpChar();
+
+    // Speak the letter once per catch
+    audio.speakLetter(letter);
+
+    // Throttled voice cheer
+    audio.playCheerThrottled('correct', 1400);
+
+    setTimeout(() => {
+      bubble.remove();
+      bubblesOnScreen = bubblesOnScreen.filter(g => g !== bubble);
+    }, 700);
+
+    // Check round complete
+    if (roundCaught >= NEEDED_PER_ROUND) {
+      await delay(450);
+      endRound();
+    }
+  } else {
+    // WRONG
+    audio.tone('wrong');
+
+    // "No no!" text
+    const nono = document.createElement('div');
+    nono.className = 'nono-text';
+    nono.textContent = 'No no!';
+    const rect = bubble.getBoundingClientRect();
+    nono.style.left = (rect.left + rect.width/2 - 30) + 'px';
+    nono.style.top = (rect.top - 10) + 'px';
+    document.body.appendChild(nono);
+    setTimeout(() => nono.remove(), 900);
+
+    // Wiggle bubble (stays!)
+    bubble.classList.remove('bubble-floating');
+    bubble.style.animation = 'none';
+    bubble.offsetHeight;
+    bubble.classList.add('bubble-wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1400);
+
+    // After wiggle, resume float
+    setTimeout(() => {
+      bubble.dataset.tapped = '';
+      bubble.classList.remove('bubble-wrong');
+      if (bubble.parentNode) {
+        bubble.classList.add('bubble-floating');
+      }
+    }, 550);
+
+    audio.playCheerThrottled('wrong', 1600);
+  }
+}
+
+async function endRound() {
+  stopTimers();
+
+  // Clear remaining bubbles
+  $('playArea').innerHTML = '';
+  bubblesOnScreen = [];
+
+  markProgDone(currentRound);
+  audio.tone('roundDone');
+  confetti(28, ['\u{1F451}','\u{1F338}','\u{1F48E}']);
+
+  if (currentRound < 3) {
+    const banner = $('roundBanner');
+    $('roundTitle').textContent = 'Round Complete!';
+    $('roundSub').textContent = 'Royal catching!';
+    banner.classList.add('show');
+    await audio.play('round-complete');
+    await delay(1000);
+    banner.classList.remove('show');
+    await delay(300);
+    currentRound++;
+    startRound();
+  } else {
+    await delay(500);
+    showCelebration();
+  }
+}
+
+async function showCelebration() {
+  audio.tone('celeb');
+  confetti(60, ['\u{1F451}','\u{1F338}','\u{1F48E}','\u{1F49D}','\u{1F380}']);
+
+  const stars = Math.min(5, Math.max(3, Math.floor(totalScore / 40)));
+  $('celebStars').textContent = '\u2B50'.repeat(stars);
+  $('celebTitle').textContent = 'All Royal Letters Caught!';
+  $('celebMsg').textContent = 'Queen Ella\'s basket is overflowing! Score: ' + totalScore;
+
+  $('scrCeleb').classList.add('active');
+
+  await audio.play('game-complete');
+  await delay(700);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['\u{1F451}','\u{1F338}','\u2728','\u{1F48E}']), 2000);
+}
+
+function resetGame() {
+  $('scrCeleb').classList.remove('active');
+  $('hud').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('basketArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('playArea').innerHTML = '';
+  audio.stopMusic();
+  audio.clearQueue();
+  $('scrTitle').classList.add('active');
+}
+
+// ====================================================================
+// INIT
+// ====================================================================
+createBackground();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.clearQueue();
+  resetGame();
+  setTimeout(() => {
+    audio.unlock();
+    startGame();
+  }, 300);
+});
+</script>
+</body>
+</html>

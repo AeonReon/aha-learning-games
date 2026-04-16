@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pip's Fairy Forest Letters</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-trees: 1; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --forest: #166534; --deep-forest: #14532d; --moss: #78350f; --moss-light: #92400e;
+  --pink: #f472b6; --pink-deep: #db2777; --gold: #fbbf24; --gold-deep: #f59e0b;
+  --sky: #38bdf8; --cream: #fef3c7;
+  --white90: rgba(255,255,255,0.9); --white60: rgba(255,255,255,0.6);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(180deg, #bae6fd 0%, #a7f3d0 35%, #86efac 65%, #166534 100%);
+}
+
+/* ── Tree silhouettes ── */
+.tree {
+  position: fixed; bottom: 50px;
+  z-index: var(--z-trees); pointer-events: none;
+  font-size: clamp(80px, 20vw, 160px);
+  line-height: 1;
+  opacity: 0.85;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+.tree-1 { left: -20px; bottom: 40px; transform: scale(1.1); }
+.tree-2 { right: -20px; bottom: 50px; transform: scale(0.95) scaleX(-1); }
+.tree-3 { left: 25%; bottom: 35px; opacity: 0.6; font-size: clamp(60px, 14vw, 110px); }
+.tree-4 { right: 28%; bottom: 35px; opacity: 0.55; font-size: clamp(55px, 13vw, 100px); transform: scaleX(-1); }
+
+/* ── Background particles (butterflies, fireflies, petals) ── */
+.bg-particle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(14px, 2.8vw, 24px);
+  opacity: 0.55;
+  animation: particleFloat linear infinite;
+}
+.firefly {
+  animation: fireflyGlow ease-in-out infinite, particleFloat linear infinite;
+  filter: drop-shadow(0 0 8px var(--gold));
+}
+@keyframes particleFloat {
+  0%   { transform: translateY(105vh) translateX(0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.55; }
+  50%  { transform: translateY(50vh) translateX(40px) rotate(20deg); }
+  92%  { opacity: 0.55; }
+  100% { transform: translateY(-60px) translateX(-30px) rotate(-15deg); opacity: 0; }
+}
+@keyframes fireflyGlow {
+  0%,100% { filter: drop-shadow(0 0 4px var(--gold)) brightness(1); }
+  50%     { filter: drop-shadow(0 0 14px var(--gold)) brightness(1.4); }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title {
+  background: linear-gradient(180deg, rgba(186,230,253,0.92) 0%, rgba(134,239,172,0.92) 60%, rgba(22,101,52,0.92) 100%);
+  backdrop-filter: blur(3px);
+}
+.screen-title .pip-hero {
+  font-size: clamp(70px, 17vw, 120px);
+  animation: pipFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px rgba(244,114,182,0.6));
+}
+@keyframes pipFloat { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-14px) rotate(4deg)} }
+.screen-title .fairy-row {
+  display: flex; gap: 16px; justify-content: center; align-items: center; margin-bottom: 6px;
+}
+.screen-title .fairy-row span { font-size: clamp(38px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(24px, 6vw, 44px);
+  color: var(--pink-deep);
+  text-shadow: 0 0 22px rgba(244,114,182,0.5), 2px 2px 0 rgba(255,255,255,0.7);
+  margin: 6px 0 6px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.4vw, 19px);
+  color: var(--deep-forest);
+  font-weight: bold;
+  max-width: 380px; line-height: 1.45;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+  margin-top: 18px;
+  animation: glowBtn 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, var(--gold), var(--gold-deep)); margin-top: 16px; color: var(--deep-forest); }
+@keyframes glowBtn { 0%,100%{filter:brightness(1); box-shadow:0 0 20px rgba(244,114,182,0.4)} 50%{filter:brightness(1.15); box-shadow:0 0 40px rgba(244,114,182,0.75)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(20,83,45,0.88); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(251,191,36,0.3);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.5); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--pink); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-target-text { color: var(--gold); font-size: clamp(13px,2.8vw,18px); font-weight: 900; }
+
+/* ── Pip character ── */
+.char-area {
+  position: fixed; bottom: 60px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(44px,10vw,66px);
+  filter: drop-shadow(0 0 12px rgba(244,114,182,0.6));
+  animation: pipHover 2.2s ease-in-out infinite;
+}
+@keyframes pipHover { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.98); color: var(--deep-forest);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 8px;
+  border: 2px solid var(--pink);
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-top: 9px solid var(--pink);
+}
+
+/* ── Game area ── */
+.game-area {
+  position: fixed;
+  top: 60px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: clamp(8px,2vw,16px);
+  gap: clamp(10px,2.5vw,20px);
+}
+
+/* ── Target card ── */
+.target-area {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.target-label {
+  font-size: clamp(12px,2.8vw,16px); color: rgba(255,255,255,0.95);
+  font-weight: bold; letter-spacing: 0.05em;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+.target-card {
+  background: linear-gradient(135deg, #fff 0%, #fef3c7 100%);
+  border: 4px solid var(--pink);
+  border-radius: 20px;
+  padding: clamp(12px,3vw,20px) clamp(18px,4.5vw,32px);
+  min-width: clamp(130px,32vw,210px);
+  min-height: clamp(70px,14vw,100px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+  box-shadow: 0 0 25px rgba(244,114,182,0.4), 0 4px 15px rgba(0,0,0,0.3);
+  animation: targetGlow 2s ease-in-out infinite;
+}
+@keyframes targetGlow {
+  0%,100%{box-shadow:0 0 20px rgba(244,114,182,0.4), 0 4px 15px rgba(0,0,0,0.3)}
+  50%    {box-shadow:0 0 38px rgba(251,191,36,0.6), 0 4px 15px rgba(0,0,0,0.3)}
+}
+.target-letter {
+  font-size: clamp(42px,10vw,66px); font-weight: 900; color: var(--pink-deep);
+  text-shadow: 0 0 12px rgba(244,114,182,0.35);
+  line-height: 1;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.target-letter .lower {
+  font-size: 0.7em; color: var(--forest);
+}
+.target-emoji {
+  font-size: clamp(28px,7vw,46px); line-height: 1.2;
+}
+.target-word {
+  font-size: clamp(14px,3.2vw,20px); color: var(--forest); font-weight: bold;
+}
+.target-small-letter {
+  font-size: clamp(14px,3vw,18px); color: var(--pink-deep); font-weight: 900;
+  opacity: 0.7;
+}
+.letter-big-lower {
+  font-size: clamp(46px,11vw,72px); font-weight: 900; color: var(--pink-deep);
+  text-shadow: 0 0 12px rgba(244,114,182,0.35);
+  line-height: 1;
+}
+.letter-small-upper {
+  font-size: clamp(16px,3.4vw,22px); color: var(--forest); font-weight: 900;
+  opacity: 0.8;
+}
+
+/* ── Option cards ── */
+.options-area {
+  display: flex; flex-wrap: wrap;
+  justify-content: center; align-items: center;
+  gap: clamp(8px,2vw,14px);
+  max-width: 95vw;
+}
+.option-card {
+  background: linear-gradient(135deg, #fff 0%, #e0f2fe 100%);
+  border: 3px solid rgba(22,101,52,0.3);
+  border-radius: 18px;
+  padding: clamp(10px,2.5vw,18px) clamp(14px,3.5vw,24px);
+  min-width: clamp(85px,23vw,140px);
+  min-height: var(--tap);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.option-card:active { transform: scale(0.94); }
+.option-card:hover { border-color: var(--pink); }
+.option-letter {
+  font-size: clamp(34px,8vw,52px); font-weight: 900; color: var(--forest);
+  line-height: 1;
+  display: flex; align-items: baseline; gap: 3px;
+}
+.option-letter .lower-sm {
+  font-size: 0.65em; color: var(--pink-deep);
+}
+.option-letter-big-upper {
+  font-size: clamp(38px,9vw,58px); font-weight: 900; color: var(--forest);
+  line-height: 1;
+}
+.option-letter-small-lower {
+  font-size: clamp(14px,3vw,20px); font-weight: 900; color: var(--pink-deep);
+  opacity: 0.8;
+}
+.option-emoji { font-size: clamp(18px,4.4vw,28px); line-height: 1.2; }
+.option-word {
+  font-size: clamp(12px,2.8vw,17px); color: var(--moss); font-weight: bold;
+}
+
+/* ── Card correct/wrong states ── */
+.option-card.correct-flash {
+  border-color: var(--gold) !important;
+  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+  box-shadow: 0 0 28px rgba(251,191,36,0.7) !important;
+  animation: correctPulse 0.5s ease-out;
+}
+.option-card.wrong-shake {
+  animation: shakeCard 0.5s ease-out;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 20px rgba(239,68,68,0.5) !important;
+}
+@keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+@keyframes shakeCard { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+
+/* ── Enchanted Garden achievement (right side) ── */
+.garden {
+  position: fixed; top: 60px; right: 8px;
+  z-index: var(--z-ui);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  pointer-events: none;
+}
+.garden-icon { font-size: clamp(28px,6vw,40px); filter: drop-shadow(0 0 6px rgba(251,191,36,0.5)); }
+.garden-plot {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
+  max-width: clamp(70px,16vw,100px);
+  padding: 4px;
+  background: rgba(120,53,15,0.35);
+  border-radius: 8px;
+  border: 1px solid rgba(251,191,36,0.3);
+}
+.garden-slot {
+  width: clamp(14px,3vw,20px); height: clamp(14px,3vw,20px);
+  border-radius: 4px;
+  background: rgba(120,53,15,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(10px,2.2vw,14px);
+  transition: all 0.5s;
+}
+.garden-slot.grown {
+  background: linear-gradient(135deg, rgba(244,114,182,0.4), rgba(251,191,36,0.4));
+  animation: sproutGrow 0.7s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes sproutGrow {
+  0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
+  60%  { transform: scale(1.4) rotate(20deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.garden.glow .garden-icon {
+  animation: gardenGlowPulse 1s ease-in-out 3;
+}
+@keyframes gardenGlowPulse {
+  0%,100% { filter: drop-shadow(0 0 5px rgba(251,191,36,0.4)); }
+  50%     { filter: drop-shadow(0 0 25px rgba(251,191,36,1)); }
+}
+.garden.bloom .garden-icon {
+  animation: gardenBloom 1.5s ease-in-out;
+}
+@keyframes gardenBloom {
+  0%   { transform: scale(1) rotate(0); }
+  30%  { transform: scale(1.5) rotate(-15deg); }
+  60%  { transform: scale(1.8) rotate(10deg); }
+  100% { transform: scale(1.3) rotate(0); }
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(20,83,45,0.88); backdrop-filter: blur(5px);
+  pointer-events: none;
+  border-top: 2px solid rgba(251,191,36,0.25);
+}
+.prog-dot {
+  width: clamp(30px,5.8vw,40px);
+  height: clamp(30px,5.8vw,40px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(12px,2.6vw,17px); font-weight: 900;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--pink), var(--gold));
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(20,83,45,0.95); backdrop-filter: blur(12px);
+  border: 3px solid var(--gold); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 0 40px rgba(251,191,36,0.4);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--gold); text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.85); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: linear-gradient(180deg, rgba(186,230,253,0.95) 0%, rgba(134,239,172,0.95) 60%, rgba(22,101,52,0.95) 100%);
+  backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--pink-deep);
+  text-shadow: 3px 3px 0 rgba(255,255,255,0.7);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: var(--deep-forest); font-weight: bold; margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-pip     { font-size: clamp(60px,15vw,100px); animation: dance 1s ease-in-out infinite; margin-bottom: 8px; }
+.celeb-garden  { font-size: clamp(44px,11vw,72px); animation: gardenBloom 2s ease-in-out infinite; margin-bottom: 6px; letter-spacing: 4px; }
+
+/* ── Hint styles ── */
+.hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(251,191,36,0.9), 0 0 50px rgba(251,191,36,0.5) !important; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+.sparkle   { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+3); font-size:16px; animation:starpop 1s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- Trees -->
+<div class="tree tree-1">🌳</div>
+<div class="tree tree-2">🌲</div>
+<div class="tree tree-3">🌲</div>
+<div class="tree tree-4">🌳</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-target-text" id="hudTarget">Find the letter!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">FLOWERS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Enchanted Garden Achievement -->
+<div class="garden" id="garden" style="display:none">
+  <div class="garden-icon">🌷</div>
+  <div class="garden-plot" id="gardenPlot"></div>
+</div>
+
+<!-- Game Area -->
+<div class="game-area" id="gameArea" style="display:none">
+  <div class="target-area" id="targetArea">
+    <div class="target-label">FIND THIS LETTER</div>
+    <div class="target-card" id="targetCard"></div>
+  </div>
+  <div class="options-area" id="optionsArea"></div>
+</div>
+
+<!-- Pip character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧚</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="fairy-row">
+    <span>🦋</span>
+    <span>🌸</span>
+    <span>🍄</span>
+  </div>
+  <div class="pip-hero">🧚</div>
+  <h1>Pip's Fairy Forest</h1>
+  <p>Pip the forest fairy needs your help! Find the magical letters F, G, H, I and J to grow an enchanted garden! 🌷✨</p>
+  <button class="btn btn-start" id="btnStart">Fly with Pip! 🧚</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-pip">🧚</div>
+  <div class="celeb-garden">🌷🌸🌻🌼🍄</div>
+  <h2 id="celebTitle">🌸 Blooming Brilliant! 🌸</h2>
+  <p id="celebMsg">Pip's enchanted garden is in full bloom!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🦋</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Pip's Fairy Forest Letters (F, G, H, I, J)              ║
+// ║  Card matching — match target letter to correct option          ║
+// ║  Voice B (en-GB-SoniaNeural) · Fairy Forest theme               ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+const LETTERS = ['f','g','h','i','j'];
+const LETTER_WORDS = {f:'flower', g:'gift', h:'house', i:'ice cream', j:'juggler'};
+const LETTER_EMOJI = {f:'🌸', g:'🎁', h:'🏠', i:'🍦', j:'🤹'};
+
+// ── Voice B clip pools ──
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first for iOS)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.05; this.sfxVol = 0.3; this.musicDucked = 0.015;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Dreamy fairy forest pentatonic (gentle, twinkly)
+    const notes = [523.25, 587.33, 659.25, 783.99, 880, 987.77, 1046.5];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.3 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.3);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1600);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(659.25,t,0.15,0.35); p(880,t+0.12,0.18,0.4); p(1046.5,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(880,t+0.3,0.18,0.45); p(1174.66,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(523.25,t,0.12,0.3); p(659.25,t+0.12,0.12,0.35); p(783.99,t+0.24,0.15,0.4); p(987.77,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(587.33,t,0.1,0.25); p(783.99,t+0.08,0.12,0.3); p(987.77,t+0.16,0.15,0.35); }
+    else if (type==='hint')     { p(523.25,t,0.15,0.15); p(659.25,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(900,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='sprout')   { p(659.25,t,0.08,0.2); p(880,t+0.06,0.1,0.25); p(1174.66,t+0.14,0.15,0.3); }
+    else if (type==='pop')      { p(800,t,0.05,0.2); p(1200,t+0.03,0.06,0.15); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(l)   { return this.speak(`${AUDIO_BASE}/letters/${l}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['Magical find! ✨','Blooming brilliant! 🌸','Gorgeous! 🦋','Sparkly work! 💫','Perfect! 🌷','Wonderful! 🧚'];
+const BUBBLE_WRONG   = ['Not that one! 🌿','Try again! 🦋','Almost! 🌸','Keep looking! 🍄','Hmm... 🌷'];
+
+// Garden sprout emojis (cycle through as each correct answer grows the garden)
+const SPROUT_EMOJIS = ['🌱','🌸','🌷','🌼','🌻','🍄','🌿','🌺','🦋','🌾'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['🌸','🌷','🌼','🌻','🦋','🍄','✨','💫','🌿','🌺', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (18 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  const bits = ['✨','🌸','⭐','🌟','💫','🦋','🌷'];
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(bits);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function gardenSparkles(targetEl) {
+  const gardenEl = $('garden');
+  if (!gardenEl) return;
+  const br = gardenEl.getBoundingClientRect();
+  const tr = targetEl.getBoundingClientRect();
+  const sx = tr.left + tr.width/2, sy = tr.top + tr.height/2;
+  const ex = br.left + br.width/2, ey = br.top + br.height/2;
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = pick(['✨','🌸','💫','🦋']);
+    s.style.left = sx + 'px'; s.style.top = sy + 'px';
+    s.style.transition = `all ${0.5 + i*0.08}s ease-in`;
+    document.body.appendChild(s);
+    requestAnimationFrame(() => {
+      s.style.left = (ex + (Math.random()-0.5)*30) + 'px';
+      s.style.top  = (ey + (Math.random()-0.5)*30) + 'px';
+      s.style.opacity = '0';
+    });
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = 'pipHover 2.2s ease-in-out infinite'; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — butterflies, fireflies, petals
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const items = [
+    {emoji:'🦋', count:5, firefly:false},
+    {emoji:'🌸', count:4, firefly:false},
+    {emoji:'✨', count:4, firefly:true},
+    {emoji:'🌿', count:3, firefly:false},
+    {emoji:'💛', count:3, firefly:true},
+  ];
+  items.forEach(({emoji, count, firefly}) => {
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      el.className = 'bg-particle' + (firefly ? ' firefly' : '');
+      el.textContent = emoji;
+      el.style.left              = (Math.random()*100) + 'vw';
+      el.style.animationDelay    = (-Math.random()*20) + 's';
+      el.style.animationDuration = firefly
+        ? `${1.5 + Math.random()*2}s, ${14 + Math.random()*18}s`
+        : `${14 + Math.random()*18}s`;
+      document.body.appendChild(el);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG — 4 rounds, progressive difficulty
+// Each round: match 5 letters (F, G, H, I, J)
+//
+// Round 1: 2 choices. Target+options: uppercase+lowercase+word+emoji.
+// Round 2: 3 choices. Target: uppercase+lowercase. Options: uppercase+lowercase.
+// Round 3: 4 choices. Target: big lowercase + small uppercase. Options: big uppercase + small lowercase.
+// Round 4: 4 choices. Target: picture only (🌸). Options: uppercase+lowercase + word.
+// ══════════════════════════════════════════════════════════════════
+const ROUNDS = [
+  { choices: 2, label: 'Round 1 — Petal Picking 🌸',  sub: 'Match the magical letter!' },
+  { choices: 3, label: 'Round 2 — Fairy Flight 🧚',   sub: 'Bigger and lowercase letters now!' },
+  { choices: 4, label: 'Round 3 — Forest Friends 🍄', sub: 'Look carefully my dear!' },
+  { choices: 4, label: 'Round 4 — Enchanted Pictures 🦋', sub: 'Find the letter the picture starts with!' },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 0, score = 0, totalErrors = 0;
+let currentItemIndex = 0;
+let roundLetters = []; // shuffled array of 5 letters for this round
+let currentTarget = ''; // single letter string like 'f'
+let lockBoard = false;
+let hintTimer = null, hintVoiceTimer = null;
+let totalSprouted = 0; // total flowers sprouted across all rounds
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ENCHANTED GARDEN (achievement)
+// ══════════════════════════════════════════════════════════════════
+function buildGarden() {
+  const plot = $('gardenPlot');
+  plot.innerHTML = '';
+  // 20 total slots (5 per round x 4 rounds)
+  for (let i = 0; i < 20; i++) {
+    const s = document.createElement('div');
+    s.className = 'garden-slot';
+    s.id = 'gardenSlot' + i;
+    plot.appendChild(s);
+  }
+}
+
+function growSprout(cardEl) {
+  const slot = $('gardenSlot' + totalSprouted);
+  if (slot) {
+    slot.textContent = pick(SPROUT_EMOJIS);
+    slot.classList.add('grown');
+    gardenSparkles(cardEl);
+  }
+  totalSprouted++;
+}
+
+function glowGarden() {
+  const g = $('garden');
+  g.classList.add('glow');
+  setTimeout(() => g.classList.remove('glow'), 3200);
+}
+
+function bloomGarden() {
+  const g = $('garden');
+  g.classList.add('bloom');
+  setTimeout(() => g.classList.remove('bloom'), 3000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  LETTERS.forEach(l => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + l; d.textContent = l.toUpperCase();
+    bar.appendChild(d);
+  });
+}
+
+function markProg(l) {
+  const d = $('prog' + l); if (d) d.classList.add('done');
+}
+
+function resetProg() {
+  LETTERS.forEach(l => {
+    const d = $('prog' + l); if (d) d.classList.remove('done');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS — wiggle after 4s, voice after 7s
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive || lockBoard) return;
+  hintTimer = setTimeout(() => {
+    const cards = [...document.querySelectorAll('.option-card')];
+    const correct = cards.find(c => c.dataset.letter === currentTarget);
+    if (correct) {
+      correct.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => correct.classList.remove('hint-wiggle', 'hint-glow'), 1800);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD TARGET CARD — varies by round
+// ══════════════════════════════════════════════════════════════════
+function buildTargetCard(letter, roundIdx) {
+  const card = $('targetCard');
+  card.innerHTML = '';
+  const U = letter.toUpperCase();
+  const L = letter.toLowerCase();
+
+  if (roundIdx === 0) {
+    // Round 1: BIG uppercase+lowercase + word + emoji
+    const letWrap = document.createElement('div');
+    letWrap.className = 'target-letter';
+    letWrap.innerHTML = `${U}<span class="lower">${L}</span>`;
+    const emo = document.createElement('div');
+    emo.className = 'target-emoji'; emo.textContent = LETTER_EMOJI[letter];
+    const wrd = document.createElement('div');
+    wrd.className = 'target-word'; wrd.textContent = LETTER_WORDS[letter];
+    card.append(letWrap, emo, wrd);
+  } else if (roundIdx === 1) {
+    // Round 2: uppercase+lowercase only (both visible, equal emphasis)
+    const letWrap = document.createElement('div');
+    letWrap.className = 'target-letter';
+    letWrap.innerHTML = `${U}<span class="lower">${L}</span>`;
+    card.append(letWrap);
+  } else if (roundIdx === 2) {
+    // Round 3: big LOWERCASE + small uppercase
+    const big = document.createElement('div');
+    big.className = 'letter-big-lower'; big.textContent = L;
+    const sm = document.createElement('div');
+    sm.className = 'letter-small-upper'; sm.textContent = U;
+    card.append(big, sm);
+  } else if (roundIdx === 3) {
+    // Round 4: picture only (emoji big)
+    const emo = document.createElement('div');
+    emo.className = 'target-emoji';
+    emo.style.fontSize = 'clamp(54px,13vw,80px)';
+    emo.textContent = LETTER_EMOJI[letter];
+    const wrd = document.createElement('div');
+    wrd.className = 'target-word';
+    wrd.style.fontSize = 'clamp(13px,3vw,18px)';
+    wrd.textContent = LETTER_WORDS[letter];
+    card.append(emo, wrd);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD OPTION CARDS — varies by round
+// ══════════════════════════════════════════════════════════════════
+function buildOptionCards(targetLetter, roundIdx, numChoices) {
+  const area = $('optionsArea');
+  area.innerHTML = '';
+
+  // Build distractors
+  let available = LETTERS.filter(l => l !== targetLetter);
+  shuffle(available);
+  let options = [targetLetter, ...available.slice(0, numChoices - 1)];
+  shuffle(options);
+
+  options.forEach(letter => {
+    const U = letter.toUpperCase();
+    const L = letter.toLowerCase();
+
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.dataset.letter = letter;
+
+    if (roundIdx === 0) {
+      // Round 1: uppercase+lowercase + emoji + word
+      const lw = document.createElement('div');
+      lw.className = 'option-letter';
+      lw.innerHTML = `${U}<span class="lower-sm">${L}</span>`;
+      const emo = document.createElement('div');
+      emo.className = 'option-emoji'; emo.textContent = LETTER_EMOJI[letter];
+      const wrd = document.createElement('div');
+      wrd.className = 'option-word'; wrd.textContent = LETTER_WORDS[letter];
+      card.append(lw, emo, wrd);
+    } else if (roundIdx === 1) {
+      // Round 2: uppercase+lowercase
+      const lw = document.createElement('div');
+      lw.className = 'option-letter';
+      lw.innerHTML = `${U}<span class="lower-sm">${L}</span>`;
+      card.append(lw);
+    } else if (roundIdx === 2) {
+      // Round 3: big UPPERCASE + small lowercase
+      const big = document.createElement('div');
+      big.className = 'option-letter-big-upper'; big.textContent = U;
+      const sm = document.createElement('div');
+      sm.className = 'option-letter-small-lower'; sm.textContent = L;
+      card.append(big, sm);
+    } else if (roundIdx === 3) {
+      // Round 4: uppercase+lowercase (both cases)
+      const lw = document.createElement('div');
+      lw.className = 'option-letter';
+      lw.innerHTML = `${U}<span class="lower-sm">${L}</span>`;
+      card.append(lw);
+    }
+
+    onTap(card, () => handleOptionTap(card, letter));
+    area.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HANDLE TAP ON OPTION
+// ══════════════════════════════════════════════════════════════════
+async function handleOptionTap(cardEl, chosenLetter) {
+  if (lockBoard || !gameActive) return;
+  lockBoard = true;
+  stopHints();
+
+  if (chosenLetter === currentTarget) {
+    // CORRECT
+    audio.tone('correct');
+    cardEl.classList.add('correct-flash');
+    starBurst(cardEl);
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT));
+    score++;
+    $('hudScore').textContent = score;
+
+    // Speak letter ONCE per correct answer
+    audio.speakLetter(currentTarget);
+
+    // Grow a sprout in the garden
+    audio.tone('sprout');
+    growSprout(cardEl);
+
+    // Voice cheer (don't await)
+    audio.play('correct');
+
+    // Mark progress
+    markProg(currentTarget);
+
+    await delay(450);
+
+    // Next item or end round
+    currentItemIndex++;
+    if (currentItemIndex >= 5) {
+      await endRound();
+    } else {
+      presentItem();
+    }
+  } else {
+    // WRONG
+    audio.tone('wrong');
+    cardEl.classList.add('wrong-shake');
+    showCharBubble(pick(BUBBLE_WRONG));
+    totalErrors++;
+
+    audio.play('wrong');
+    setTimeout(() => { if (!lockBoard) audio.speakLetter(currentTarget); }, 500);
+
+    setTimeout(() => cardEl.classList.remove('wrong-shake'), 500);
+    lockBoard = false;
+    resetHints();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PRESENT A SINGLE ITEM
+// ══════════════════════════════════════════════════════════════════
+async function presentItem() {
+  lockBoard = true;
+  currentTarget = roundLetters[currentItemIndex];
+  const rnd = ROUNDS[round];
+
+  // Build target and options
+  buildTargetCard(currentTarget, round);
+  buildOptionCards(currentTarget, round, rnd.choices);
+
+  // Update HUD
+  const U = currentTarget.toUpperCase(), L = currentTarget.toLowerCase();
+  $('hudTarget').textContent = `Find ${U}${L} ${LETTER_EMOJI[currentTarget]}`;
+
+  // Speak the letter once — quickly
+  audio.tone('reveal');
+  audio.speakLetter(currentTarget);
+  await delay(250);
+
+  lockBoard = false;
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// END ROUND
+// ══════════════════════════════════════════════════════════════════
+async function endRound() {
+  lockBoard = true;
+  gameActive = false;
+  stopHints();
+
+  // Garden glows
+  glowGarden();
+  audio.tone('roundDone');
+  confetti(30);
+
+  // Don't await — let pacing stay tight
+  audio.play('round-complete');
+
+  await delay(1800);
+
+  round++;
+  if (round >= 4) {
+    await endGame();
+  } else {
+    await showRoundBanner();
+    await startRound();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SHOW ROUND BANNER
+// ══════════════════════════════════════════════════════════════════
+async function showRoundBanner() {
+  const rnd = ROUNDS[round];
+  $('roundTitle').textContent = rnd.label;
+  $('roundSub').textContent = rnd.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(2200);
+  $('roundBanner').classList.remove('show');
+  await delay(400);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START ROUND
+// ══════════════════════════════════════════════════════════════════
+async function startRound() {
+  currentItemIndex = 0;
+  roundLetters = shuffle([...LETTERS]);
+  resetProg();
+
+  $('hudRound').textContent = (round+1) + '/4';
+  gameActive = true;
+
+  await presentItem();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// END GAME — celebration
+// ══════════════════════════════════════════════════════════════════
+async function endGame() {
+  gameActive = false;
+  lockBoard = true;
+  stopHints();
+  audio.stopMusic();
+
+  // Grand bloom
+  bloomGarden();
+
+  await delay(600);
+  audio.tone('celeb');
+  confetti(60);
+
+  // Star rating
+  const stars = totalErrors <= 2 ? 3 : totalErrors <= 5 ? 2 : 1;
+  $('celebStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('celebTitle').textContent = stars === 3 ? '🌸 Blooming Brilliant! 🌸' : stars === 2 ? '🦋 Marvellous! 🦋' : '🌷 Well Done! 🌷';
+  $('celebMsg').textContent = `You grew ${totalSprouted} magical blooms in Pip's garden!`;
+
+  // Hide game UI
+  $('hud').style.display = 'none';
+  $('gameArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('garden').style.display = 'none';
+
+  showScreen('scrCeleb');
+
+  // Two voice phrases + confetti waves (don't await first)
+  audio.play('game-complete');
+  await delay(1800);
+
+  confetti(40, ['🧚','🌷','🌸']);
+  audio.play('game-complete');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START GAME
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  round = 0; score = 0; totalErrors = 0; totalSprouted = 0;
+  $('hudScore').textContent = '0';
+
+  // Build UI
+  buildGarden();
+  buildProg();
+
+  // Show game elements
+  $('hud').style.display = '';
+  $('gameArea').style.display = '';
+  $('charArea').style.display = '';
+  $('garden').style.display = '';
+  $('progBar').style.display = '';
+
+  audio.startMusic();
+
+  // Greeting — don't await, let game start quickly
+  audio.play('greetings');
+  await delay(1200);
+
+  // Show first round banner
+  await showRoundBanner();
+
+  // Start round 1
+  await startRound();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  $('btnStart').disabled = true;
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  $('btnAgain').disabled = true;
+  showScreen(null);
+  setTimeout(() => {
+    $('btnAgain').disabled = false;
+    $('btnStart').disabled = false;
+    startGame();
+  }, 400);
+});
+
+</script>
+</body>
+</html>

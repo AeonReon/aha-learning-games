@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Paint with Magic — Stella's Rainbow</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --pink: #fbcfe8; --yellow: #fef08a; --mint: #bbf7d0; --sky: #bae6fd; --lavender: #e9d5ff; --peach: #fed7aa;
+  --deep-pink: #ec4899; --deep-purple: #a855f7;
+  --text-dark: #4a1d5e;
+  --white90: rgba(255,255,255,0.92);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--sky);
+}
+
+/* ── Background: pastel rainbow sky ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(180deg,
+    #fbcfe8 0%,
+    #fde2c4 18%,
+    #fef08a 34%,
+    #bbf7d0 52%,
+    #bae6fd 72%,
+    #e9d5ff 100%);
+}
+.bg-cloud {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(40px, 9vw, 70px);
+  opacity: 0.85;
+  animation: cloudFloat linear infinite;
+  filter: drop-shadow(0 4px 10px rgba(255,255,255,0.5));
+}
+@keyframes cloudFloat {
+  0%   { transform: translateX(-100px); }
+  100% { transform: translateX(110vw); }
+}
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: 2;
+  font-size: clamp(12px, 2.2vw, 18px);
+  animation: sparkleTwinkle ease-in-out infinite;
+}
+@keyframes sparkleTwinkle {
+  0%,100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+
+/* ── Painted Rainbow (achievement) ── */
+.painted-rainbow {
+  position: fixed; top: 62px; left: 0; right: 0;
+  z-index: 3;
+  pointer-events: none;
+  display: flex; flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.rainbow-stripe {
+  width: 0;
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0;
+  transition: width 0.6s ease-out, opacity 0.6s;
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
+}
+.rainbow-stripe.lit {
+  width: min(88vw, 420px);
+  opacity: 0.85;
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: #fff;
+  text-shadow: 0 0 30px rgba(236,72,153,0.6), 3px 3px 0 rgba(168,85,247,0.5), 4px 4px 0 rgba(0,0,0,0.15);
+  margin: 6px 0 8px;
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: center;
+  margin-bottom: 10px;
+  font-size: clamp(36px, 9vw, 60px);
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--text-dark);
+  max-width: 360px; line-height: 1.45;
+  font-weight: bold;
+  background: rgba(255,255,255,0.7);
+  padding: 12px 18px;
+  border-radius: 18px;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(236,72,153,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, #ec4899, #a855f7);
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, #ec4899, #a855f7); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.8); backdrop-filter: blur(8px);
+  border-bottom: 2px solid rgba(236,72,153,0.3);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(74,29,94,0.55); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--deep-pink); }
+.hud-score .hud-val { color: var(--deep-purple); }
+.hud-center .hud-val { color: var(--deep-pink); font-size: clamp(18px,4vw,26px); }
+
+/* ── Character (Stella the unicorn) ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 4px 8px rgba(236,72,153,0.4)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--text-dark);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(236,72,153,0.25);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+@keyframes charJump {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-15px) rotate(-4deg); }
+  70%  { transform: translateY(-5px) rotate(2deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+/* ── Canvas area ── */
+.canvas-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+}
+.canvas-area canvas {
+  border-radius: 24px;
+  box-shadow: 0 0 40px rgba(236,72,153,0.25), 0 6px 30px rgba(168,85,247,0.25);
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Letter display ── */
+.letter-display {
+  position: fixed;
+  top: 56px; right: 12px;
+  z-index: var(--z-ui);
+  pointer-events: none;
+}
+.letter-display .big-letter {
+  font-size: clamp(40px,10vw,70px);
+  font-weight: 900;
+  color: var(--deep-pink);
+  text-shadow: 0 0 20px rgba(236,72,153,0.4), 2px 2px 0 rgba(255,255,255,0.9);
+  line-height: 1;
+}
+.letter-display .sub-label {
+  font-size: clamp(10px,2vw,14px);
+  color: var(--text-dark);
+  text-align: center;
+  font-weight: bold;
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui); height: 56px;
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+  border-top: 2px solid rgba(236,72,153,0.3);
+  display: flex; align-items: center; justify-content: center; gap: clamp(6px,2vw,14px);
+  padding: 0 12px;
+}
+.prog-dot {
+  width: clamp(32px,8vw,44px); height: clamp(32px,8vw,44px);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3.2vw,20px); font-weight: 900;
+  background: rgba(255,255,255,0.55); color: rgba(74,29,94,0.4);
+  border: 2px solid rgba(236,72,153,0.2);
+  transition: all 0.4s;
+}
+.prog-dot.active {
+  background: rgba(251,207,232,0.8); color: var(--deep-pink);
+  border-color: var(--deep-pink);
+  box-shadow: 0 0 12px rgba(236,72,153,0.35);
+  transform: scale(1.1);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, #ec4899, #a855f7);
+  color: #fff; border-color: #fff;
+  box-shadow: 0 0 16px rgba(168,85,247,0.5);
+}
+
+/* ── Level banner ── */
+.level-banner {
+  position: fixed; inset: 0;
+  z-index: var(--z-celeb);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(10px);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.4s;
+}
+.level-banner.show { opacity: 1; visibility: visible; pointer-events: auto; }
+.level-banner h2 {
+  font-size: clamp(24px,6vw,42px);
+  color: var(--deep-pink);
+  text-shadow: 0 0 20px rgba(236,72,153,0.35), 2px 2px 0 rgba(255,255,255,0.9);
+  margin-bottom: 6px;
+  padding: 0 16px;
+  text-align: center;
+}
+.level-banner p {
+  font-size: clamp(14px,3.5vw,20px);
+  color: var(--text-dark);
+  font-weight: bold;
+  padding: 0 20px;
+  text-align: center;
+}
+
+/* ── Confetti ── */
+.confetti {
+  position: fixed; pointer-events: none;
+  z-index: var(--z-celeb);
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+.starburst {
+  position: fixed; pointer-events: none; z-index: var(--z-celeb);
+  animation: starPop 0.8s ease-out forwards;
+}
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(0); opacity: 1; }
+  60%  { transform: scale(1.5) rotate(180deg); opacity: 0.9; }
+  100% { transform: scale(0.5) rotate(360deg) translateY(-40px); opacity: 0; }
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: linear-gradient(180deg, #fbcfe8 0%, #fef08a 30%, #bbf7d0 55%, #bae6fd 80%, #e9d5ff 100%);
+}
+.screen-celeb h1 {
+  font-size: clamp(26px,6.5vw,46px);
+  color: #fff;
+  text-shadow: 0 0 30px rgba(236,72,153,0.6), 3px 3px 0 rgba(168,85,247,0.5), 4px 4px 0 rgba(0,0,0,0.15);
+  margin-bottom: 12px;
+}
+.screen-celeb p {
+  font-size: clamp(16px,4vw,22px);
+  color: var(--text-dark);
+  line-height: 1.5;
+  font-weight: bold;
+  background: rgba(255,255,255,0.75);
+  padding: 12px 18px;
+  border-radius: 18px;
+}
+.screen-celeb .final-unicorn {
+  font-size: clamp(60px,15vw,100px);
+  margin: 16px 0;
+  animation: unicornPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 6px 14px rgba(236,72,153,0.4));
+}
+@keyframes unicornPulse {
+  0%,100% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.05) rotate(-3deg); }
+  50% { transform: scale(1.1) rotate(0); }
+  75% { transform: scale(1.05) rotate(3deg); }
+}
+.final-score {
+  font-size: clamp(18px,4.5vw,28px);
+  color: var(--deep-purple); font-weight: 900;
+  margin-top: 8px;
+  text-shadow: 2px 2px 0 rgba(255,255,255,0.9);
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg" id="bg"></div>
+
+<!-- Painted Rainbow (achievement) -->
+<div class="painted-rainbow" id="paintedRainbow" style="display:none"></div>
+
+<!-- Title Screen -->
+<div class="screen screen-title active" id="screenTitle">
+  <div class="icon-row"><span>🦄</span><span>🌈</span><span>✨</span></div>
+  <h1>Paint with Magic</h1>
+  <p>Help Stella the unicorn paint letters in the sky! Trace each letter with her magical horn to paint a rainbow!</p>
+  <button class="btn btn-start" id="btnStart">Paint Magic!</button>
+</div>
+
+<!-- Game Screen (HUD + Canvas + Progress) -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <div class="hud-label">LEVEL</div>
+    <div class="hud-val" id="hudLevel">1</div>
+  </div>
+  <div class="hud-center">
+    <div class="hud-val" id="hudLetter">U</div>
+  </div>
+  <div class="hud-right hud-score">
+    <div class="hud-label">STRIPES</div>
+    <div class="hud-val" id="hudScore">0</div>
+  </div>
+</div>
+
+<!-- Letter display -->
+<div class="letter-display" id="letterDisplay" style="display:none">
+  <div class="big-letter" id="bigLetter">U</div>
+  <div class="sub-label" id="letterSubLabel"></div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-area" id="canvasArea" style="display:none">
+  <canvas id="traceCanvas"></canvas>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Character -->
+<div class="char-area" id="charArea" style="display:none">
+  <span class="char-emoji" id="charEmoji">🦄</span>
+  <div class="char-bubble" id="charBubble"></div>
+</div>
+
+<!-- Level Banner -->
+<div class="level-banner" id="levelBanner">
+  <h2 id="bannerTitle">Level 1</h2>
+  <p id="bannerSub">Follow the sparkle trail!</p>
+</div>
+
+<!-- Celebration Screen -->
+<div class="screen screen-celeb" id="screenCeleb">
+  <h1>Rainbow Complete!</h1>
+  <div class="final-unicorn">🦄🌈</div>
+  <p>Stella painted a beautiful rainbow!<br>You are a magical artist!</p>
+  <div class="final-score" id="finalScore">24 Stripes Painted!</div>
+  <button class="btn btn-again" id="btnAgain">Paint Again!</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════════════
+const AUDIO_BASE = '../../audio';
+
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+const LETTERS = ['u','v','w','x','y','z'];
+
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Gentle pentatonic sparkle notes for magical rainbow feel
+    const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.10, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.6);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.8);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1500);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')    { p(440,t,0.12,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='rainbow')   { p(523.25,t,0.10,0.3); p(587.33,t+0.08,0.10,0.3); p(659.25,t+0.16,0.10,0.3); p(698.46,t+0.24,0.10,0.3); p(783.99,t+0.32,0.10,0.3); p(880.00,t+0.40,0.15,0.35); p(1046.5,t+0.50,0.25,0.4); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='checkpoint') {
+      p(700 + Math.random()*300, t, 0.08, 0.15, 'triangle');
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(letter) { return this.speak(`${AUDIO_BASE}/letters/${letter.toLowerCase()}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT DATA — uppercase U, V, W, X, Y, Z
+// ══════════════════════════════════════════════════════════════════
+const CHECKPOINTS = {
+  // U (1 part): down, curve, up
+  'U':        [{x:0.22,y:0.12},{x:0.22,y:0.65},{x:0.30,y:0.82},{x:0.50,y:0.88},{x:0.70,y:0.82},{x:0.78,y:0.65},{x:0.78,y:0.12}],
+  // V (1 part): two diagonals
+  'V':        [{x:0.15,y:0.12},{x:0.50,y:0.88},{x:0.85,y:0.12}],
+  // W (1 part): four diagonals
+  'W':        [{x:0.10,y:0.12},{x:0.30,y:0.88},{x:0.50,y:0.40},{x:0.70,y:0.88},{x:0.90,y:0.12}],
+  // X (2 parts): two diagonals
+  'X_first':  [{x:0.15,y:0.12},{x:0.85,y:0.88}],
+  'X_second': [{x:0.85,y:0.12},{x:0.15,y:0.88}],
+  // Y (2 parts): V-top + vertical
+  'Y_first':  [{x:0.15,y:0.12},{x:0.50,y:0.55}],
+  'Y_second': [{x:0.85,y:0.12},{x:0.50,y:0.55},{x:0.50,y:0.88}],
+  // Z (1 part): top, diagonal, bottom
+  'Z':        [{x:0.15,y:0.12},{x:0.85,y:0.12},{x:0.15,y:0.88},{x:0.85,y:0.88}],
+};
+
+// Sequence: U -> V -> W -> X_first -> X_second -> Y_first -> Y_second -> Z
+const TRACE_SEQUENCE = ['U', 'V', 'W', 'X_first', 'X_second', 'Y_first', 'Y_second', 'Z'];
+
+// Level configs
+const LEVELS = [
+  { label: 'Level 1 — Follow Stella!', sub: 'Watch the magic trail, then trace!', outlineOpacity: 1.0, showGuide: true },
+  { label: 'Level 2 — Paint the Sky!', sub: 'No guide this time!', outlineOpacity: 1.0, showGuide: false },
+  { label: 'Level 3 — Fading Magic!', sub: 'The outline is fading...', outlineOpacity: 0.5, showGuide: false },
+  { label: 'Level 4 — From Memory!', sub: 'Can you remember the shapes?', outlineOpacity: 0.15, showGuide: false },
+];
+
+const BUBBLE_CORRECT = ['Magical! 🦄','Sparkle magic! ✨','Wonderful! 🌈','So pretty! 💖','Beautiful! 🌟'];
+const BUBBLE_WRONG   = ['Keep tracing! 🦄','Follow the path! ✨','Almost there! 💫','Try the glow! 🌈'];
+
+// Rainbow stripe colors (pastel rainbow - 6 colors cycled through 4 levels = 24 stripes)
+const RAINBOW_COLORS = [
+  '#fbcfe8', // pink
+  '#fed7aa', // peach
+  '#fef08a', // yellow
+  '#bbf7d0', // mint
+  '#bae6fd', // sky
+  '#e9d5ff', // lavender
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let currentLevel = 0;
+let currentTraceIndex = 0;
+let score = 0;
+let totalLetters = 0;
+let rainbowStripeCount = 0;
+
+// Tracing state
+let traceCheckpoints = [];
+let nextCheckpoint = 0;
+let isDrawing = false;
+let drawPoints = [];
+let hitRadius = 0;
+let canvas, ctx;
+let canvasW, canvasH, dpr;
+let guideAnimating = false;
+let hintTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — puffy clouds + sparkle stars
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Puffy clouds drifting across
+  const cloudEmojis = ['☁️','☁️','⛅','☁️'];
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-cloud';
+    el.textContent = pick(cloudEmojis);
+    el.style.top = (5 + Math.random() * 75) + 'vh';
+    el.style.animationDuration = (30 + Math.random() * 25) + 's';
+    el.style.animationDelay = (-Math.random() * 30) + 's';
+    el.style.opacity = (0.6 + Math.random() * 0.3).toFixed(2);
+    document.body.appendChild(el);
+  }
+  // Sparkle stars
+  const sparkles = ['✨','⭐','💫','🌟'];
+  for (let i = 0; i < 40; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(sparkles);
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 100) + 'vh';
+    el.style.animationDuration = (2.5 + Math.random() * 4) + 's';
+    el.style.animationDelay = (-Math.random() * 5) + 's';
+    $('bg').appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PAINTED RAINBOW (achievement)
+// ══════════════════════════════════════════════════════════════════
+function buildPaintedRainbow() {
+  const r = $('paintedRainbow');
+  r.innerHTML = '';
+  // 24 stripes = 6 letters × 4 levels
+  for (let i = 0; i < 24; i++) {
+    const s = document.createElement('div');
+    s.className = 'rainbow-stripe';
+    s.id = 'stripe' + i;
+    s.style.background = RAINBOW_COLORS[i % RAINBOW_COLORS.length];
+    r.appendChild(s);
+  }
+}
+
+function paintRainbowStripe() {
+  const s = $('stripe' + rainbowStripeCount);
+  if (s) {
+    s.classList.add('lit');
+    rainbowStripeCount++;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40) {
+  const all = ['🌈','✨','💖','🦄','🌟','💫','⭐','🌸','🎀','☁️'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function rainbowBurst(x, y) {
+  // Rainbow burst - colorful ring of sparkles
+  const colors = ['🌈','💖','✨','💫','🌟','🦄','🎀','🌸'];
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(colors);
+    s.style.left = (x + (Math.random()-0.5)*160) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*160) + 'px';
+    s.style.fontSize = (18 + Math.random()*14) + 'px';
+    s.style.animationDelay = (Math.random()*0.3) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1100);
+  }
+}
+
+function starBurstAt(x, y) {
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🌟','💖','🦄']);
+    s.style.left = (x + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+function showGameUI(show) {
+  $('hud').style.display = show ? '' : 'none';
+  $('canvasArea').style.display = show ? '' : 'none';
+  $('progBar').style.display = show ? '' : 'none';
+  $('charArea').style.display = show ? '' : 'none';
+  $('paintedRainbow').style.display = show ? '' : 'none';
+  $('letterDisplay').style.display = show ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  const labels = ['U', 'V', 'W', 'X', 'Y', 'Z'];
+  labels.forEach((l, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'prog' + i;
+    d.textContent = l;
+    bar.appendChild(d);
+  });
+}
+
+// Map trace index to progress dot
+// 0=U, 1=V, 2=W, 3=X_first, 4=X_second, 5=Y_first, 6=Y_second, 7=Z
+// Progress dots: 0=U, 1=V, 2=W, 3=X, 4=Y, 5=Z
+function traceIndexToDot(idx) {
+  if (idx <= 2) return idx;         // U, V, W
+  if (idx <= 4) return 3;           // X_first, X_second -> X
+  if (idx <= 6) return 4;           // Y_first, Y_second -> Y
+  return 5;                         // Z
+}
+
+function updateProg() {
+  const dotIndex = traceIndexToDot(currentTraceIndex);
+  for (let i = 0; i < 6; i++) {
+    const d = $('prog' + i);
+    if (!d) continue;
+    d.classList.remove('active', 'done');
+    if (i < dotIndex) d.classList.add('done');
+    else if (i === dotIndex) d.classList.add('active');
+  }
+}
+
+function markProgDone(idx) {
+  const d = $('prog' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════════════════════
+function setupCanvas() {
+  canvas = $('traceCanvas');
+  const area = $('canvasArea');
+  const rect = area.getBoundingClientRect();
+  const pad = 16;
+  const w = rect.width - pad * 2;
+  const h = rect.height - pad * 2;
+  const size = Math.min(w, h, 400);
+
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+
+  ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  canvasW = size;
+  canvasH = size;
+  hitRadius = canvasW * 0.15;
+
+  // Touch/mouse events
+  canvas.addEventListener('mousedown', onPointerDown);
+  canvas.addEventListener('mousemove', onPointerMove);
+  canvas.addEventListener('mouseup', onPointerUp);
+  canvas.addEventListener('mouseleave', onPointerUp);
+  canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas.addEventListener('touchend', onPointerUp, { passive: false });
+}
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onPointerDown(e) {
+  if (!gameActive || guideAnimating) return;
+  audio.unlock();
+  isDrawing = true;
+  drawPoints = [];
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  checkCheckpoint(pos);
+}
+
+function onPointerMove(e) {
+  if (!isDrawing || !gameActive || guideAnimating) return;
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  drawTraceLine();
+  checkCheckpoint(pos);
+}
+
+function onPointerUp() {
+  isDrawing = false;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAWING
+// ══════════════════════════════════════════════════════════════════
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+}
+
+function drawLetterOutline(key, opacity) {
+  const cps = CHECKPOINTS[key];
+  if (!cps || cps.length < 2) return;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  // Pastel white/pink stroke for the outline
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 16;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(251,207,232,0.8)';
+  ctx.shadowBlur = 18;
+
+  ctx.beginPath();
+  const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineTo(pts[i].x, pts[i].y);
+  }
+  ctx.stroke();
+
+  // Inner pink tint
+  ctx.globalAlpha = opacity * 0.7;
+  ctx.strokeStyle = '#fbcfe8';
+  ctx.lineWidth = 8;
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineTo(pts[i].x, pts[i].y);
+  }
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawCheckpointDots() {
+  const cps = traceCheckpoints;
+  for (let i = 0; i < cps.length; i++) {
+    const cp = cps[i];
+    const x = cp.x * canvasW;
+    const y = cp.y * canvasH;
+
+    if (i < nextCheckpoint) {
+      // Hit — glowing rainbow star
+      ctx.save();
+      ctx.shadowColor = 'rgba(236,72,153,0.9)';
+      ctx.shadowBlur = 14;
+      // Cycle through rainbow colors per checkpoint
+      const stripeColor = RAINBOW_COLORS[i % RAINBOW_COLORS.length];
+      ctx.fillStyle = stripeColor;
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      // White inner core
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawTraceLine() {
+  if (drawPoints.length < 2) return;
+
+  // Redraw everything
+  clearCanvas();
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const level = LEVELS[currentLevel];
+  drawLetterOutline(key, level.outlineOpacity);
+
+  // Rainbow gradient trace line
+  ctx.save();
+  const grad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
+  grad.addColorStop(0.00, '#fbcfe8'); // pink
+  grad.addColorStop(0.33, '#fef08a'); // yellow
+  grad.addColorStop(0.66, '#bbf7d0'); // mint
+  grad.addColorStop(1.00, '#bae6fd'); // sky
+
+  // Outer rainbow glow
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(236,72,153,0.6)';
+  ctx.shadowBlur = 20;
+
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+
+  // Inner bright line
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 5;
+  ctx.shadowColor = 'rgba(255,255,255,0.9)';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  drawCheckpointDots();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT CHECKING
+// ══════════════════════════════════════════════════════════════════
+function checkCheckpoint(pos) {
+  if (nextCheckpoint >= traceCheckpoints.length) return;
+
+  const cp = traceCheckpoints[nextCheckpoint];
+  const cpx = cp.x * canvasW;
+  const cpy = cp.y * canvasH;
+  const dx = pos.x - cpx;
+  const dy = pos.y - cpy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist <= hitRadius) {
+    nextCheckpoint++;
+    audio.tone('checkpoint');
+    resetHints();
+
+    // Redraw to show hit dot
+    clearCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+    drawTraceLine();
+    drawCheckpointDots();
+
+    if (nextCheckpoint >= traceCheckpoints.length) {
+      onTraceComplete();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANIMATED GUIDE (Level 1)
+// ══════════════════════════════════════════════════════════════════
+function animateGuide(key) {
+  return new Promise(resolve => {
+    const cps = CHECKPOINTS[key];
+    if (!cps || cps.length < 2) { resolve(); return; }
+
+    guideAnimating = true;
+    const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+    const totalDuration = 2000;
+    const start = performance.now();
+
+    // Build dense path
+    const densePoints = [];
+    const steps = 80;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const totalLen = pts.length - 1;
+      const segment = t * totalLen;
+      const i = Math.min(Math.floor(segment), totalLen - 1);
+      const localT = segment - i;
+
+      if (pts.length === 2) {
+        densePoints.push({
+          x: pts[0].x + (pts[1].x - pts[0].x) * t,
+          y: pts[0].y + (pts[1].y - pts[0].y) * t
+        });
+      } else {
+        const p0 = pts[i];
+        const p1 = pts[Math.min(i + 1, pts.length - 1)];
+        densePoints.push({
+          x: p0.x + (p1.x - p0.x) * localT,
+          y: p0.y + (p1.y - p0.y) * localT
+        });
+      }
+    }
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const idx = Math.floor(progress * (densePoints.length - 1));
+
+      clearCanvas();
+      drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+
+      // Rainbow sparkle trail
+      ctx.save();
+      const trailLen = 10;
+      for (let j = Math.max(0, idx - trailLen); j <= idx; j++) {
+        const p = densePoints[j];
+        const alpha = 1 - (idx - j) / trailLen;
+        const colorIdx = j % RAINBOW_COLORS.length;
+        ctx.fillStyle = RAINBOW_COLORS[colorIdx];
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.shadowColor = 'rgba(236,72,153,0.8)';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6 + alpha * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Magical sparkle head (Stella's horn sparkle)
+      if (idx < densePoints.length) {
+        const p = densePoints[idx];
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(251,207,232,1)';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        guideAnimating = false;
+        clearCanvas();
+        drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    if (!gameActive || guideAnimating) return;
+    if (nextCheckpoint < traceCheckpoints.length) {
+      const cp = traceCheckpoints[nextCheckpoint];
+      const x = cp.x * canvasW;
+      const y = cp.y * canvasH;
+
+      const key = TRACE_SEQUENCE[currentTraceIndex];
+      clearCanvas();
+      drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(236,72,153,0.25)';
+      ctx.shadowColor = 'rgba(236,72,153,0.8)';
+      ctx.shadowBlur = 28;
+      ctx.beginPath();
+      ctx.arc(x, y, hitRadius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      audio.tone('hint');
+      showCharBubble('Trace here! ✨', 2000);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRACE COMPLETE
+// ══════════════════════════════════════════════════════════════════
+function keyToLetter(key) {
+  if (key === 'X_first' || key === 'X_second') return 'X';
+  if (key === 'Y_first' || key === 'Y_second') return 'Y';
+  return key;
+}
+
+function isLetterFinalPart(key) {
+  // Returns true if this trace completes the whole letter
+  return key === 'U' || key === 'V' || key === 'W' || key === 'X_second' || key === 'Y_second' || key === 'Z';
+}
+
+async function onTraceComplete() {
+  gameActive = false;
+  isDrawing = false;
+  clearTimeout(hintTimer);
+
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const finishesLetter = isLetterFinalPart(key);
+
+  // Sparkle burst on canvas center
+  const rect = canvas.getBoundingClientRect();
+  starBurstAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+  audio.tone('correct');
+  jumpChar();
+  showCharBubble(pick(BUBBLE_CORRECT), 2000);
+
+  if (finishesLetter) {
+    // A full letter is done — rainbow burst + new stripe
+    score++;
+    totalLetters++;
+    $('hudScore').textContent = rainbowStripeCount + 1;
+
+    audio.tone('rainbow');
+    rainbowBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    paintRainbowStripe();
+    showCharBubble('Magical! 🌈', 2200);
+
+    await audio.play('correct');
+  } else {
+    // Part 1 of 2 — simple cheer
+    await delay(400);
+  }
+
+  await delay(500);
+
+  // Advance to next trace
+  currentTraceIndex++;
+
+  // Update progress dots
+  if (finishesLetter) {
+    const dotIdx = traceIndexToDot(currentTraceIndex - 1);
+    markProgDone(dotIdx);
+  }
+
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) {
+    // Level complete
+    currentTraceIndex = 0;
+    currentLevel++;
+
+    if (currentLevel >= LEVELS.length) {
+      await onGameComplete();
+    } else {
+      await onLevelComplete();
+    }
+  } else {
+    await startTrace();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEVEL COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onLevelComplete() {
+  audio.tone('roundDone');
+  confetti(30);
+  showCharBubble('Level complete! 🦄', 2500);
+
+  await audio.play('round-complete');
+  await delay(1000);
+
+  await showLevelBanner();
+}
+
+async function showLevelBanner() {
+  const level = LEVELS[currentLevel];
+  $('bannerTitle').textContent = level.label;
+  $('bannerSub').textContent = level.sub;
+  $('levelBanner').classList.add('show');
+
+  audio.tone('reveal');
+  await audio.play('greetings');
+  await delay(1800);
+
+  $('levelBanner').classList.remove('show');
+  await delay(400);
+
+  await startLevel();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onGameComplete() {
+  showGameUI(false);
+
+  // Gentle flash
+  document.body.style.background = '#fff';
+  await delay(100);
+  document.body.style.background = '';
+
+  audio.tone('celeb');
+  audio.tone('rainbow');
+  confetti(60);
+
+  $('finalScore').textContent = rainbowStripeCount + ' Stripes Painted!';
+  showScreen('screenCeleb');
+
+  await delay(500);
+  confetti(40);
+
+  await audio.play('game-complete');
+  await delay(1500);
+  await audio.play('game-complete');
+  confetti(40);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START TRACE
+// ══════════════════════════════════════════════════════════════════
+async function startTrace() {
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const cps = CHECKPOINTS[key];
+  traceCheckpoints = cps;
+  nextCheckpoint = 0;
+  isDrawing = false;
+  drawPoints = [];
+  gameActive = true;
+
+  // Update HUD
+  const level = LEVELS[currentLevel];
+  $('hudLevel').textContent = currentLevel + 1;
+
+  // Display letter
+  const letter = keyToLetter(key);
+  let subLabel = '';
+  let isPart1 = true;
+  if (key === 'X_first')       { subLabel = 'part 1/2'; isPart1 = true; }
+  else if (key === 'X_second') { subLabel = 'part 2/2'; isPart1 = false; }
+  else if (key === 'Y_first')  { subLabel = 'part 1/2'; isPart1 = true; }
+  else if (key === 'Y_second') { subLabel = 'part 2/2'; isPart1 = false; }
+
+  $('bigLetter').textContent = letter;
+  $('letterSubLabel').textContent = subLabel;
+  $('hudLetter').textContent = letter;
+
+  updateProg();
+
+  // Draw the outline
+  clearCanvas();
+  drawLetterOutline(key, level.outlineOpacity);
+
+  // Speak letter ONCE at start of part 1 only (silent on subsequent parts)
+  if (isPart1) {
+    audio.speakLetter(letter);
+  }
+
+  // Level 1: show animated guide first
+  if (level.showGuide) {
+    await delay(300);
+    await animateGuide(key);
+    showCharBubble('Your turn! Trace it! ✨', 2000);
+  } else {
+    showCharBubble('Paint the letter! 🦄', 2000);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START LEVEL
+// ══════════════════════════════════════════════════════════════════
+async function startLevel() {
+  currentTraceIndex = 0;
+  buildProg();
+  await startTrace();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  audio.unlock();
+  showScreen(null);
+  currentLevel = 0;
+  currentTraceIndex = 0;
+  score = 0;
+  totalLetters = 0;
+  rainbowStripeCount = 0;
+
+  $('hudScore').textContent = '0';
+  showGameUI(true);
+  buildPaintedRainbow();
+  setupCanvas();
+
+  audio.startMusic();
+
+  // Show level 1 banner
+  await showLevelBanner();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => startGame());
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+
+// Unlock audio on any touch (iOS)
+document.addEventListener('touchstart', () => audio.unlock(), { once: true, passive: true });
+document.addEventListener('click', () => audio.unlock(), { once: true });
+
+// Handle resize to keep canvas crisp
+window.addEventListener('resize', () => {
+  if ($('canvasArea').style.display !== 'none' && canvas) {
+    setupCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    if (key && CHECKPOINTS[key]) {
+      clearCanvas();
+      drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+    }
+  }
+});
+</script>
+</body>
+</html>

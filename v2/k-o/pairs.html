@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Magic Mountain Memory ❄️</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --ice-deep: #0a1a3a; --ice-blue: #2b4b8c; --ice-light: #a8d0f0; --ice-white: #f0f8ff;
+  --silver: #d4dfea; --lavender: #b8a8d8; --sparkle: #e8f0ff; --gold: #ffe066;
+  --aurora-green: #7dffb4; --aurora-pink: #ff9eca; --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(160deg, #0a1a3a 0%, #1e3a6b 30%, #3d5e9a 60%, #6b8ac0 85%, #a8c8e8 100%);
+}
+
+/* ── Snowy peaks silhouette ── */
+.mountain-bg {
+  position: fixed; bottom: 45px; left: 0; right: 0;
+  pointer-events: none; z-index: var(--z-bg);
+  height: 45vh;
+  background:
+    radial-gradient(ellipse at 15% 100%, rgba(255,255,255,0.12) 0%, transparent 35%),
+    radial-gradient(ellipse at 85% 100%, rgba(255,255,255,0.10) 0%, transparent 35%);
+}
+.mountain-bg svg { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; }
+
+/* ── Snowfall ── */
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(10px, 2vw, 18px);
+  opacity: 0.6;
+  animation: snowFall linear infinite;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255,255,255,0.8);
+}
+@keyframes snowFall {
+  0%   { transform: translateY(-30px) translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(110vh) translateX(30px) rotate(360deg); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title {
+  background: linear-gradient(160deg, #0a1a3a 0%, #1e3a6b 30%, #3d5e9a 60%, #6b8ac0 85%, #a8c8e8 100%);
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--ice-white);
+  text-shadow: 0 0 30px rgba(168,208,240,0.8), 2px 2px 0 rgba(10,26,58,0.6);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #0a1a3a; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(10,26,58,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start  { background: linear-gradient(135deg, #e8f0ff, #a8d0f0); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again  { background: linear-gradient(135deg, #e8f0ff, #a8d0f0); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.25)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(10,26,58,0.90); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(168,208,240,0.25);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--ice-light); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-pairs-text { color: var(--ice-white); font-size: clamp(14px,3vw,20px); font-weight: 900; text-shadow: 0 0 8px rgba(168,208,240,0.6); }
+
+/* ── Character (Bramble the yeti) ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 0 8px rgba(255,255,255,0.4)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.97); color: var(--ice-deep);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(10,26,58,0.3);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.97);
+}
+
+/* ── Card Grid ── */
+.card-grid {
+  position: fixed;
+  top: 55px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-game);
+  display: grid;
+  gap: clamp(6px,1.5vw,10px);
+  padding: 8px;
+  justify-items: center; align-items: center;
+}
+.card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.card-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* ── Card ── */
+.card {
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.card:active { transform: scale(0.95); }
+.card-inner {
+  position: relative;
+  width: clamp(70px, 18vw, 100px);
+  height: clamp(90px, 24vw, 120px);
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+.card.flipped .card-inner  { transform: rotateY(180deg); }
+.card.matched .card-inner  { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 4px 12px rgba(10,26,58,0.35);
+}
+
+/* Card back — icy blue snowflake tile */
+.card-back {
+  background: linear-gradient(135deg, #3d5e9a, #1e3a6b);
+  border: 3px solid rgba(232,240,255,0.5);
+  box-shadow: 0 0 15px rgba(168,208,240,0.3), 0 4px 12px rgba(10,26,58,0.4);
+  gap: 2px;
+  position: relative;
+  overflow: hidden;
+}
+.card-back::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent 50%);
+  pointer-events: none;
+}
+.card-back-icon { font-size: clamp(30px,7.5vw,44px); line-height: 1; animation: snowSpin 4s linear infinite; }
+@keyframes snowSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+.card-back-sparkle { font-size: 10px; color: var(--sparkle); text-shadow: 0 0 4px #fff; }
+
+/* Card front — icy white tile with content */
+.card-front {
+  background: linear-gradient(135deg, #f0f8ff, #d4dfea);
+  border: 3px solid rgba(168,208,240,0.8);
+  transform: rotateY(180deg);
+  gap: 2px;
+  padding: 4px;
+}
+
+/* Card content types */
+.card-letter {
+  font-size: clamp(38px, 10vw, 58px);
+  font-weight: 900;
+  color: var(--ice-blue);
+  text-shadow: 0 0 12px rgba(168,208,240,0.5), 1px 1px 0 rgba(255,255,255,0.6);
+  line-height: 1;
+  font-family: var(--font);
+}
+.card-letter.lower {
+  color: #6b4aa0;
+  text-shadow: 0 0 12px rgba(184,168,216,0.5), 1px 1px 0 rgba(255,255,255,0.6);
+}
+.card-word {
+  font-size: clamp(15px, 3.5vw, 20px);
+  font-weight: 900;
+  color: #1e3a6b;
+  text-transform: uppercase;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+}
+.card-emoji-big {
+  font-size: clamp(30px, 7vw, 44px);
+  line-height: 1;
+}
+.card-small-letter {
+  font-size: clamp(12px, 2.6vw, 15px);
+  font-weight: 900;
+  color: rgba(30,58,107,0.7);
+  margin-top: 2px;
+}
+
+/* Matched cards — frozen crystal glow */
+.card.matched .card-front {
+  background: linear-gradient(135deg, #e8f5ff, #b8d8f0);
+  border-color: var(--aurora-green);
+  box-shadow: 0 0 18px rgba(125,255,180,0.6);
+}
+.card.matched .card-inner {
+  animation: cardmatch 0.4s ease-out;
+}
+.card.match-anim .card-front::after {
+  content: '❄️✨';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(28px, 7vw, 42px);
+  background: rgba(232,245,255,0.85);
+  border-radius: 11px;
+  animation: crystalBurst 1.2s ease-out forwards;
+}
+@keyframes crystalBurst {
+  0%   { opacity: 1; transform: scale(0.6) rotate(0deg); }
+  50%  { opacity: 1; transform: scale(1.3) rotate(180deg); }
+  100% { opacity: 0; transform: scale(1.8) rotate(360deg); }
+}
+
+/* Hint styles */
+.hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(168,208,240,0.9), 0 0 50px rgba(232,240,255,0.5) !important; border-radius: 14px; }
+
+/* ── Mountain Summit (achievement) ── */
+.mountain-summit {
+  position: fixed; bottom: 52px; right: 8px;
+  z-index: var(--z-char);
+  width: clamp(80px,18vw,120px);
+  pointer-events: none;
+}
+.summit-svg { width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(168,208,240,0.4)); }
+.summit-crystal {
+  fill: rgba(168,208,240,0.25);
+  transition: fill 0.6s, filter 0.6s;
+}
+.summit-crystal.lit {
+  fill: #e8f0ff;
+  filter: drop-shadow(0 0 8px rgba(232,240,255,1)) drop-shadow(0 0 4px #a8d0f0);
+}
+.summit-complete { animation: auroraGlow 2s ease-in-out infinite; }
+@keyframes auroraGlow {
+  0%,100% { filter: drop-shadow(0 0 10px rgba(125,255,180,0.6)) drop-shadow(0 0 20px rgba(168,208,240,0.4)); }
+  33%     { filter: drop-shadow(0 0 15px rgba(255,158,202,0.8)) drop-shadow(0 0 25px rgba(184,168,216,0.5)); }
+  66%     { filter: drop-shadow(0 0 15px rgba(125,255,180,0.9)) drop-shadow(0 0 25px rgba(232,240,255,0.6)); }
+}
+
+/* ── Aurora lights overlay (full summit) ── */
+.aurora-overlay {
+  position: fixed; top: 0; left: 0; right: 0; height: 50vh;
+  z-index: var(--z-bg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(125,255,180,0.35) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 25%, rgba(255,158,202,0.3) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 10%, rgba(184,168,216,0.3) 0%, transparent 50%);
+  animation: auroraShift 6s ease-in-out infinite;
+}
+.aurora-overlay.show { opacity: 1; }
+@keyframes auroraShift {
+  0%,100% { transform: translateX(0) scale(1); }
+  50%     { transform: translateX(20px) scale(1.05); }
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(10,26,58,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(168,208,240,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,#e8f0ff,#a8d0f0);
+  border-color: var(--gold); color: #1e3a6b;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(10,26,58,0.95); backdrop-filter: blur(12px);
+  border: 2px solid rgba(168,208,240,0.35); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 0 40px rgba(168,208,240,0.3);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--ice-white); text-shadow: 0 0 15px rgba(168,208,240,0.7), 1px 1px 0 rgba(10,26,58,0.5);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.65); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(10,26,58,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--ice-white);
+  text-shadow: 0 0 20px rgba(168,208,240,0.8), 3px 3px 0 rgba(10,26,58,0.5);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.9); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cardmatch   { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.15)} 100%{transform:rotateY(180deg) scale(1)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+</style>
+</head>
+<body>
+
+<!-- Aurora lights (activates when summit complete) -->
+<div class="aurora-overlay" id="auroraOverlay"></div>
+
+<!-- Snowy mountain silhouette -->
+<div class="mountain-bg" id="mountainBg">
+  <svg viewBox="0 0 400 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Back mountains -->
+    <polygon points="0,200 0,120 60,70 130,110 200,50 270,100 340,60 400,95 400,200" fill="rgba(255,255,255,0.15)"/>
+    <!-- Front mountains -->
+    <polygon points="0,200 0,160 40,130 90,150 150,110 210,140 270,120 330,145 400,125 400,200" fill="rgba(255,255,255,0.22)"/>
+    <!-- Snow caps -->
+    <polygon points="180,65 200,50 220,65 210,70 200,66 190,70" fill="rgba(255,255,255,0.5)"/>
+    <polygon points="50,78 60,70 70,78 64,82 60,79 56,82" fill="rgba(255,255,255,0.4)"/>
+    <polygon points="328,67 340,60 352,67 345,71 340,68 335,71" fill="rgba(255,255,255,0.4)"/>
+  </svg>
+</div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-pairs-text" id="hudPairs">Find the matching pairs!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Card Grid -->
+<div class="card-grid" id="cardGrid"></div>
+
+<!-- Bramble the yeti -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧌</div>
+</div>
+
+<!-- Mountain Summit with 6 ice crystals -->
+<div class="mountain-summit" id="mountainSummit" style="display:none">
+  <svg class="summit-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Mountain -->
+    <polygon points="70,12 15,135 125,135" fill="#1e3a6b" stroke="#a8d0f0" stroke-width="1.5"/>
+    <!-- Snow cap -->
+    <polygon points="70,12 50,55 60,48 70,54 80,48 90,55" fill="#f0f8ff" stroke="#a8d0f0" stroke-width="1"/>
+    <!-- Side shading -->
+    <polygon points="70,12 15,135 50,135" fill="rgba(10,26,58,0.3)"/>
+
+    <!-- 6 ice crystals on the summit (arranged in cluster near peak) -->
+    <!-- Summit crystals (diamond shape) -->
+    <polygon class="summit-crystal" id="sc0" points="70,25 74,32 70,39 66,32" stroke="#a8d0f0" stroke-width="0.6"/>
+    <polygon class="summit-crystal" id="sc1" points="56,42 60,49 56,56 52,49" stroke="#a8d0f0" stroke-width="0.6"/>
+    <polygon class="summit-crystal" id="sc2" points="84,42 88,49 84,56 80,49" stroke="#a8d0f0" stroke-width="0.6"/>
+    <polygon class="summit-crystal" id="sc3" points="45,62 49,69 45,76 41,69" stroke="#a8d0f0" stroke-width="0.6"/>
+    <polygon class="summit-crystal" id="sc4" points="95,62 99,69 95,76 91,69" stroke="#a8d0f0" stroke-width="0.6"/>
+    <polygon class="summit-crystal" id="sc5" points="70,55 75,64 70,73 65,64" stroke="#a8d0f0" stroke-width="0.6"/>
+  </svg>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>❄️</span>
+    <span>🧌</span>
+    <span>⛰️</span>
+  </div>
+  <h1>Magic Mountain ❄️</h1>
+  <p>A snowstorm scrambled Bramble's letter snowballs! Flip the icy tiles and find the matching pairs!<br>⛰️ Restore the mountain peak! ⛰️</p>
+  <button class="btn btn-start" id="btnStart">Let's Play! ❄️</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🧌</span>
+    <span>⛰️</span>
+  </div>
+  <h2 id="celebTitle">❄️ Magical! ❄️</h2>
+  <p id="celebMsg">You restored the mountain peak!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! ❄️</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Magic Mountain Memory (K-O)  ❄️                         ║
+// ║  Cross-representation letter matching — uppercase, lowercase,    ║
+// ║  letter ↔ word cards. Voice B (en-GB-SoniaNeural) · Icy theme    ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+// ── Voice B clip pools ──
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+const LETTERS = ['k','l','m','n','o'];
+const LETTER_WORDS = {k:'kite',l:'lion',m:'moon',n:'nest',o:'owl'};
+const LETTER_EMOJI = {k:'🪁',l:'🦁',m:'🌙',n:'🪺',o:'🦉'};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first for iOS)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Icy, shimmering pentatonic — airy feel
+    const notes = [261.63, 329.63, 392.00, 440.00, 523.25, 659.25, 783.99];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.8 ? 2 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 900 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); p(1046.5,t+0.36,0.22,0.35); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='flip')     { p(800,t,0.06,0.15,'triangle'); p(1000,t+0.03,0.08,0.12,'triangle'); }
+    else if (type==='reveal')   { p(440,t,0.08,0.2); p(660,t+0.06,0.1,0.18); }
+    else if (type==='hint')     { p(554,t,0.15,0.15); p(659,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(900,t+0.18);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.22);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='pop')      { p(987,t,0.05,0.2); p(1175,t+0.04,0.06,0.15); p(1397,t+0.08,0.08,0.12); }
+    else if (type==='sparkle')  { p(1318,t,0.06,0.2); p(1568,t+0.05,0.08,0.15); p(2093,t+0.12,0.1,0.12); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(letter) { return this.speak(`${AUDIO_BASE}/letters/${letter.toLowerCase()}.mp3`); }
+  speakPhrase(name)   { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()        { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['A match! ❄️','Frozen! ✨','That\'s it! ⭐','Well done! 🧌','Magic! 💫','Crystal clear! 🌟'];
+const BUBBLE_WRONG   = ['Not a match!','Try again! ❄️','Almost! ✨','Keep going! 🧌','Remember! 💫'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['❄️','✨','💫','⭐','🌟','⛰️','🧌','🌨️','☃️','🏔️', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['❄️','✨','💫','⭐','🌟','🌨️']);
+    s.style.left = (cx + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — snowflakes fall
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['❄️','✨','⭐','❅','❆','💫','🌨️'];
+  for (let i = 0; i < 22; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*18) + 's';
+    el.style.animationDuration = (9 + Math.random()*12) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MOUNTAIN SUMMIT — 6 ice crystals light up as pairs are matched
+// Full summit = aurora lights dance
+// ══════════════════════════════════════════════════════════════════
+let summitIdx = 0;
+function resetSummit() {
+  summitIdx = 0;
+  for (let i = 0; i < 6; i++) {
+    const c = $('sc' + i);
+    if (c) c.classList.remove('lit');
+  }
+  const svg = document.querySelector('.summit-svg');
+  if (svg) svg.classList.remove('summit-complete');
+  $('auroraOverlay').classList.remove('show');
+}
+function lightCrystal() {
+  if (summitIdx < 6) {
+    const c = $('sc' + summitIdx);
+    if (c) { c.classList.add('lit'); audio.tone('sparkle'); }
+    summitIdx++;
+  }
+  if (summitIdx >= 6) {
+    const svg = document.querySelector('.summit-svg');
+    if (svg) svg.classList.add('summit-complete');
+    $('auroraOverlay').classList.add('show');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG — 4 rounds, progressive difficulty with cross-rep
+//
+// Card types:
+//   'upper'  — uppercase letter (e.g. "K")
+//   'lower'  — lowercase letter (e.g. "k")
+//   'word'   — word + emoji (e.g. "KITE" 🪁)
+//
+// Each pair = two cards with same letter but different representation
+// ══════════════════════════════════════════════════════════════════
+
+// R1: 3 pairs. Peek 1.5s. Letters K,L,M. Uppercase ↔ lowercase.
+// R2: 4 pairs. No peek. K-N. Uppercase ↔ lowercase.
+// R3: 5 pairs. No peek. K-O. Letter ↔ word.
+// R4: 6 pairs. Mixed cross-rep.
+
+function buildRoundPairs(roundIdx) {
+  let pairs = [];
+  if (roundIdx === 0) {
+    // 3 pairs: upper ↔ lower for K, L, M
+    ['k','l','m'].forEach(L => {
+      pairs.push({ letter: L, typeA: 'upper', typeB: 'lower' });
+    });
+  } else if (roundIdx === 1) {
+    // 4 pairs: upper ↔ lower for K, L, M, N
+    ['k','l','m','n'].forEach(L => {
+      pairs.push({ letter: L, typeA: 'upper', typeB: 'lower' });
+    });
+  } else if (roundIdx === 2) {
+    // 5 pairs: letter ↔ word for K-O
+    ['k','l','m','n','o'].forEach(L => {
+      pairs.push({ letter: L, typeA: 'upper', typeB: 'word' });
+    });
+  } else {
+    // 6 pairs: mix — upper/lower, upper/word, lower/word
+    pairs.push({ letter: 'k', typeA: 'upper', typeB: 'lower' });
+    pairs.push({ letter: 'l', typeA: 'upper', typeB: 'word' });
+    pairs.push({ letter: 'm', typeA: 'lower', typeB: 'word' });
+    pairs.push({ letter: 'n', typeA: 'upper', typeB: 'lower' });
+    pairs.push({ letter: 'o', typeA: 'upper', typeB: 'word' });
+    pairs.push({ letter: 'k', typeA: 'lower', typeB: 'word' }); // second K pair — different rep combo
+  }
+  return pairs;
+}
+
+const ROUND_META = [
+  { label: 'Round 1 — The Snowstorm Begins! ❄️', sub: '3 pairs — peek first!', cols: 3, peek: true },
+  { label: 'Round 2 — Up the Mountain! 🏔️',      sub: '4 pairs — no peeking!', cols: 4, peek: false },
+  { label: 'Round 3 — Magic Words! ✨',           sub: '5 pairs — letters meet words!', cols: 5, peek: false },
+  { label: 'Round 4 — Summit Challenge! ⛰️',      sub: '6 pairs — the mountain peak!', cols: 4, peek: false },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 0, score = 0;
+let matches = 0, totalPairs = 0;
+let flippedCards = [], lockBoard = false;
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg(pairs) {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  pairs.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + i; d.textContent = p.letter.toUpperCase();
+    bar.appendChild(d);
+  });
+}
+function markProg(idx) {
+  const d = $('prog' + idx); if (d) d.classList.add('done');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS — wiggle after 4s, voice after 7s
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive || lockBoard) return;
+  hintTimer = setTimeout(() => {
+    const cards = [...document.querySelectorAll('.card:not(.matched):not(.flipped)')];
+    if (cards.length > 0) {
+      const target = cards[0];
+      target.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => target.classList.remove('hint-wiggle', 'hint-glow'), 1800);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD CONTENT
+// Both cases always visible — uppercase cards show small lowercase,
+// lowercase cards show small uppercase, word cards show big letter + word
+// ══════════════════════════════════════════════════════════════════
+function buildCardFront(letter, type) {
+  const front = document.createElement('div');
+  front.className = 'card-front';
+
+  if (type === 'upper') {
+    const bigEl = document.createElement('div');
+    bigEl.className = 'card-letter';
+    bigEl.textContent = letter.toUpperCase();
+    front.appendChild(bigEl);
+    // Small lowercase always visible
+    const small = document.createElement('div');
+    small.className = 'card-small-letter';
+    small.textContent = letter.toLowerCase();
+    front.appendChild(small);
+  } else if (type === 'lower') {
+    const bigEl = document.createElement('div');
+    bigEl.className = 'card-letter lower';
+    bigEl.textContent = letter.toLowerCase();
+    front.appendChild(bigEl);
+    // Small uppercase always visible
+    const small = document.createElement('div');
+    small.className = 'card-small-letter';
+    small.textContent = letter.toUpperCase();
+    front.appendChild(small);
+  } else if (type === 'word') {
+    const emojiEl = document.createElement('div');
+    emojiEl.className = 'card-emoji-big';
+    emojiEl.textContent = LETTER_EMOJI[letter] || '✨';
+    front.appendChild(emojiEl);
+    const wordEl = document.createElement('div');
+    wordEl.className = 'card-word';
+    wordEl.textContent = (LETTER_WORDS[letter] || letter).toUpperCase();
+    front.appendChild(wordEl);
+    // Small letter always visible (both cases)
+    const small = document.createElement('div');
+    small.className = 'card-small-letter';
+    small.textContent = letter.toUpperCase() + letter.toLowerCase();
+    front.appendChild(small);
+  }
+
+  return front;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD GRID
+// ══════════════════════════════════════════════════════════════════
+let currentPairs = [];
+
+function buildGrid() {
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  const pairs = buildRoundPairs(round);
+  currentPairs = pairs;
+  totalPairs = pairs.length;
+  matches = 0;
+
+  // Create two cards per pair
+  let cards = [];
+  pairs.forEach((p, pairIdx) => {
+    cards.push({ letter: p.letter, type: p.typeA, pairIdx });
+    cards.push({ letter: p.letter, type: p.typeB, pairIdx });
+  });
+  shuffle(cards);
+
+  const meta = ROUND_META[round];
+  grid.className = 'card-grid cols-' + meta.cols;
+
+  cards.forEach((cardData, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.letter = cardData.letter;
+    card.dataset.pairIdx = cardData.pairIdx;
+    card.dataset.idx = idx;
+    card.dataset.type = cardData.type;
+
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+
+    // Back (face down — snowflake on ice blue with sparkle)
+    const back = document.createElement('div');
+    back.className = 'card-back';
+    back.innerHTML = '<div class="card-back-icon">❄️</div><div class="card-back-sparkle">✨✨✨</div>';
+
+    // Front (face up — letter content)
+    const front = buildCardFront(cardData.letter, cardData.type);
+
+    inner.appendChild(back);
+    inner.appendChild(front);
+    card.appendChild(inner);
+
+    onTap(card, () => flipCard(card));
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLIP CARD
+// ══════════════════════════════════════════════════════════════════
+function flipCard(card) {
+  if (!gameActive || lockBoard) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  if (flippedCards.length >= 2) return;
+
+  resetHints();
+  card.classList.add('flipped');
+  audio.tone('flip');
+  flippedCards.push(card);
+
+  // Speak the letter on this card
+  const letter = card.dataset.letter;
+  audio.speakLetter(letter);
+
+  if (flippedCards.length === 2) {
+    lockBoard = true;
+    checkMatch();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECK MATCH — cross-representation: same pairIdx = match
+// ══════════════════════════════════════════════════════════════════
+async function checkMatch() {
+  const [a, b] = flippedCards;
+  const pairA = a.dataset.pairIdx;
+  const pairB = b.dataset.pairIdx;
+
+  await delay(600);
+
+  if (pairA === pairB && a.dataset.idx !== b.dataset.idx) {
+    // MATCH!
+    a.classList.add('matched');
+    b.classList.add('matched');
+
+    // Crystal burst animation
+    a.classList.add('match-anim');
+    b.classList.add('match-anim');
+    setTimeout(() => { a.classList.remove('match-anim'); b.classList.remove('match-anim'); }, 1300);
+
+    matches++;
+    score++;
+    $('hudScore').textContent = score;
+
+    audio.tone('correct');
+    jumpChar();
+    starBurst(a);
+    starBurst(b);
+
+    // Mark progress
+    const progIdx = parseInt(pairA);
+    markProg(progIdx);
+
+    // Light an ice crystal on the summit
+    lightCrystal();
+
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    audio.play('correct'); // non-blocking
+
+    flippedCards = [];
+    lockBoard = false;
+
+    // Check round complete
+    if (matches >= totalPairs) {
+      await delay(650);
+      advanceRound();
+    } else {
+      resetHints();
+    }
+
+  } else {
+    // NO MATCH
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    a.style.animation = 'wrongShake 0.4s ease-in-out';
+    b.style.animation = 'wrongShake 0.4s ease-in-out';
+
+    audio.play('wrong'); // non-blocking
+    await delay(650);
+
+    a.style.animation = '';
+    b.style.animation = '';
+    a.classList.remove('flipped');
+    b.classList.remove('flipped');
+    flippedCards = [];
+    lockBoard = false;
+    resetHints();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ADVANCE ROUND
+// ══════════════════════════════════════════════════════════════════
+async function advanceRound() {
+  stopHints();
+  lockBoard = true;
+  round++;
+
+  if (round >= ROUND_META.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  // Round complete celebration
+  audio.tone('roundDone');
+  confetti(30, ['❄️','⛰️','✨']);
+  showCharBubble('Mountain restored! 🎉', 2500);
+
+  $('roundTitle').textContent = '❄️ Round Complete! ❄️';
+  $('roundSub').textContent   = '';
+  $('roundBanner').classList.add('show');
+  audio.play('round-complete'); // non-blocking
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  // Reset summit for next round
+  resetSummit();
+
+  // Next round banner (snappy ~3s)
+  const cfg = ROUND_META[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1100);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  $('hudRound').textContent = `${round + 1}/4`;
+
+  // Build new grid
+  buildGrid();
+  const pairs = currentPairs;
+  buildProg(pairs);
+  flippedCards = [];
+  lockBoard = false;
+  gameActive = true;
+
+  // Peek only if configured (R1 only)
+  if (cfg.peek) {
+    lockBoard = true;
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(300);
+    lockBoard = false;
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopHints();
+  audio.stopMusic();
+  $('hud').style.display      = 'none';
+  $('progBar').style.display  = 'none';
+  $('charArea').style.display = 'none';
+  $('mountainSummit').style.display = 'none';
+  $('cardGrid').innerHTML     = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.tone('celeb');
+  await delay(400);
+  confetti(60, ['❄️','⛰️','✨','🧌','🌟','☃️','🏔️']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 4)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '❄️ Magical! ❄️';
+  $('celebMsg').textContent   = `You restored the mountain peak! Bramble is so proud!`;
+  showScreen('scrCeleb');
+
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['❄️','⛰️','🌟']), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START GAME
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  // Reset
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0; score = 0; matches = 0;
+  flippedCards = []; lockBoard = false;
+  stopHints();
+  resetSummit();
+
+  $('hudScore').textContent   = '0';
+  $('hudRound').textContent   = '1/4';
+  $('hudPairs').textContent   = 'Find the matching pairs!';
+  $('hud').style.display      = '';
+  $('charArea').style.display = '';
+  $('mountainSummit').style.display = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.startMusic();
+
+  // Round 1 opening banner
+  const cfg = ROUND_META[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  audio.play('greetings'); // non-blocking
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  buildGrid();
+  buildProg(currentPairs);
+  gameActive = true;
+
+  // Round 1 peek — show all cards briefly for 1.5s
+  if (cfg.peek) {
+    lockBoard = true;
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(400);
+    lockBoard = false;
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+</script>
+</body>
+</html>

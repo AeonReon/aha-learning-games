@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fairy Spell Writing — Pip's Spellbook</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --forest-deep: #0a1f14;
+  --forest-dark: #14402a;
+  --forest-mid: #1f6b45;
+  --forest-green: #10b981;
+  --fairy-gold: #fbbf24;
+  --fairy-pink: #f472b6;
+  --cream: #fef3c7;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--forest-deep);
+}
+
+/* ── Background: Enchanted Forest ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(16,185,129,0.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(251,191,36,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(244,114,182,0.08) 0%, transparent 60%),
+    linear-gradient(180deg, #0a1f14 0%, #14402a 40%, #1f6b45 70%, #0a1f14 100%);
+}
+.bg-tree {
+  position: fixed; bottom: 0; pointer-events: none; z-index: 1;
+  font-size: clamp(40px, 10vw, 80px);
+  opacity: 0.5;
+  filter: drop-shadow(0 0 12px rgba(16,185,129,0.3));
+}
+.bg-mushroom {
+  position: fixed; bottom: 50px; pointer-events: none; z-index: 1;
+  font-size: clamp(20px, 4vw, 32px);
+  opacity: 0.65;
+  filter: drop-shadow(0 0 6px rgba(244,114,182,0.5));
+}
+.bg-firefly {
+  position: fixed; pointer-events: none; z-index: 2;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle, #fef3c7 0%, #fbbf24 50%, transparent 80%);
+  box-shadow: 0 0 10px #fbbf24, 0 0 18px rgba(251,191,36,0.6);
+  animation: fireflyFloat ease-in-out infinite;
+}
+@keyframes fireflyFloat {
+  0%   { transform: translate(0,0) scale(0.8); opacity: 0.4; }
+  25%  { transform: translate(30px,-20px) scale(1.2); opacity: 1; }
+  50%  { transform: translate(60px,10px) scale(0.9); opacity: 0.7; }
+  75%  { transform: translate(30px,30px) scale(1.1); opacity: 1; }
+  100% { transform: translate(0,0) scale(0.8); opacity: 0.4; }
+}
+.bg-leaf {
+  position: fixed; pointer-events: none; z-index: 2;
+  font-size: clamp(14px, 2.5vw, 20px);
+  opacity: 0.4;
+  animation: leafFall linear infinite;
+}
+@keyframes leafFall {
+  0%   { transform: translateY(-20px) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(360deg); }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--fairy-gold);
+  text-shadow: 0 0 30px rgba(251,191,36,0.7), 2px 2px 0 rgba(0,0,0,0.4);
+  margin: 6px 0 8px;
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: center;
+  margin-bottom: 10px;
+  font-size: clamp(36px, 9vw, 60px);
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, var(--forest-green), var(--fairy-gold));
+  color: #0a1f14;
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, var(--forest-green), var(--fairy-gold)); color: #0a1f14; margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(10,31,20,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(16,185,129,0.3);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--fairy-pink); }
+.hud-score .hud-val { color: var(--fairy-gold); }
+.hud-center .hud-val { color: var(--fairy-gold); font-size: clamp(14px,3vw,20px); }
+
+/* ── Character ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(40px,9vw,60px);
+  filter: drop-shadow(0 0 12px rgba(251,191,36,0.7));
+  animation: fairyHover 2.8s ease-in-out infinite;
+}
+@keyframes fairyHover {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%     { transform: translateY(-8px) rotate(3deg); }
+}
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(254,243,199,0.97); color: #14402a;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(254,243,199,0.97);
+}
+@keyframes charJump {
+  0%   { transform: translateY(0) rotate(0); }
+  40%  { transform: translateY(-18px) rotate(-8deg); }
+  70%  { transform: translateY(-6px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+/* ── Canvas area ── */
+.canvas-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+}
+.canvas-area canvas {
+  border-radius: 18px;
+  box-shadow: 0 0 40px rgba(16,185,129,0.25), 0 6px 30px rgba(0,0,0,0.55);
+  background: rgba(5,20,12,0.65);
+  border: 2px solid rgba(251,191,36,0.2);
+}
+
+/* ── Letter display ── */
+.letter-display {
+  position: fixed;
+  top: 56px; right: 12px;
+  z-index: var(--z-ui);
+  pointer-events: none;
+}
+.letter-display .big-letter {
+  font-size: clamp(40px,10vw,70px);
+  font-weight: 900;
+  color: var(--fairy-gold);
+  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  line-height: 1;
+}
+.letter-display .sub-label {
+  font-size: clamp(10px,2vw,14px);
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui); height: 56px;
+  background: rgba(10,31,20,0.92); backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(16,185,129,0.3);
+  display: flex; align-items: center; justify-content: center; gap: clamp(6px,2vw,14px);
+  padding: 0 12px;
+}
+.prog-dot {
+  width: clamp(32px,8vw,44px); height: clamp(32px,8vw,44px);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3.2vw,20px); font-weight: 900;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35);
+  border: 2px solid rgba(255,255,255,0.08);
+  transition: all 0.4s;
+}
+.prog-dot.active {
+  background: rgba(244,114,182,0.2); color: var(--fairy-pink);
+  border-color: var(--fairy-pink);
+  box-shadow: 0 0 12px rgba(244,114,182,0.4);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--forest-green), var(--fairy-gold));
+  color: #0a1f14; border-color: var(--fairy-gold);
+  box-shadow: 0 0 16px rgba(251,191,36,0.5);
+}
+
+/* ── Spell Book ── */
+.spell-book {
+  position: fixed; top: 60px; left: 8px;
+  z-index: var(--z-char);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.spell-book-icon {
+  font-size: clamp(28px,6vw,40px);
+  filter: drop-shadow(0 0 8px rgba(16,185,129,0.6));
+}
+.spell-book-pages {
+  display: flex; gap: 2px; flex-wrap: wrap; max-width: 60px; justify-content: center;
+}
+.spell-page {
+  width: 8px; height: 10px; border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.5s;
+}
+.spell-page.lit {
+  background: linear-gradient(135deg, var(--forest-green), var(--fairy-gold));
+  box-shadow: 0 0 8px rgba(251,191,36,0.7);
+  animation: pagePop 0.5s ease-out;
+}
+@keyframes pagePop {
+  0% { transform: scale(0); } 50% { transform: scale(1.6); } 100% { transform: scale(1); }
+}
+
+/* ── Level banner ── */
+.level-banner {
+  position: fixed; inset: 0;
+  z-index: var(--z-celeb);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(10,31,20,0.94);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.4s;
+}
+.level-banner.show { opacity: 1; visibility: visible; pointer-events: auto; }
+.level-banner h2 {
+  font-size: clamp(24px,6vw,42px);
+  color: var(--fairy-gold);
+  text-shadow: 0 0 20px rgba(251,191,36,0.6);
+  margin-bottom: 6px;
+}
+.level-banner p {
+  font-size: clamp(14px,3.5vw,20px);
+  color: var(--white85);
+}
+
+/* ── Confetti ── */
+.confetti {
+  position: fixed; pointer-events: none;
+  z-index: var(--z-celeb);
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+.starburst {
+  position: fixed; pointer-events: none; z-index: var(--z-celeb);
+  animation: starPop 0.9s ease-out forwards;
+}
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(0); opacity: 1; }
+  60%  { transform: scale(1.6) rotate(180deg); opacity: 0.85; }
+  100% { transform: scale(0.5) rotate(360deg) translateY(-45px); opacity: 0; }
+}
+
+/* ── Bloom flowers on canvas after complete ── */
+.bloom {
+  position: fixed; pointer-events: none; z-index: var(--z-celeb);
+  font-size: clamp(22px,4.5vw,30px);
+  animation: bloomPop 1.1s ease-out forwards;
+}
+@keyframes bloomPop {
+  0%   { transform: scale(0) rotate(0); opacity: 0; }
+  40%  { transform: scale(1.3) rotate(120deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.95; }
+}
+
+/* ── Celebration screen ── */
+.screen-celeb h1 {
+  font-size: clamp(26px,6.5vw,46px);
+  color: var(--fairy-gold);
+  text-shadow: 0 0 30px rgba(251,191,36,0.7), 2px 2px 0 rgba(0,0,0,0.4);
+  margin-bottom: 12px;
+}
+.screen-celeb p {
+  font-size: clamp(16px,4vw,22px);
+  color: var(--white85); line-height: 1.5;
+}
+.screen-celeb .final-book {
+  font-size: clamp(60px,15vw,100px);
+  margin: 16px 0;
+  animation: bookPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(16,185,129,0.7));
+}
+@keyframes bookPulse {
+  0%,100% { transform: scale(1) rotate(0); }
+  25%     { transform: scale(1.05) rotate(-2deg); }
+  50%     { transform: scale(1.1) rotate(0); }
+  75%     { transform: scale(1.05) rotate(2deg); }
+}
+.final-score {
+  font-size: clamp(18px,4.5vw,28px);
+  color: var(--fairy-gold); font-weight: 900;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg" id="bg"></div>
+
+<!-- Title Screen -->
+<div class="screen screen-title active" id="screenTitle">
+  <div class="icon-row"><span>🧚</span><span>📖</span><span>✨</span></div>
+  <h1>Fairy Spell Writing</h1>
+  <p>Help Pip write magical letters in the enchanted forest! Trace each letter to cast a nature spell!</p>
+  <button class="btn btn-start" id="btnStart">Cast Spells!</button>
+</div>
+
+<!-- Game Screen (HUD + Canvas + Progress) -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <div class="hud-label">LEVEL</div>
+    <div class="hud-val" id="hudLevel">1</div>
+  </div>
+  <div class="hud-center">
+    <div class="hud-val" id="hudLetter">F</div>
+  </div>
+  <div class="hud-right hud-score">
+    <div class="hud-label">SPELLS</div>
+    <div class="hud-val" id="hudScore">0</div>
+  </div>
+</div>
+
+<!-- Letter display -->
+<div class="letter-display" id="letterDisplay" style="display:none">
+  <div class="big-letter" id="bigLetter">F</div>
+  <div class="sub-label" id="letterSubLabel"></div>
+</div>
+
+<!-- Spell Book -->
+<div class="spell-book" id="spellBook" style="display:none">
+  <div class="spell-book-icon">📖</div>
+  <div class="spell-book-pages" id="spellPages"></div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-area" id="canvasArea" style="display:none">
+  <canvas id="traceCanvas"></canvas>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Character -->
+<div class="char-area" id="charArea" style="display:none">
+  <span class="char-emoji" id="charEmoji">🧚</span>
+  <div class="char-bubble" id="charBubble"></div>
+</div>
+
+<!-- Level Banner -->
+<div class="level-banner" id="levelBanner">
+  <h2 id="bannerTitle">Level 1</h2>
+  <p id="bannerSub">Follow the fairy sparkle!</p>
+</div>
+
+<!-- Celebration Screen -->
+<div class="screen screen-celeb" id="screenCeleb">
+  <h1>Spellbook Complete!</h1>
+  <div class="final-book">📖✨</div>
+  <p>Pip's forest spells are glowing!<br>You are a true fairy friend!</p>
+  <div class="final-score" id="finalScore">20 Spells Cast!</div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════════════
+const AUDIO_BASE = '../../audio';
+
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+const LETTERS = ['f','g','h','i','j'];
+
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Gentle forest pentatonic — airy fairy feel
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.10, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1600);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')    { p(440,t,0.12,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='checkpoint') {
+      p(600 + Math.random()*200, t, 0.08, 0.15, 'triangle');
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(l) { return this.speak(`${AUDIO_BASE}/letters/${l.toLowerCase()}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT DATA — F, G, H, I, J (uppercase)
+// ══════════════════════════════════════════════════════════════════
+const CHECKPOINTS = {
+  // F (2 parts): top + vertical, then middle
+  'F_first':  [{x:0.80,y:0.12},{x:0.25,y:0.12},{x:0.25,y:0.88}],
+  'F_second': [{x:0.25,y:0.50},{x:0.70,y:0.50}],
+  // G (1 part): C-shape + hook
+  'G':        [{x:0.80,y:0.22},{x:0.55,y:0.12},{x:0.30,y:0.22},{x:0.18,y:0.45},{x:0.22,y:0.70},{x:0.40,y:0.85},{x:0.65,y:0.88},{x:0.82,y:0.78},{x:0.82,y:0.55},{x:0.55,y:0.55}],
+  // H (3 parts): two verticals + bar
+  'H_first':  [{x:0.22,y:0.12},{x:0.22,y:0.88}],
+  'H_second': [{x:0.78,y:0.12},{x:0.78,y:0.88}],
+  'H_third':  [{x:0.22,y:0.50},{x:0.78,y:0.50}],
+  // I (3 parts): top bar + vertical + bottom bar
+  'I_first':  [{x:0.30,y:0.12},{x:0.70,y:0.12}],
+  'I_second': [{x:0.50,y:0.12},{x:0.50,y:0.88}],
+  'I_third':  [{x:0.30,y:0.88},{x:0.70,y:0.88}],
+  // J (1 part): curved tail
+  'J':        [{x:0.70,y:0.12},{x:0.70,y:0.70},{x:0.60,y:0.85},{x:0.40,y:0.85},{x:0.28,y:0.70}],
+};
+
+// Sequence of tracing parts per level
+const TRACE_SEQUENCE = [
+  'F_first', 'F_second',
+  'G',
+  'H_first', 'H_second', 'H_third',
+  'I_first', 'I_second', 'I_third',
+  'J'
+];
+
+// Map trace key to displayed letter
+function keyToLetter(key) { return key.charAt(0); }
+// Map trace key to part sub-label
+function keyToSubLabel(key) {
+  if (key === 'F_first')  return 'part 1/2';
+  if (key === 'F_second') return 'part 2/2';
+  if (key === 'H_first')  return 'part 1/3';
+  if (key === 'H_second') return 'part 2/3';
+  if (key === 'H_third')  return 'part 3/3';
+  if (key === 'I_first')  return 'part 1/3';
+  if (key === 'I_second') return 'part 2/3';
+  if (key === 'I_third')  return 'part 3/3';
+  return '';
+}
+// Is this the first part for its letter? (trigger speakLetter + cheer)
+function isFirstPart(key) {
+  return key === 'F_first' || key === 'G' || key === 'H_first' || key === 'I_first' || key === 'J';
+}
+// Is this the last part for its letter? (trigger bloom + page light + score)
+function isLastPart(key) {
+  return key === 'F_second' || key === 'G' || key === 'H_third' || key === 'I_third' || key === 'J';
+}
+// Progress dot index for letter (F=0, G=1, H=2, I=3, J=4)
+function keyToProgIdx(key) {
+  const map = { 'F': 0, 'G': 1, 'H': 2, 'I': 3, 'J': 4 };
+  return map[keyToLetter(key)];
+}
+
+// Level configs
+const LEVELS = [
+  { label: 'Level 1 — Follow the Sparkle!', sub: 'Watch Pip, then trace!',   outlineOpacity: 1.0,  showGuide: true  },
+  { label: 'Level 2 — Trace the Glow!',     sub: 'No guide this time!',     outlineOpacity: 1.0,  showGuide: false },
+  { label: 'Level 3 — Fading Outline!',     sub: 'The letter is fading...', outlineOpacity: 0.5,  showGuide: false },
+  { label: 'Level 4 — Nearly From Memory!', sub: 'Can you remember?',       outlineOpacity: 0.15, showGuide: false },
+];
+
+const BUBBLE_CORRECT = ['Magical! ✨','Spell cast! 🌿','Wonderful! 💫','The forest blooms! 🌸','Beautiful! 🌟'];
+const BUBBLE_WRONG   = ['Keep tracing! 🌿','Follow the path! ✨','Almost there! 💫','Try the glow! 🌟'];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let currentLevel = 0;
+let currentTraceIndex = 0;
+let score = 0;
+let totalSpells = 0;
+let spellPageCount = 0;
+
+// Tracing state
+let traceCheckpoints = [];
+let nextCheckpoint = 0;
+let isDrawing = false;
+let drawPoints = [];
+let hitRadius = 0;
+let canvas, ctx;
+let canvasW, canvasH, dpr;
+let guideAnimating = false;
+let hintTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Fireflies
+  for (let i = 0; i < 22; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-firefly';
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 100) + 'vh';
+    el.style.animationDuration = (4 + Math.random() * 6) + 's';
+    el.style.animationDelay = (-Math.random() * 8) + 's';
+    $('bg').appendChild(el);
+  }
+  // Trees along bottom
+  const trees = ['🌲','🌳','🌴','🌲','🌳'];
+  for (let i = 0; i < 6; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-tree';
+    el.textContent = pick(trees);
+    el.style.left = (Math.random() * 95) + 'vw';
+    el.style.bottom = (-10 + Math.random() * 10) + 'px';
+    $('bg').appendChild(el);
+  }
+  // Mushrooms
+  for (let i = 0; i < 4; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-mushroom';
+    el.textContent = pick(['🍄','🌸','🌺']);
+    el.style.left = (Math.random() * 90) + 'vw';
+    el.style.bottom = (10 + Math.random() * 30) + 'px';
+    $('bg').appendChild(el);
+  }
+  // Falling leaves
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-leaf';
+    el.textContent = pick(['🍃','🍂','🌿']);
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (-Math.random() * 100) + 'vh';
+    el.style.animationDuration = (10 + Math.random() * 14) + 's';
+    el.style.animationDelay = (-Math.random() * 12) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40) {
+  const all = ['🌸','✨','💚','🌿','🍃','🌺','💫','⭐','🌟','🧚','🍄'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurstAt(x, y) {
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🌟','💚','🌸']);
+    s.style.left = (x + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function bloomAround(cx, cy) {
+  // Flowers blooming around letter
+  const blooms = ['🌸','🌺','🌼','🌻','🌷','🌹'];
+  const count = 10;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    const r = 80 + Math.random() * 60;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    const el = document.createElement('div');
+    el.className = 'bloom';
+    el.textContent = pick(blooms);
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    el.style.animationDelay = (i * 0.05) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1400);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.7s ease-out';
+  setTimeout(() => { el.style.animation = 'fairyHover 2.8s ease-in-out infinite'; }, 720);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+function showGameUI(show) {
+  $('hud').style.display = show ? '' : 'none';
+  $('canvasArea').style.display = show ? '' : 'none';
+  $('progBar').style.display = show ? '' : 'none';
+  $('charArea').style.display = show ? '' : 'none';
+  $('spellBook').style.display = show ? '' : 'none';
+  $('letterDisplay').style.display = show ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SPELL BOOK
+// ══════════════════════════════════════════════════════════════════
+function buildSpellBook() {
+  const pages = $('spellPages');
+  pages.innerHTML = '';
+  // 5 letters × 4 levels = 20 pages
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'spell-page';
+    p.id = 'page' + i;
+    pages.appendChild(p);
+  }
+}
+
+function lightSpellPage() {
+  const p = $('page' + spellPageCount);
+  if (p) {
+    p.classList.add('lit');
+    spellPageCount++;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  const labels = ['F','G','H','I','J'];
+  labels.forEach((l, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'prog' + i;
+    d.textContent = l;
+    bar.appendChild(d);
+  });
+}
+
+function updateProg() {
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const activeIdx = key ? keyToProgIdx(key) : 5;
+  for (let i = 0; i < 5; i++) {
+    const d = $('prog' + i);
+    if (!d) continue;
+    d.classList.remove('active', 'done');
+    if (i < activeIdx) d.classList.add('done');
+    else if (i === activeIdx) d.classList.add('active');
+  }
+}
+
+function markProgDone(idx) {
+  const d = $('prog' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CANVAS SETUP (High DPI)
+// ══════════════════════════════════════════════════════════════════
+function setupCanvas() {
+  canvas = $('traceCanvas');
+  const area = $('canvasArea');
+  const rect = area.getBoundingClientRect();
+  const pad = 16;
+  const w = rect.width - pad * 2;
+  const h = rect.height - pad * 2;
+  const size = Math.min(w, h, 420);
+
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+
+  ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  canvasW = size;
+  canvasH = size;
+  hitRadius = canvasW * 0.15;
+
+  // Touch/mouse events (rebind safe)
+  canvas.onmousedown = onPointerDown;
+  canvas.onmousemove = onPointerMove;
+  canvas.onmouseup = onPointerUp;
+  canvas.onmouseleave = onPointerUp;
+  canvas.ontouchstart = onTouchStart;
+  canvas.ontouchmove = onTouchMove;
+  canvas.ontouchend = onPointerUp;
+}
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onPointerDown(e) {
+  if (!gameActive || guideAnimating) return;
+  audio.unlock();
+  isDrawing = true;
+  drawPoints = [];
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  checkCheckpoint(pos);
+}
+
+function onPointerMove(e) {
+  if (!isDrawing || !gameActive || guideAnimating) return;
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  drawTraceLine();
+  checkCheckpoint(pos);
+}
+
+function onPointerUp() {
+  isDrawing = false;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAWING
+// ══════════════════════════════════════════════════════════════════
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+}
+
+function drawPathForKey(key, pts) {
+  // Build a crisp path for straight letter parts. Uppercase F/H/I are rigid.
+  // G uses a smooth curve. J uses smooth curve on tail.
+  const smooth = (key === 'G' || key === 'J');
+
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+
+  if (!smooth || pts.length === 2) {
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+  } else {
+    // Quadratic smoothing through midpoints
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i+1].x) / 2;
+      const my = (pts[i].y + pts[i+1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  }
+}
+
+function drawLetterOutline(key, opacity) {
+  const cps = CHECKPOINTS[key];
+  if (!cps || cps.length < 2) return;
+
+  const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+
+  // Outline — cream/green stroke
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.strokeStyle = '#d9f99d';
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(16,185,129,0.5)';
+  ctx.shadowBlur = 16;
+  drawPathForKey(key, pts);
+  ctx.stroke();
+
+  // Inner green line
+  ctx.globalAlpha = opacity * 0.9;
+  ctx.strokeStyle = '#6ee7b7';
+  ctx.lineWidth = 6;
+  ctx.shadowColor = 'rgba(16,185,129,0.35)';
+  ctx.shadowBlur = 8;
+  drawPathForKey(key, pts);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCheckpointDots() {
+  const cps = traceCheckpoints;
+  for (let i = 0; i < cps.length; i++) {
+    const cp = cps[i];
+    const x = cp.x * canvasW;
+    const y = cp.y * canvasH;
+
+    if (i < nextCheckpoint) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(251,191,36,0.9)';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawTraceLine() {
+  if (drawPoints.length < 2) return;
+
+  clearCanvas();
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const level = LEVELS[currentLevel];
+  drawLetterOutline(key, level.outlineOpacity);
+
+  const strokePoints = () => {
+    ctx.beginPath();
+    ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+    for (let i = 1; i < drawPoints.length; i++) {
+      ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+    }
+    ctx.stroke();
+  };
+
+  ctx.save();
+  // Outer — vivid green
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 12;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(16,185,129,0.9)';
+  ctx.shadowBlur = 14;
+  strokePoints();
+
+  // Middle — fairy gold
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 7;
+  ctx.shadowColor = 'rgba(251,191,36,0.8)';
+  ctx.shadowBlur = 10;
+  strokePoints();
+
+  // Core — white
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = 'rgba(255,255,255,0.9)';
+  ctx.shadowBlur = 6;
+  strokePoints();
+  ctx.restore();
+
+  drawCheckpointDots();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT CHECKING
+// ══════════════════════════════════════════════════════════════════
+function checkCheckpoint(pos) {
+  if (nextCheckpoint >= traceCheckpoints.length) return;
+
+  const cp = traceCheckpoints[nextCheckpoint];
+  const cpx = cp.x * canvasW;
+  const cpy = cp.y * canvasH;
+  const dx = pos.x - cpx;
+  const dy = pos.y - cpy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist <= hitRadius) {
+    nextCheckpoint++;
+    audio.tone('checkpoint');
+    resetHints();
+
+    clearCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+    drawTraceLine();
+    drawCheckpointDots();
+
+    if (nextCheckpoint >= traceCheckpoints.length) {
+      onTraceComplete();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANIMATED GUIDE (Level 1)
+// ══════════════════════════════════════════════════════════════════
+function animateGuide(key) {
+  return new Promise(resolve => {
+    const cps = CHECKPOINTS[key];
+    if (!cps || cps.length < 2) { resolve(); return; }
+
+    guideAnimating = true;
+    const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+    const totalDuration = 2100;
+    const start = performance.now();
+
+    const densePoints = [];
+    const steps = 100;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const totalLen = pts.length - 1;
+      const segment = t * totalLen;
+      const i = Math.min(Math.floor(segment), totalLen - 1);
+      const localT = segment - i;
+
+      if (pts.length === 2) {
+        densePoints.push({
+          x: pts[0].x + (pts[1].x - pts[0].x) * t,
+          y: pts[0].y + (pts[1].y - pts[0].y) * t
+        });
+      } else {
+        const p0 = pts[i];
+        const p1 = pts[Math.min(i + 1, pts.length - 1)];
+        densePoints.push({
+          x: p0.x + (p1.x - p0.x) * localT,
+          y: p0.y + (p1.y - p0.y) * localT
+        });
+      }
+    }
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const idx = Math.floor(progress * (densePoints.length - 1));
+
+      clearCanvas();
+      drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+
+      // Sparkle trail — green/gold mix
+      ctx.save();
+      const trailLen = 10;
+      for (let j = Math.max(0, idx - trailLen); j <= idx; j++) {
+        const p = densePoints[j];
+        const alpha = 1 - (idx - j) / trailLen;
+        const isGold = j % 2 === 0;
+        ctx.fillStyle = isGold
+          ? `rgba(251,191,36,${alpha * 0.8})`
+          : `rgba(16,185,129,${alpha * 0.8})`;
+        ctx.shadowColor = isGold ? 'rgba(251,191,36,1)' : 'rgba(16,185,129,1)';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5 + alpha * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Sparkle head — white
+      if (idx < densePoints.length) {
+        const p = densePoints[idx];
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(251,191,36,1)';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        guideAnimating = false;
+        clearCanvas();
+        drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    if (!gameActive || guideAnimating) return;
+    if (nextCheckpoint < traceCheckpoints.length) {
+      const cp = traceCheckpoints[nextCheckpoint];
+      const x = cp.x * canvasW;
+      const y = cp.y * canvasH;
+
+      const key = TRACE_SEQUENCE[currentTraceIndex];
+      clearCanvas();
+      drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(251,191,36,0.3)';
+      ctx.shadowColor = 'rgba(251,191,36,0.9)';
+      ctx.shadowBlur = 28;
+      ctx.beginPath();
+      ctx.arc(x, y, hitRadius * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      audio.tone('hint');
+      showCharBubble('Trace here! ✨', 2000);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRACE COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onTraceComplete() {
+  gameActive = false;
+  isDrawing = false;
+  clearTimeout(hintTimer);
+
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const lastOfLetter = isLastPart(key);
+  const rect = canvas.getBoundingClientRect();
+
+  audio.tone('checkpoint');
+
+  if (lastOfLetter) {
+    // Letter fully done — full celebration
+    score++;
+    totalSpells++;
+    $('hudScore').textContent = score;
+
+    lightSpellPage();
+
+    // Bloom flowers around letter
+    bloomAround(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    starBurstAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+    audio.tone('correct');
+    jumpChar();
+
+    showCharBubble('Magical!', 2000);
+    await audio.play('correct');
+    await delay(700);
+
+    // Mark letter done on progress bar
+    markProgDone(keyToProgIdx(key));
+  } else {
+    // Intermediate part — subtle confirm
+    audio.tone('reveal');
+    showCharBubble('Next part! ✨', 1400);
+    await delay(600);
+  }
+
+  currentTraceIndex++;
+
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) {
+    currentTraceIndex = 0;
+    currentLevel++;
+
+    if (currentLevel >= LEVELS.length) {
+      await onGameComplete();
+    } else {
+      await onLevelComplete();
+    }
+  } else {
+    await startTrace();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEVEL COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onLevelComplete() {
+  audio.tone('roundDone');
+  confetti(36);
+  showCharBubble('Level complete! 🌸', 2600);
+
+  await audio.play('round-complete');
+  await delay(900);
+
+  await showLevelBanner();
+}
+
+async function showLevelBanner() {
+  const level = LEVELS[currentLevel];
+  $('bannerTitle').textContent = level.label;
+  $('bannerSub').textContent = level.sub;
+  $('levelBanner').classList.add('show');
+
+  audio.tone('reveal');
+  await audio.play('greetings');
+  await delay(3000);
+
+  $('levelBanner').classList.remove('show');
+  await delay(400);
+
+  await startLevel();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME COMPLETE — Spellbook closes with green sparkles
+// ══════════════════════════════════════════════════════════════════
+async function onGameComplete() {
+  showGameUI(false);
+
+  // Green flash
+  document.body.style.background = '#10b981';
+  await delay(100);
+  document.body.style.background = '';
+
+  audio.tone('celeb');
+  confetti(70);
+
+  $('finalScore').textContent = score + ' Spells Cast!';
+  showScreen('screenCeleb');
+
+  await delay(500);
+  confetti(40);
+
+  await audio.play('game-complete');
+  await delay(1500);
+  await audio.play('game-complete');
+  confetti(40);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START TRACE
+// ══════════════════════════════════════════════════════════════════
+async function startTrace() {
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const cps = CHECKPOINTS[key];
+  traceCheckpoints = cps;
+  nextCheckpoint = 0;
+  isDrawing = false;
+  drawPoints = [];
+  gameActive = true;
+
+  const level = LEVELS[currentLevel];
+  $('hudLevel').textContent = currentLevel + 1;
+
+  const letter = keyToLetter(key);
+  const subLabel = keyToSubLabel(key);
+
+  $('bigLetter').textContent = letter;
+  $('letterSubLabel').textContent = subLabel;
+  $('hudLetter').textContent = letter;
+
+  updateProg();
+
+  clearCanvas();
+  drawLetterOutline(key, level.outlineOpacity);
+
+  // Speak letter ONCE at start of first part, silent on subsequent parts
+  if (isFirstPart(key)) {
+    audio.speakLetter(letter);
+  }
+
+  if (level.showGuide) {
+    await delay(300);
+    await animateGuide(key);
+    showCharBubble('Your turn! Trace it! ✨', 2000);
+  } else {
+    showCharBubble('Trace the letter! 🌿', 2000);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START LEVEL
+// ══════════════════════════════════════════════════════════════════
+async function startLevel() {
+  currentTraceIndex = 0;
+  buildProg();
+  await startTrace();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+  currentLevel = 0;
+  currentTraceIndex = 0;
+  score = 0;
+  totalSpells = 0;
+  spellPageCount = 0;
+
+  $('hudScore').textContent = '0';
+  showGameUI(true);
+  buildSpellBook();
+  setupCanvas();
+
+  audio.startMusic();
+
+  await showLevelBanner();
+}
+
+// Handle resize — redraw current trace
+window.addEventListener('resize', () => {
+  if (!canvas) return;
+  const oldPts = drawPoints.slice();
+  setupCanvas();
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  if (key) {
+    clearCanvas();
+    drawLetterOutline(key, LEVELS[currentLevel].outlineOpacity);
+    drawCheckpointDots();
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+
+// Unlock audio on any touch/click
+document.addEventListener('touchstart', () => audio.unlock(), { once: true, passive: true });
+document.addEventListener('click', () => audio.unlock(), { once: true });
+</script>
+</body>
+</html>

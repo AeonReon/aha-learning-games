@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catch the Rainbow Stars!</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --pink: #ffb6d9; --peach: #ffcfa8; --yellow: #fff3a8; --mint: #b8f2d8; --sky: #b8e0ff; --lavender: #d8c0ff;
+  --deep-pink: #d63384; --deep-purple: #6f42c1; --deep-sky: #0099cc;
+  --gold: #ffd86b; --white85: rgba(255,255,255,0.92);
+  --text-dark: #4a2c6f;
+  --glow-rainbow: rgba(255,180,220,0.7);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background:
+    linear-gradient(180deg,
+      #ffd6ea 0%,
+      #ffe0d0 18%,
+      #fff6c8 36%,
+      #d4f5e3 54%,
+      #c8e6ff 72%,
+      #e0d0ff 100%);
+}
+
+/* Fluffy clouds */
+.bg-cloud {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(32px, 8vw, 60px);
+  opacity: 0.85;
+  animation: cloudDrift linear infinite;
+  filter: drop-shadow(0 2px 6px rgba(255,255,255,0.6));
+}
+@keyframes cloudDrift {
+  0% { transform: translateX(-80px); }
+  100% { transform: translateX(110vw); }
+}
+
+/* Sparkle stars */
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(10px, 2vw, 18px);
+  opacity: 0.45;
+  animation: sparkleTwinkle 2.5s ease-in-out infinite;
+}
+@keyframes sparkleTwinkle {
+  0%,100% { opacity: 0.2; transform: scale(0.7) rotate(0deg); }
+  50%     { opacity: 0.85; transform: scale(1.2) rotate(180deg); }
+}
+
+/* Rainbow arch background */
+.bg-rainbow {
+  position: fixed; top: -20vh; left: -10vw; right: -10vw;
+  height: 70vh;
+  pointer-events: none; z-index: var(--z-bg);
+  opacity: 0.25;
+  background: radial-gradient(ellipse at 50% 100%,
+    transparent 45%,
+    #ff8fb3 48%, #ff8fb3 51%,
+    #ffc088 53%, #ffc088 56%,
+    #ffeb88 58%, #ffeb88 61%,
+    #88eab0 63%, #88eab0 66%,
+    #88c8ff 68%, #88c8ff 71%,
+    #c4a0ff 73%, #c4a0ff 76%,
+    transparent 78%);
+}
+
+/* Screen system */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* Title screen */
+.screen-title {
+  background: linear-gradient(180deg,
+    rgba(255,214,234,0.98) 0%,
+    rgba(255,246,200,0.98) 50%,
+    rgba(216,224,255,0.98) 100%);
+}
+.screen-title .icon-row {
+  display: flex; gap: 14px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 11vw, 72px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--deep-pink);
+  text-shadow: 0 0 18px rgba(255,180,220,0.8), 2px 2px 0 rgba(255,255,255,0.9);
+  margin: 6px 0 8px;
+  font-weight: 900;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--text-dark);
+  max-width: 380px; line-height: 1.45;
+  font-weight: bold;
+}
+
+/* Buttons */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: 900;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer;
+  box-shadow: 0 5px 22px rgba(214,51,132,0.4), inset 0 -4px 0 rgba(0,0,0,0.12);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, #ff8fb3 0%, #ffc088 25%, #ffeb88 50%, #88eab0 75%, #c4a0ff 100%);
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again {
+  background: linear-gradient(135deg, #ff8fb3 0%, #c4a0ff 100%);
+  margin-top: 16px;
+}
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18) saturate(1.2)} }
+
+/* HUD */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(8px);
+  border-bottom: 3px solid rgba(214,51,132,0.25);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: var(--deep-purple); font-weight: 900; letter-spacing: 0.05em; opacity: 0.75; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--deep-pink); }
+.hud-score .hud-val { color: var(--deep-purple); }
+.hud-target {
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-target-label { font-size: clamp(10px,2.2vw,12px); color: var(--deep-purple); font-weight: 900; opacity: 0.8; }
+.hud-target-num {
+  font-size: clamp(32px,7vw,48px); font-weight: 900;
+  background: linear-gradient(135deg, #ff5b92, #ff9966, #ffd95a, #5ed29a, #5ab8ff, #a975ff);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  line-height: 1;
+  filter: drop-shadow(0 0 10px rgba(255,180,220,0.6));
+  letter-spacing: 0.02em;
+}
+.hud-target-word {
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: var(--deep-purple); opacity: 0.85;
+  line-height: 1;
+}
+
+/* Stella horn glow area */
+.horn-area {
+  position: fixed; bottom: 60px; right: 10px;
+  z-index: var(--z-char);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.horn-emoji {
+  font-size: clamp(42px, 10vw, 68px);
+  filter: drop-shadow(0 0 6px rgba(255,180,220,0.4));
+  transition: filter 0.5s;
+}
+.horn-emoji.glow-1 { filter: drop-shadow(0 0 12px rgba(255,180,220,0.6)) drop-shadow(0 0 4px rgba(255,235,136,0.5)); }
+.horn-emoji.glow-2 { filter: drop-shadow(0 0 18px rgba(255,143,179,0.7)) drop-shadow(0 0 8px rgba(136,234,176,0.5)); }
+.horn-emoji.glow-3 { filter: drop-shadow(0 0 24px rgba(196,160,255,0.8)) drop-shadow(0 0 12px rgba(255,192,136,0.6)); }
+.horn-emoji.glow-4 { filter: drop-shadow(0 0 32px rgba(255,180,220,1)) drop-shadow(0 0 16px rgba(255,235,136,0.9)); }
+.horn-emoji.glow-full {
+  filter: drop-shadow(0 0 40px rgba(255,180,220,1)) drop-shadow(0 0 20px rgba(196,160,255,1));
+  animation: hornPulse 0.7s ease-in-out infinite;
+}
+@keyframes hornPulse {
+  0%,100% { transform: scale(1) rotate(0deg); }
+  50%     { transform: scale(1.15) rotate(-5deg); }
+}
+.horn-count {
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: var(--deep-pink);
+  margin-top: 2px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.9);
+}
+
+/* Character (Stella unicorn) */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(44px,10vw,66px);
+  filter: drop-shadow(0 0 12px rgba(255,180,220,0.6));
+}
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.98); color: var(--deep-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 3px 14px rgba(214,51,132,0.3);
+  border: 2px solid rgba(255,180,220,0.5);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 9px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-top: 9px solid rgba(255,255,255,0.98);
+}
+
+/* Stella gallop across screen */
+.stella-gallop {
+  position: fixed; bottom: 40%; left: -120px;
+  z-index: calc(var(--z-celeb) + 10);
+  font-size: clamp(60px, 15vw, 100px);
+  animation: gallopRun 3s ease-in-out forwards;
+  pointer-events: none;
+}
+@keyframes gallopRun {
+  0%   { left: -120px; transform: translateY(0) rotate(-3deg); }
+  15%  { transform: translateY(-30px) rotate(3deg); }
+  30%  { transform: translateY(0) rotate(-3deg); }
+  45%  { transform: translateY(-30px) rotate(3deg); }
+  60%  { transform: translateY(0) rotate(-3deg); }
+  75%  { transform: translateY(-25px) rotate(3deg); }
+  100% { left: 110vw; transform: translateY(0) rotate(-3deg); }
+}
+.stella-trail {
+  position: fixed;
+  pointer-events: none;
+  z-index: calc(var(--z-celeb) + 5);
+  font-size: clamp(20px, 5vw, 32px);
+  animation: trailFade 1.8s ease-out forwards;
+}
+@keyframes trailFade {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.6) translateY(20px); }
+}
+
+/* Play area */
+.play-area {
+  position: fixed;
+  top: 65px; left: 0; right: 0; bottom: 50px;
+  z-index: var(--z-game);
+  overflow: hidden;
+}
+
+/* Star orb */
+.star-orb {
+  position: absolute;
+  width: clamp(74px, 19vw, 108px);
+  height: clamp(74px, 19vw, 108px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: var(--z-game);
+  transition: transform 0.1s;
+}
+.star-orb:active { transform: scale(0.92); }
+.star-body {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255,255,255,0.6),
+    inset 0 -8px 20px rgba(255,255,255,0.35),
+    inset 0 8px 20px rgba(255,255,255,0.7);
+}
+.star-body::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 12%;
+  width: 35%; height: 35%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, transparent 70%);
+  pointer-events: none;
+}
+.star-body::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.5) 0%, transparent 20%),
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.35) 0%, transparent 15%);
+  pointer-events: none;
+  animation: orbShimmer 2s ease-in-out infinite;
+}
+@keyframes orbShimmer {
+  0%,100% { opacity: 0.6; }
+  50%     { opacity: 1; }
+}
+/* Pastel rainbow variants */
+.orb-pink    { background: radial-gradient(circle at 30% 30%, #ffc4de, #ff8fb3); }
+.orb-peach   { background: radial-gradient(circle at 30% 30%, #ffddbe, #ffa77a); }
+.orb-yellow  { background: radial-gradient(circle at 30% 30%, #fff6c2, #ffe17a); }
+.orb-mint    { background: radial-gradient(circle at 30% 30%, #c6f5dc, #7ed5a8); }
+.orb-sky     { background: radial-gradient(circle at 30% 30%, #cfe8ff, #7ec4ff); }
+.orb-lavender{ background: radial-gradient(circle at 30% 30%, #dccafd, #b098f0); }
+
+/* Letter display */
+.star-big {
+  font-size: clamp(30px, 7vw, 46px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow:
+    1px 1px 0 rgba(108,66,183,0.45),
+    0 0 8px rgba(255,255,255,0.6);
+  position: relative; z-index: 2;
+}
+.star-small {
+  font-size: clamp(16px, 3.6vw, 22px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  margin-top: 2px;
+  text-shadow: 1px 1px 0 rgba(108,66,183,0.45);
+  position: relative; z-index: 2;
+}
+.star-pic {
+  font-size: clamp(34px, 8vw, 48px);
+  line-height: 1;
+  position: relative; z-index: 2;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+.star-pic-small {
+  font-size: clamp(14px, 3.2vw, 20px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  margin-top: 2px;
+  text-shadow: 1px 1px 0 rgba(108,66,183,0.45);
+  position: relative; z-index: 2;
+}
+
+/* Rise animation */
+.star-rising {
+  animation: starRise linear forwards;
+}
+@keyframes starRise {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  3%   { opacity: 1; }
+  25%  { transform: translateY(-22vh) rotate(-6deg); }
+  50%  { transform: translateY(-48vh) rotate(6deg); }
+  75%  { transform: translateY(-72vh) rotate(-4deg); }
+  92%  { opacity: 1; }
+  100% { transform: translateY(calc(-100vh - 140px)) rotate(5deg); opacity: 0; }
+}
+
+/* Wrong wiggle - Aww! */
+.star-wrong {
+  animation: starWiggle 0.55s ease-in-out;
+}
+@keyframes starWiggle {
+  0%,100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-14deg) scale(1.06); }
+  40% { transform: rotate(12deg) scale(1.06); }
+  60% { transform: rotate(-9deg) scale(1.03); }
+  80% { transform: rotate(7deg) scale(1.03); }
+}
+
+/* Captured - fly to horn */
+.star-captured {
+  transition: all 0.65s cubic-bezier(0.25,0.46,0.45,0.94);
+  opacity: 0 !important;
+  transform: scale(0.3) rotate(360deg) !important;
+}
+
+/* AWW text */
+.aww-text {
+  position: absolute;
+  font-size: clamp(16px,4vw,24px);
+  font-weight: 900;
+  color: var(--deep-pink);
+  text-shadow: 0 0 10px rgba(255,255,255,0.9), 1px 1px 0 #fff;
+  pointer-events: none;
+  animation: awwFloat 0.9s ease-out forwards;
+  z-index: calc(var(--z-game) + 5);
+}
+@keyframes awwFloat {
+  0% { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-45px) scale(1.25); opacity: 0; }
+}
+
+/* Progress bar */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(214,51,132,0.2);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  border: 2px solid rgba(214,51,132,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,2.8vw,18px);
+  font-weight: 900;
+  color: rgba(111,66,193,0.4);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, #ff8fb3, #c4a0ff);
+  border-color: #fff;
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom {
+  0%   { transform: scale(0.4); opacity: 0.5; }
+  70%  { transform: scale(1.25); }
+  100% { transform: scale(1.15); }
+}
+
+/* Round banner */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(12px);
+  border: 3px solid;
+  border-image: linear-gradient(135deg,#ff8fb3,#ffc088,#ffeb88,#88eab0,#88c8ff,#c4a0ff) 1;
+  border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 10px 40px rgba(214,51,132,0.3);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(22px,5.2vw,36px); font-weight: 900;
+  background: linear-gradient(135deg,#ff5b92,#ffc088,#88c8ff,#a975ff);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(255,143,179,0.3));
+}
+.round-banner p {
+  font-size: clamp(13px,3vw,18px);
+  color: var(--deep-purple);
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+/* Celebration screen */
+.screen-celeb {
+  background: linear-gradient(180deg,
+    rgba(255,214,234,0.98) 0%,
+    rgba(255,246,200,0.98) 50%,
+    rgba(216,224,255,0.98) 100%);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px);
+  background: linear-gradient(135deg,#ff5b92,#ff9966,#ffd95a,#5ed29a,#5ab8ff,#a975ff);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  text-shadow: none;
+  animation: bounce 1.5s ease-in-out infinite;
+  filter: drop-shadow(2px 2px 0 rgba(255,255,255,0.8));
+  font-weight: 900;
+}
+.screen-celeb p {
+  font-size: clamp(14px,3.5vw,22px);
+  color: var(--deep-purple);
+  margin: 6px 0;
+  font-weight: bold;
+}
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-stella-dance {
+  animation: dance 1s ease-in-out infinite;
+  display: inline-block;
+  filter: drop-shadow(0 0 16px rgba(255,180,220,0.8));
+}
+
+/* Particles */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.8s ease-out forwards; }
+
+/* Keyframes */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+@keyframes dance       {
+  0%,100%{transform:translateY(0) rotate(0) scale(1)}
+  15%{transform:translateY(-20px) rotate(-10deg) scale(1.1)}
+  30%{transform:translateY(0) rotate(10deg)}
+  45%{transform:translateY(-14px) rotate(-6deg) scale(1.06)}
+  60%{transform:translateY(0) rotate(6deg)}
+  75%{transform:translateY(-10px) rotate(-4deg) scale(1.1)}
+}
+@keyframes charJump    {
+  0%,100%{transform:translateY(0) scale(1)}
+  35%{transform:translateY(-24px) scale(1.1) rotate(-5deg)}
+  70%{transform:translateY(-10px) scale(1.04) rotate(3deg)}
+}
+@keyframes cfall       {
+  0%{transform:translateY(-20px) rotate(0) scale(1); opacity:1}
+  100%{transform:translateY(105vh) rotate(720deg) scale(0.5); opacity:0.4}
+}
+@keyframes starpop     {
+  0%{transform:scale(0) rotate(0); opacity:1}
+  60%{transform:scale(1.5) rotate(200deg); opacity:1}
+  100%{transform:scale(0) rotate(360deg); opacity:0}
+}
+</style>
+</head>
+<body>
+
+<!-- Rainbow arch -->
+<div class="bg-rainbow"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center hud-target">
+    <span class="hud-target-label">CATCH THE</span>
+    <span class="hud-target-num" id="hudTargetNum">U</span>
+    <span class="hud-target-word" id="hudTargetWord">Uu</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Stella unicorn character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji">&#x1F984;</div>
+</div>
+
+<!-- Horn glow -->
+<div class="horn-area" id="hornArea" style="display:none">
+  <div class="horn-emoji" id="hornEmoji">&#x2728;</div>
+  <div class="horn-count" id="hornCount">0/5</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>&#x1F308;</span>
+    <span>&#x1F984;</span>
+    <span>&#x2B50;</span>
+  </div>
+  <h1>Catch the Rainbow Stars!</h1>
+  <p>Stella the unicorn needs rainbow stars to light her glittering horn! Tap the stars with the right letter to help her shine!</p>
+  <button class="btn btn-start" id="btnStart">Let's Play!</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>&#x1F308;</span>
+    <span class="celeb-stella-dance">&#x1F984;</span>
+    <span>&#x2728;</span>
+  </div>
+  <h2 id="celebTitle">Stella's Horn Shines!</h2>
+  <p id="celebMsg">Rainbow magic fills the sky!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ====================================================================
+//  Aha! -- Rainbow Star Catcher (U-Z)
+//  Stella the unicorn catches rainbow letter stars.
+//  Voice B (en-GB-SoniaNeural) -- Pastel rainbow theme
+// ====================================================================
+
+const AUDIO_BASE = '../../audio';
+
+const VOICE_B = {
+  greetings: ['voice-b/greetings/hello-ready-to-play.mp3','voice-b/greetings/lets-discover-something-wonderful.mp3','voice-b/greetings/oh-i-love-this-game.mp3','voice-b/greetings/wonderful-are-you-ready.mp3','voice-b/greetings/lets-begin-our-adventure.mp3','voice-b/greetings/i-am-so-glad-youre-here.mp3','voice-b/greetings/time-to-learn-something-new.mp3'],
+  correct: ['voice-b/correct/oh-wonderful-well-done.mp3','voice-b/correct/youre-such-a-clever-one.mp3','voice-b/correct/beautiful-thats-exactly-right.mp3','voice-b/correct/oh-my-goodness-yes.mp3','voice-b/correct/gorgeous-work.mp3','voice-b/correct/you-make-me-so-happy.mp3','voice-b/correct/splendid-absolutely-splendid.mp3','voice-b/correct/what-a-star-you-are.mp3','voice-b/correct/oh-how-clever.mp3','voice-b/correct/thats-perfect-my-dear.mp3','voice-b/correct/i-am-so-proud-of-you.mp3','voice-b/correct/you-did-it-wonderful.mp3','voice-b/correct/oh-yes-well-done.mp3'],
+  wrong: ['voice-b/wrong/not-that-one-but-youll-find-it.mp3','voice-b/wrong/so-close-have-another-lovely-go.mp3','voice-b/wrong/nearly-there-my-clever-one.mp3','voice-b/wrong/keep-trying-youre-doing-so-well.mp3','voice-b/wrong/dont-worry-try-once-more.mp3','voice-b/wrong/have-another-go-you-can-do-it.mp3'],
+  thinking: ['voice-b/thinking/hmm-lets-think-together.mp3','voice-b/thinking/i-wonder-which-one.mp3','voice-b/thinking/take-a-nice-long-look.mp3','voice-b/thinking/you-are-doing-so-well.mp3','voice-b/thinking/we-can-do-this-together.mp3'],
+  'round-complete': ['voice-b/round-complete/wonderful-round-youre-blooming.mp3','voice-b/round-complete/oh-that-was-beautiful-next-round.mp3','voice-b/round-complete/gorgeous-work-keep-going.mp3','voice-b/round-complete/oh-how-marvellous-round-done.mp3'],
+  'game-complete': ['voice-b/game-complete/you-finished-how-marvellous.mp3','voice-b/game-complete/i-am-so-proud-of-you.mp3','voice-b/game-complete/you-are-truly-amazing.mp3','voice-b/game-complete/what-a-star-you-are.mp3','voice-b/game-complete/oh-my-goodness-you-did-it.mp3'],
+};
+
+const LETTERS = ['u','v','w','x','y','z'];
+const LETTER_EMOJI = {u:'☂️',v:'🎻',w:'🐋',x:'📦',y:'🪀',z:'🦓'};
+const EARLIER_DISTRACTORS = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t'];
+
+// Orb colour pool (pastel rainbow)
+const ORB_COLORS = ['orb-pink','orb-peach','orb-yellow','orb-mint','orb-sky','orb-lavender'];
+
+// ====================================================================
+// AUDIO CLASS (AudioContext-first for iOS)
+// ====================================================================
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.05; this.sfxVol = 0.3; this.musicDucked = 0.015;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+    this._letterThrottle = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Dreamy pastel rainbow: major pentatonic
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+      o.frequency.value = f * (Math.random() > 0.75 ? 2 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.10, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.2);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.5);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 700 + Math.random() * 1200);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.14,0.32); p(659.25,t+0.1,0.16,0.36); p(783.99,t+0.2,0.18,0.4); p(1046.5,t+0.3,0.22,0.4); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='pop')       { p(800,t,0.06,0.22); p(1200,t+0.04,0.1,0.18); p(1600,t+0.08,0.12,0.15); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(1200,t+0.18);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.22);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='reveal')    { p(440,t,0.1,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); p(880,t+0.24,0.2,0.3); }
+    else if (type==='sparkle')   { p(1320,t,0.06,0.2); p(1760,t+0.05,0.08,0.18); p(2100,t+0.11,0.1,0.15); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(letter) {
+    // Throttle same-letter announcement so we don't spam
+    const now = Date.now();
+    const last = this._letterThrottle[letter] || 0;
+    if (now - last < 400) return Promise.resolve();
+    this._letterThrottle[letter] = now;
+    return this.speak(`${AUDIO_BASE}/letters/${letter}.mp3`);
+  }
+  clearQueue() {
+    this.voiceQueue.forEach(q => q.resolve());
+    this.voiceQueue = [];
+    this.speaking = false;
+    this._unduck();
+  }
+}
+
+// ====================================================================
+// UTILITIES
+// ====================================================================
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['Gorgeous!','Yes!','Sparkly!','Rainbow magic!','Oh lovely!','To my horn!'];
+const BUBBLE_WRONG   = ['Aww!','Not that one!','Try again!','Keep looking!','Oh dear!'];
+
+// ====================================================================
+// VISUAL EFFECTS
+// ====================================================================
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🌈','🦄','💖','💜','💛','💚','💙','🩷', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function rainbowSparkleBurst(x, y) {
+  const icons = ['✨','💫','⭐','🌈','💖','💜','💛','💚','💙','🌟'];
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(icons);
+    s.style.left = (x + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.25) + 's';
+    s.style.fontSize = (22 + Math.random()*12) + 'px';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1100);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charArea');
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'charJump 0.55s ease-out';
+}
+
+// Stella gallops across the screen with a rainbow trail
+function stellaGallopFull() {
+  const stella = document.createElement('div');
+  stella.className = 'stella-gallop';
+  stella.textContent = '🦄';
+  document.body.appendChild(stella);
+
+  // Trail of rainbow sparkles following across
+  const trailIcons = ['🌈','✨','💖','💛','💚','💙','💜'];
+  let count = 0;
+  const trailInt = setInterval(() => {
+    const t = document.createElement('div');
+    t.className = 'stella-trail';
+    t.textContent = pick(trailIcons);
+    const rect = stella.getBoundingClientRect();
+    t.style.left = (rect.left + rect.width*0.2) + 'px';
+    t.style.top  = (rect.top + rect.height*0.5) + 'px';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1800);
+    count++;
+    if (count > 30) clearInterval(trailInt);
+  }, 90);
+
+  setTimeout(() => stella.remove(), 3200);
+  setTimeout(() => clearInterval(trailInt), 3000);
+}
+
+// ====================================================================
+// BACKGROUND
+// ====================================================================
+function createBackground() {
+  // Clouds
+  const cloudEmojis = ['☁️','☁️','☁️','⛅'];
+  for (let i = 0; i < 5; i++) {
+    const c = document.createElement('div');
+    c.className = 'bg-cloud';
+    c.textContent = pick(cloudEmojis);
+    c.style.top = (5 + Math.random()*55) + 'vh';
+    c.style.animationDuration = (28 + Math.random()*18) + 's';
+    c.style.animationDelay = (Math.random()*20) + 's';
+    document.body.appendChild(c);
+  }
+  // Sparkle stars scattered
+  const sparkleIcons = ['✨','⭐','💫','🌟'];
+  for (let i = 0; i < 28; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-sparkle';
+    s.textContent = pick(sparkleIcons);
+    s.style.left = (Math.random()*100) + 'vw';
+    s.style.top  = (Math.random()*100) + 'vh';
+    s.style.animationDelay = (Math.random()*3) + 's';
+    s.style.animationDuration = (2 + Math.random()*2.5) + 's';
+    document.body.appendChild(s);
+  }
+}
+
+// ====================================================================
+// PROGRESS BAR
+// ====================================================================
+function buildProgBar() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'progDot'+i;
+    d.textContent = (i+1);
+    bar.appendChild(d);
+  }
+}
+
+function markProgDone(round) {
+  const d = $('progDot'+round);
+  if (d) d.classList.add('done');
+}
+
+// ====================================================================
+// STELLA HORN GLOW
+// ====================================================================
+function updateHorn(caught, needed) {
+  $('hornCount').textContent = caught + '/' + needed;
+  const ratio = caught / needed;
+  const emoji = $('hornEmoji');
+  emoji.className = 'horn-emoji';
+  if (ratio >= 1)        emoji.classList.add('glow-full');
+  else if (ratio >= 0.8) emoji.classList.add('glow-4');
+  else if (ratio >= 0.6) emoji.classList.add('glow-3');
+  else if (ratio >= 0.4) emoji.classList.add('glow-2');
+  else if (ratio >= 0.2) emoji.classList.add('glow-1');
+}
+
+// ====================================================================
+// STAR ORB CREATION
+// ====================================================================
+function createStar(letter, displayMode, floatDuration) {
+  const star = document.createElement('div');
+  star.className = 'star-orb';
+  star.dataset.letter = letter;
+
+  const body = document.createElement('div');
+  body.className = 'star-body ' + pick(ORB_COLORS);
+
+  if (displayMode === 'big-small') {
+    // Round 1 & 2: BIG uppercase + small lowercase
+    const big = document.createElement('div');
+    big.className = 'star-big';
+    big.textContent = letter.toUpperCase();
+    body.appendChild(big);
+    const small = document.createElement('div');
+    small.className = 'star-small';
+    small.textContent = letter.toLowerCase();
+    body.appendChild(small);
+  } else if (displayMode === 'pic-small') {
+    // Round 3: picture + small letter
+    const pic = document.createElement('div');
+    pic.className = 'star-pic';
+    pic.textContent = LETTER_EMOJI[letter] || '⭐';
+    body.appendChild(pic);
+    const small = document.createElement('div');
+    small.className = 'star-pic-small';
+    small.textContent = letter.toLowerCase();
+    body.appendChild(small);
+  } else if (displayMode === 'mixed') {
+    // Round 4: random mix
+    const style = pick(['big-small','pic-small','big-only','upper-lower']);
+    if (style === 'big-small') {
+      const big = document.createElement('div');
+      big.className = 'star-big';
+      big.textContent = letter.toUpperCase();
+      body.appendChild(big);
+      const small = document.createElement('div');
+      small.className = 'star-small';
+      small.textContent = letter.toLowerCase();
+      body.appendChild(small);
+    } else if (style === 'pic-small') {
+      const pic = document.createElement('div');
+      pic.className = 'star-pic';
+      pic.textContent = LETTER_EMOJI[letter] || '⭐';
+      body.appendChild(pic);
+      const small = document.createElement('div');
+      small.className = 'star-pic-small';
+      small.textContent = letter.toLowerCase();
+      body.appendChild(small);
+    } else if (style === 'big-only') {
+      const big = document.createElement('div');
+      big.className = 'star-big';
+      big.style.fontSize = 'clamp(40px, 9vw, 60px)';
+      big.textContent = letter.toUpperCase();
+      body.appendChild(big);
+    } else {
+      const big = document.createElement('div');
+      big.className = 'star-big';
+      big.textContent = letter.toLowerCase();
+      body.appendChild(big);
+    }
+  }
+
+  star.appendChild(body);
+
+  // Position at bottom, random x
+  const areaW = $('playArea').clientWidth;
+  const starW = 100;
+  const maxX = Math.max(20, areaW - starW - 10);
+  const x = 10 + Math.random() * maxX;
+
+  star.style.left = x + 'px';
+  star.style.bottom = '-130px';
+  star.style.animationDuration = floatDuration + 's';
+  star.classList.add('star-rising');
+
+  return star;
+}
+
+// ====================================================================
+// GAME STATE
+// ====================================================================
+const audio = new GameAudio();
+let currentRound = 0;
+let totalScore = 0;
+let roundCaught = 0;
+const NEEDED_PER_ROUND = 5;
+let targetLetter = '';
+let roundActive = false;
+let spawnTimer = null;
+let thinkTimer = null;
+let starsOnScreen = [];
+let spawnCount = 0;
+const MAX_SPAWNS = 30;
+
+// Round configs - rising difficulty, faster each round
+const ROUNDS = [
+  { display: 'big-small', speed: 16, targetDisplay: 'big-small' },  // R1 slow
+  { display: 'big-small', speed: 11, targetDisplay: 'big-small' },  // R2 same, faster
+  { display: 'pic-small', speed: 14, targetDisplay: 'big-small' },  // R3 pictures
+  { display: 'mixed',     speed: 9,  targetDisplay: 'big-small' },  // R4 mixed fast
+];
+
+// ====================================================================
+// GAME FLOW
+// ====================================================================
+async function startGame() {
+  $('scrTitle').classList.remove('active');
+  $('hud').style.display = 'flex';
+  $('charArea').style.display = 'block';
+  $('hornArea').style.display = 'flex';
+  $('progBar').style.display = 'flex';
+  buildProgBar();
+  currentRound = 0;
+  totalScore = 0;
+  $('hudScore').textContent = '0';
+  audio.startMusic();
+  await audio.play('greetings');
+  await delay(400);
+  startRound();
+}
+
+async function startRound() {
+  roundCaught = 0;
+  spawnCount = 0;
+  starsOnScreen = [];
+  $('playArea').innerHTML = '';
+
+  // Pick target - avoid repeating last round's target
+  const available = LETTERS.filter(l => l !== targetLetter);
+  targetLetter = pick(available);
+
+  const cfg = ROUNDS[currentRound];
+
+  // Update HUD
+  $('hudRound').textContent = (currentRound+1)+'/4';
+  $('hudTargetNum').textContent = targetLetter.toUpperCase();
+  $('hudTargetWord').textContent = targetLetter.toUpperCase() + targetLetter.toLowerCase();
+  $('hudTargetWord').style.display = 'block';
+
+  updateHorn(0, NEEDED_PER_ROUND);
+
+  // Show round banner
+  const banner = $('roundBanner');
+  $('roundTitle').textContent = 'Round ' + (currentRound+1);
+  $('roundSub').textContent = 'Catch the ' + targetLetter.toUpperCase() + 's!';
+  banner.classList.add('show');
+  audio.tone('reveal');
+  await delay(650);
+
+  // Speak the target letter
+  await audio.speakLetter(targetLetter);
+  await delay(900);
+  banner.classList.remove('show');
+  await delay(300);
+
+  showCharBubble('Find the ' + targetLetter.toUpperCase() + '!', 2800);
+
+  roundActive = true;
+  startSpawning();
+  startThinkingPrompts();
+}
+
+function startSpawning() {
+  const cfg = ROUNDS[currentRound];
+  const spawnStar = () => {
+    if (!roundActive) return;
+    if (spawnCount >= MAX_SPAWNS && roundCaught < NEEDED_PER_ROUND) {
+      spawnCount = 0;
+    }
+
+    // ~40% target, rest distractors
+    const isTarget = Math.random() < 0.4;
+    let letter;
+    if (isTarget) {
+      letter = targetLetter;
+    } else {
+      // Mix from pool: u-z non-target letters plus earlier letters
+      const pool = [
+        ...LETTERS.filter(l => l !== targetLetter),
+        ...LETTERS.filter(l => l !== targetLetter),  // weight u-z slightly higher
+        ...shuffle([...EARLIER_DISTRACTORS]).slice(0, 6),
+      ];
+      letter = pick(pool);
+    }
+
+    const star = createStar(letter, cfg.display, cfg.speed);
+    $('playArea').appendChild(star);
+    starsOnScreen.push(star);
+    spawnCount++;
+
+    onTap(star, (e) => {
+      e.stopPropagation();
+      if (!roundActive) return;
+      if (star.dataset.tapped) return;
+      handleStarTap(star, star.dataset.letter);
+    });
+
+    star.addEventListener('animationend', () => {
+      if (!star.dataset.tapped) {
+        star.remove();
+        starsOnScreen = starsOnScreen.filter(s => s !== star);
+      }
+    });
+
+    if (roundActive) {
+      const interval = 750 + Math.random() * 1100;
+      spawnTimer = setTimeout(spawnStar, interval);
+    }
+  };
+
+  spawnStar();
+}
+
+function startThinkingPrompts() {
+  const prompt = () => {
+    if (!roundActive) return;
+    audio.speakLetter(targetLetter);
+    showCharBubble('Find the ' + targetLetter.toUpperCase() + '!', 2500);
+    thinkTimer = setTimeout(prompt, 5800 + Math.random() * 1200);
+  };
+  thinkTimer = setTimeout(prompt, 6000);
+}
+
+function stopTimers() {
+  roundActive = false;
+  clearTimeout(spawnTimer);
+  clearTimeout(thinkTimer);
+}
+
+async function handleStarTap(star, letter) {
+  star.dataset.tapped = 'true';
+
+  if (letter === targetLetter) {
+    // CORRECT - fly to Stella's horn
+    roundCaught++;
+    totalScore += 10;
+    $('hudScore').textContent = totalScore;
+
+    audio.tone('pop');
+    audio.tone('sparkle');
+    const rect = star.getBoundingClientRect();
+    rainbowSparkleBurst(rect.left + rect.width/2, rect.top + rect.height/2);
+
+    // Animate to Stella's horn (corner)
+    const hornRect = $('hornEmoji').getBoundingClientRect();
+    star.style.position = 'fixed';
+    star.style.left = rect.left + 'px';
+    star.style.top = rect.top + 'px';
+    star.style.bottom = 'auto';
+    star.classList.remove('star-rising');
+    star.style.animation = 'none';
+
+    // Force reflow then transition to horn
+    star.offsetHeight;
+    star.classList.add('star-captured');
+    star.style.left = hornRect.left + 'px';
+    star.style.top = hornRect.top + 'px';
+
+    updateHorn(roundCaught, NEEDED_PER_ROUND);
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+    jumpChar();
+
+    // Voice (throttled): say letter once per catch, plus praise
+    audio.speakLetter(letter);
+    audio.play('correct');
+
+    setTimeout(() => {
+      star.remove();
+      starsOnScreen = starsOnScreen.filter(s => s !== star);
+    }, 750);
+
+    if (roundCaught >= NEEDED_PER_ROUND) {
+      await delay(500);
+      endRound();
+    }
+  } else {
+    // WRONG - "Aww!" wiggle, stays
+    audio.tone('wrong');
+
+    const aww = document.createElement('div');
+    aww.className = 'aww-text';
+    aww.textContent = 'Aww!';
+    const rect = star.getBoundingClientRect();
+    aww.style.left = (rect.left + rect.width/2 - 22) + 'px';
+    aww.style.top = (rect.top - 10) + 'px';
+    document.body.appendChild(aww);
+    setTimeout(() => aww.remove(), 1000);
+
+    star.classList.remove('star-rising');
+    star.style.animation = 'none';
+    star.offsetHeight;
+    star.classList.add('star-wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    setTimeout(() => {
+      star.dataset.tapped = '';
+      star.classList.remove('star-wrong');
+      if (star.parentNode) {
+        star.classList.add('star-rising');
+      }
+    }, 600);
+
+    audio.play('wrong');
+  }
+}
+
+async function endRound() {
+  stopTimers();
+
+  $('playArea').innerHTML = '';
+  starsOnScreen = [];
+
+  markProgDone(currentRound);
+  audio.tone('roundDone');
+  confetti(30, ['🌈','🦄','✨','💖']);
+
+  if (currentRound < 3) {
+    const banner = $('roundBanner');
+    $('roundTitle').textContent = 'Round Complete!';
+    $('roundSub').textContent = "Stella's horn is shining!";
+    banner.classList.add('show');
+    await audio.play('round-complete');
+    await delay(1400);  // ~3s transition total with voice
+    banner.classList.remove('show');
+    await delay(500);
+    currentRound++;
+    startRound();
+  } else {
+    await delay(500);
+    showCelebration();
+  }
+}
+
+async function showCelebration() {
+  audio.tone('celeb');
+  audio.tone('sparkle');
+  confetti(70, ['🌈','🦄','✨','💖','💜','💛','💚','💙','🩷']);
+
+  // Stella does a gallop across the screen with rainbow trail
+  stellaGallopFull();
+
+  const stars = Math.min(5, Math.max(3, Math.floor(totalScore / 40)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = "Stella's Horn Shines!";
+  $('celebMsg').textContent = 'Rainbow magic fills the sky! Score: ' + totalScore;
+
+  await delay(600);
+  $('scrCeleb').classList.add('active');
+
+  await audio.play('game-complete');
+  await delay(800);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(40, ['🌈','🦄','✨','🌟']), 2000);
+}
+
+function resetGame() {
+  $('scrCeleb').classList.remove('active');
+  $('hud').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('hornArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('playArea').innerHTML = '';
+  audio.stopMusic();
+  audio.clearQueue();
+  $('scrTitle').classList.add('active');
+}
+
+// ====================================================================
+// INIT
+// ====================================================================
+createBackground();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.clearQueue();
+  resetGame();
+  setTimeout(() => {
+    audio.unlock();
+    startGame();
+  }, 300);
+});
+</script>
+</body>
+</html>

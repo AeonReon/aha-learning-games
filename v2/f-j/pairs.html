@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fairy Forest Pairs 🧚</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --forest-dark: #0d2818; --forest-green: #1e5a3a; --moss-brown: #5c4328;
+  --fairy-pink: #ff7eb9; --gold: #ffd86b; --petal-glow: #ffe8f5;
+  --leaf-light: #9de3a1; --white85: rgba(255,255,255,0.88);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(165deg, #0a1f12 0%, #0d2818 30%, #1e5a3a 65%, #2a6b44 100%);
+}
+
+/* ── Background fireflies/flowers ── */
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(12px, 2.5vw, 22px);
+  opacity: 0.5;
+  animation: sparkleFloat linear infinite;
+}
+@keyframes sparkleFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.55; }
+  92%  { opacity: 0.55; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--fairy-pink);
+  text-shadow: 0 0 30px rgba(255,126,185,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start  { background: linear-gradient(135deg, #ff7eb9, #c94a89); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again  { background: linear-gradient(135deg, #ff7eb9, #c94a89); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(13,40,24,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,216,107,0.18);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.42); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--fairy-pink); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-pairs-text { color: var(--gold); font-size: clamp(14px,3vw,20px); font-weight: 900; }
+
+/* ── Character (Pip the fairy) ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(40px,9vw,60px);
+  filter: drop-shadow(0 0 8px rgba(255,216,107,0.5));
+  animation: fairyHover 3s ease-in-out infinite;
+}
+@keyframes fairyHover {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%     { transform: translateY(-6px) rotate(3deg); }
+}
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.97); color: var(--forest-dark);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.97);
+}
+
+/* ── Card Grid ── */
+.card-grid {
+  position: fixed;
+  top: 55px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-game);
+  display: grid;
+  gap: clamp(6px,1.5vw,10px);
+  padding: 8px;
+  justify-items: center; align-items: center;
+}
+.card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.card-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* ── Card ── */
+.card {
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.card:active { transform: scale(0.95); }
+.card-inner {
+  position: relative;
+  width: clamp(70px, 18vw, 100px);
+  height: clamp(90px, 24vw, 120px);
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+.card.flipped .card-inner  { transform: rotateY(180deg); }
+.card.matched .card-inner  { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+/* Card back — flower petal with glowing center */
+.card-back {
+  background: radial-gradient(circle at 50% 50%, #ff9ec9 0%, #d65a99 55%, #8b2d66 100%);
+  border: 3px solid rgba(255,216,107,0.55);
+  box-shadow: 0 0 18px rgba(255,126,185,0.35), 0 4px 12px rgba(0,0,0,0.3);
+  gap: 2px;
+}
+.card-back-icon {
+  font-size: clamp(30px,7.5vw,44px); line-height: 1;
+  animation: petalGlow 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255,216,107,0.9));
+}
+@keyframes petalGlow { 0%,100%{transform:scale(1);filter:drop-shadow(0 0 6px rgba(255,216,107,0.7))} 50%{transform:scale(1.08);filter:drop-shadow(0 0 14px rgba(255,216,107,1))} }
+.card-back-sparkle { font-size: 10px; color: var(--gold); letter-spacing: 2px; }
+
+/* Card front — forest background with letter content */
+.card-front {
+  background: linear-gradient(135deg, #1e4a2e, #12331f);
+  border: 3px solid rgba(255,216,107,0.55);
+  transform: rotateY(180deg);
+  gap: 2px;
+  padding: 4px;
+}
+
+/* Card content types */
+.card-upper {
+  font-size: clamp(32px, 8vw, 50px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(255,216,107,0.6), 1px 1px 0 rgba(0,0,0,0.4);
+  line-height: 1;
+}
+.card-lower {
+  font-size: clamp(32px, 8vw, 50px);
+  font-weight: 900;
+  color: var(--fairy-pink);
+  text-shadow: 0 0 15px rgba(255,126,185,0.6), 1px 1px 0 rgba(0,0,0,0.4);
+  line-height: 1;
+}
+.card-emoji {
+  font-size: clamp(32px, 8vw, 48px);
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(255,216,107,0.4));
+}
+.card-word {
+  font-size: clamp(13px, 3vw, 18px);
+  font-weight: 900;
+  color: var(--leaf-light);
+  text-shadow: 0 0 8px rgba(157,227,161,0.5);
+  text-transform: lowercase;
+  line-height: 1.1;
+}
+.card-small-letters {
+  font-size: clamp(11px, 2.4vw, 14px);
+  font-weight: 900;
+  color: rgba(255,216,107,0.75);
+  margin-top: 2px;
+  letter-spacing: 0.1em;
+}
+.card-dual {
+  display: flex; gap: 4px; align-items: baseline;
+}
+
+/* Matched cards — bloom green */
+.card.matched .card-front {
+  background: linear-gradient(135deg, #2a6b44, #1a4a2e);
+  border-color: var(--leaf-light);
+}
+.card.matched .card-inner {
+  animation: cardmatch 0.4s ease-out;
+}
+.card.match-anim .card-front::after {
+  content: '🌸✨';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(28px, 7vw, 42px);
+  background: rgba(26,74,46,0.85);
+  border-radius: 11px;
+  animation: petalFloat 1.2s ease-out forwards;
+}
+@keyframes petalFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.5) rotate(180deg); }
+}
+
+/* Hint styles */
+.hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(255,216,107,0.7), 0 0 50px rgba(255,126,185,0.35) !important; border-radius: 14px; }
+
+/* ── Fairy Garden (6 flower spots) ── */
+.fairy-garden {
+  position: fixed; bottom: 52px; right: 8px;
+  z-index: var(--z-char);
+  width: clamp(70px,16vw,110px);
+  pointer-events: none;
+}
+.garden-svg { width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(255,216,107,0.25)); }
+.garden-spot {
+  fill: rgba(60,40,25,0.7);
+  stroke: rgba(157,227,161,0.5);
+  stroke-width: 1;
+  transition: fill 0.6s;
+}
+.garden-flower {
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: opacity 0.6s;
+}
+.garden-flower.bloomed {
+  opacity: 1;
+  animation: bloomIn 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloomIn {
+  0%   { opacity: 0; transform: scale(0.2) rotate(-30deg); }
+  70%  { transform: scale(1.2) rotate(10deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.garden-complete { animation: gardenGlow 1.5s ease-in-out infinite; }
+@keyframes gardenGlow { 0%,100%{filter:drop-shadow(0 0 8px rgba(255,216,107,0.3))} 50%{filter:drop-shadow(0 0 25px rgba(255,216,107,0.9))} }
+
+/* ── Butterflies (shown when garden full) ── */
+.butterfly-parade {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: var(--z-char);
+}
+.butterfly {
+  position: absolute;
+  font-size: clamp(26px, 5vw, 40px);
+  opacity: 0;
+  animation: flutter 4s ease-in-out forwards;
+}
+@keyframes flutter {
+  0%   { opacity: 0; transform: translate(0,0) rotate(0) scale(0.5); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--bx,200px), var(--by,-120px)) rotate(30deg) scale(1); }
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(13,40,24,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--fairy-pink), #c94a89);
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(13,40,24,0.95); backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,216,107,0.3); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--fairy-pink); text-shadow: 0 0 15px rgba(255,126,185,0.45), 1px 1px 0 rgba(0,0,0,0.35);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.6); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(13,40,24,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--fairy-pink);
+  text-shadow: 0 0 20px rgba(255,126,185,0.55), 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.92); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cardmatch   { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.15)} 100%{transform:rotateY(180deg) scale(1)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-pairs-text" id="hudPairs">Find the matching petals!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Card Grid -->
+<div class="card-grid" id="cardGrid"></div>
+
+<!-- Pip the fairy -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧚</div>
+</div>
+
+<!-- Fairy Garden -->
+<div class="fairy-garden" id="fairyGarden" style="display:none">
+  <svg class="garden-svg" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Ground / grass -->
+    <ellipse cx="60" cy="125" rx="58" ry="10" fill="#1a4a2e" opacity="0.6"/>
+    <rect x="2" y="110" width="116" height="28" fill="#2a5a34" rx="4"/>
+    <!-- Grass blades -->
+    <path d="M 10 115 L 14 108 L 18 115 Z" fill="#3d7a48"/>
+    <path d="M 100 115 L 104 108 L 108 115 Z" fill="#3d7a48"/>
+    <path d="M 55 115 L 60 106 L 65 115 Z" fill="#3d7a48"/>
+    <!-- 6 flower spots with stems -->
+    <!-- Spot 1 -->
+    <line x1="18" y1="112" x2="18" y2="92" stroke="#3d7a48" stroke-width="2"/>
+    <circle class="garden-spot" id="gs0" cx="18" cy="88" r="7"/>
+    <g class="garden-flower" id="gf0">
+      <circle cx="18" cy="88" r="9" fill="#ff7eb9"/>
+      <circle cx="18" cy="88" r="4" fill="#ffd86b"/>
+      <circle cx="13" cy="85" r="3" fill="#ff9ec9"/>
+      <circle cx="23" cy="85" r="3" fill="#ff9ec9"/>
+      <circle cx="13" cy="91" r="3" fill="#ff9ec9"/>
+      <circle cx="23" cy="91" r="3" fill="#ff9ec9"/>
+    </g>
+    <!-- Spot 2 -->
+    <line x1="40" y1="112" x2="40" y2="78" stroke="#3d7a48" stroke-width="2"/>
+    <circle class="garden-spot" id="gs1" cx="40" cy="74" r="7"/>
+    <g class="garden-flower" id="gf1">
+      <circle cx="40" cy="74" r="9" fill="#ffd86b"/>
+      <circle cx="40" cy="74" r="4" fill="#ff7eb9"/>
+      <circle cx="35" cy="71" r="3" fill="#ffe8a3"/>
+      <circle cx="45" cy="71" r="3" fill="#ffe8a3"/>
+      <circle cx="35" cy="77" r="3" fill="#ffe8a3"/>
+      <circle cx="45" cy="77" r="3" fill="#ffe8a3"/>
+    </g>
+    <!-- Spot 3 -->
+    <line x1="60" y1="112" x2="60" y2="62" stroke="#3d7a48" stroke-width="2"/>
+    <circle class="garden-spot" id="gs2" cx="60" cy="58" r="7"/>
+    <g class="garden-flower" id="gf2">
+      <circle cx="60" cy="58" r="9" fill="#c77dff"/>
+      <circle cx="60" cy="58" r="4" fill="#ffd86b"/>
+      <circle cx="55" cy="55" r="3" fill="#e0b3ff"/>
+      <circle cx="65" cy="55" r="3" fill="#e0b3ff"/>
+      <circle cx="55" cy="61" r="3" fill="#e0b3ff"/>
+      <circle cx="65" cy="61" r="3" fill="#e0b3ff"/>
+    </g>
+    <!-- Spot 4 -->
+    <line x1="80" y1="112" x2="80" y2="78" stroke="#3d7a48" stroke-width="2"/>
+    <circle class="garden-spot" id="gs3" cx="80" cy="74" r="7"/>
+    <g class="garden-flower" id="gf3">
+      <circle cx="80" cy="74" r="9" fill="#9de3a1"/>
+      <circle cx="80" cy="74" r="4" fill="#ffd86b"/>
+      <circle cx="75" cy="71" r="3" fill="#c7efc8"/>
+      <circle cx="85" cy="71" r="3" fill="#c7efc8"/>
+      <circle cx="75" cy="77" r="3" fill="#c7efc8"/>
+      <circle cx="85" cy="77" r="3" fill="#c7efc8"/>
+    </g>
+    <!-- Spot 5 -->
+    <line x1="102" y1="112" x2="102" y2="92" stroke="#3d7a48" stroke-width="2"/>
+    <circle class="garden-spot" id="gs4" cx="102" cy="88" r="7"/>
+    <g class="garden-flower" id="gf4">
+      <circle cx="102" cy="88" r="9" fill="#ff9ec9"/>
+      <circle cx="102" cy="88" r="4" fill="#ffd86b"/>
+      <circle cx="97" cy="85" r="3" fill="#ffc2dd"/>
+      <circle cx="107" cy="85" r="3" fill="#ffc2dd"/>
+      <circle cx="97" cy="91" r="3" fill="#ffc2dd"/>
+      <circle cx="107" cy="91" r="3" fill="#ffc2dd"/>
+    </g>
+    <!-- Spot 6 (center front, smaller) -->
+    <line x1="30" y1="112" x2="30" y2="100" stroke="#3d7a48" stroke-width="2"/>
+    <circle class="garden-spot" id="gs5" cx="30" cy="96" r="6"/>
+    <g class="garden-flower" id="gf5">
+      <circle cx="30" cy="96" r="8" fill="#ffb3d9"/>
+      <circle cx="30" cy="96" r="3.5" fill="#ffd86b"/>
+      <circle cx="26" cy="93" r="2.5" fill="#ffd0e5"/>
+      <circle cx="34" cy="93" r="2.5" fill="#ffd0e5"/>
+      <circle cx="26" cy="99" r="2.5" fill="#ffd0e5"/>
+      <circle cx="34" cy="99" r="2.5" fill="#ffd0e5"/>
+    </g>
+  </svg>
+</div>
+
+<!-- Butterfly parade (shown when garden complete) -->
+<div class="butterfly-parade" id="butterflyParade"></div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🌸</span>
+    <span>🧚</span>
+    <span>🌿</span>
+  </div>
+  <h1>Fairy Forest Pairs 🧚</h1>
+  <p>The forest sprites scattered Pip's letter flowers! Flip the petals to find matching letter pairs and restore the fairy garden.<br>🌺 Bloom every flower! 🌺</p>
+  <button class="btn btn-start" id="btnStart">Let's Play! 🌸</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🧚</span>
+    <span>🌸</span>
+    <span>🦋</span>
+  </div>
+  <h2 id="celebTitle">🌟 Magical! 🌟</h2>
+  <p id="celebMsg">You restored Pip's fairy garden!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🌺</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Fairy Forest Pairs (F–J)  🧚                            ║
+// ║  Letter memory matching — uppercase, lowercase, words & emojis  ║
+// ║  Voice B (en-GB-SoniaNeural) · Fairy Forest theme               ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+const LETTERS = ['f','g','h','i','j'];
+const LETTER_WORDS = { f:'flower', g:'gift', h:'house', i:'ice cream', j:'juggler' };
+const LETTER_EMOJI = { f:'🌸', g:'🎁', h:'🏠', i:'🍦', j:'🤹' };
+
+// ── Voice B clip pools ──
+const VOICE_B = {
+  greetings: [
+    'voice-b/greetings/hello-ready-to-play.mp3',
+    'voice-b/greetings/lets-discover-something-wonderful.mp3',
+    'voice-b/greetings/oh-i-love-this-game.mp3',
+    'voice-b/greetings/wonderful-are-you-ready.mp3',
+    'voice-b/greetings/lets-begin-our-adventure.mp3',
+    'voice-b/greetings/i-am-so-glad-youre-here.mp3',
+    'voice-b/greetings/time-to-learn-something-new.mp3',
+  ],
+  correct: [
+    'voice-b/correct/oh-wonderful-well-done.mp3',
+    'voice-b/correct/youre-such-a-clever-one.mp3',
+    'voice-b/correct/beautiful-thats-exactly-right.mp3',
+    'voice-b/correct/oh-my-goodness-yes.mp3',
+    'voice-b/correct/gorgeous-work.mp3',
+    'voice-b/correct/you-make-me-so-happy.mp3',
+    'voice-b/correct/splendid-absolutely-splendid.mp3',
+    'voice-b/correct/what-a-star-you-are.mp3',
+    'voice-b/correct/oh-how-clever.mp3',
+    'voice-b/correct/thats-perfect-my-dear.mp3',
+    'voice-b/correct/i-am-so-proud-of-you.mp3',
+    'voice-b/correct/you-did-it-wonderful.mp3',
+    'voice-b/correct/oh-yes-well-done.mp3',
+  ],
+  wrong: [
+    'voice-b/wrong/not-that-one-but-youll-find-it.mp3',
+    'voice-b/wrong/so-close-have-another-lovely-go.mp3',
+    'voice-b/wrong/nearly-there-my-clever-one.mp3',
+    'voice-b/wrong/keep-trying-youre-doing-so-well.mp3',
+    'voice-b/wrong/dont-worry-try-once-more.mp3',
+    'voice-b/wrong/have-another-go-you-can-do-it.mp3',
+  ],
+  thinking: [
+    'voice-b/thinking/hmm-lets-think-together.mp3',
+    'voice-b/thinking/i-wonder-which-one.mp3',
+    'voice-b/thinking/take-a-nice-long-look.mp3',
+    'voice-b/thinking/you-are-doing-so-well.mp3',
+    'voice-b/thinking/we-can-do-this-together.mp3',
+  ],
+  'round-complete': [
+    'voice-b/round-complete/wonderful-round-youre-blooming.mp3',
+    'voice-b/round-complete/oh-that-was-beautiful-next-round.mp3',
+    'voice-b/round-complete/gorgeous-work-keep-going.mp3',
+    'voice-b/round-complete/oh-how-marvellous-round-done.mp3',
+  ],
+  'game-complete': [
+    'voice-b/game-complete/you-finished-how-marvellous.mp3',
+    'voice-b/game-complete/i-am-so-proud-of-you.mp3',
+    'voice-b/game-complete/you-are-truly-amazing.mp3',
+    'voice-b/game-complete/what-a-star-you-are.mp3',
+    'voice-b/game-complete/oh-my-goodness-you-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first for iOS)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Gentle fairy major pentatonic — dreamy, sparkly feel
+    const notes = [392.00, 440.00, 493.88, 587.33, 659.25, 783.99, 880.00];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+      o.frequency.value = f * (Math.random() > 0.75 ? 2 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.2);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 2.4);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 900 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='flip')     { p(700,t,0.06,0.15); p(900,t+0.03,0.08,0.12); }
+    else if (type==='reveal')   { p(440,t,0.08,0.2); p(660,t+0.06,0.1,0.18); }
+    else if (type==='hint')     { p(523.25,t,0.15,0.15); p(659.25,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(1100,t+0.18);
+      g.gain.setValueAtTime(0.14,t); g.gain.linearRampToValueAtTime(0,t+0.22);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='pop')      { p(880,t,0.05,0.2); p(1100,t+0.04,0.06,0.15); }
+    else if (type==='bloom')    { p(659.25,t,0.08,0.25); p(880,t+0.08,0.1,0.3); p(1046.5,t+0.18,0.15,0.35); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_B[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakLetter(l)   { return this.speak(`${AUDIO_BASE}/letters/${l.toLowerCase()}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const BUBBLE_CORRECT = ['A match! 🌸','Bloomed! ✨','That\'s it! 🧚','Lovely! 🌺','Magic! 💫','Beautiful! 🦋'];
+const BUBBLE_WRONG   = ['Not a match!','Try again! 🌿','Almost! 🌸','Keep going! 🧚','Remember! ✨'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['🌸','🌺','✨','💫','🌟','🌿','🦋','⭐','🧚','🌷', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['🌸','✨','💫','🌺','🌟','🦋']);
+    s.style.left = (cx + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out, fairyHover 3s ease-in-out 0.7s infinite';
+  setTimeout(() => { el.style.animation = 'fairyHover 3s ease-in-out infinite'; }, 700);
+}
+
+function butterflyParade() {
+  const parade = $('butterflyParade');
+  const flies = ['🦋','🧚','🌸','🌺'];
+  for (let i = 0; i < 10; i++) {
+    const b = document.createElement('div');
+    b.className = 'butterfly';
+    b.textContent = pick(flies);
+    b.style.left = (20 + Math.random() * 60) + 'vw';
+    b.style.top  = (40 + Math.random() * 40) + 'vh';
+    b.style.setProperty('--bx', ((Math.random()-0.5) * 400) + 'px');
+    b.style.setProperty('--by', (-150 - Math.random() * 200) + 'px');
+    b.style.animationDelay = (i * 0.18) + 's';
+    parade.appendChild(b);
+    setTimeout(() => b.remove(), 4800);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — fireflies, flowers, leaves float upward
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['🦋','🌙','⭐','✨','🌸','🌿','🍄','💫','🌺','🌷'];
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*22) + 's';
+    el.style.animationDuration = (11 + Math.random()*14) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FAIRY GARDEN — flower spots bloom as pairs are matched
+// ══════════════════════════════════════════════════════════════════
+let flowerIdx = 0;
+function resetGarden() {
+  flowerIdx = 0;
+  for (let i = 0; i < 6; i++) {
+    const f = $('gf' + i);
+    if (f) f.classList.remove('bloomed');
+  }
+  const svg = document.querySelector('.garden-svg');
+  if (svg) svg.classList.remove('garden-complete');
+}
+function bloomFlower() {
+  if (flowerIdx < 6) {
+    const f = $('gf' + flowerIdx);
+    if (f) { f.classList.add('bloomed'); audio.tone('bloom'); }
+    flowerIdx++;
+  }
+  if (flowerIdx >= 6) {
+    const svg = document.querySelector('.garden-svg');
+    if (svg) svg.classList.add('garden-complete');
+    // Butterfly parade!
+    butterflyParade();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG — 4 rounds, progressive difficulty with cross-rep
+//
+// Card types:
+//   'upper'   — big uppercase (e.g. "F") + small lowercase below
+//   'lower'   — big lowercase (e.g. "f") + small uppercase below
+//   'word'    — word + emoji (e.g. "flower 🌸") + small letter
+//   'emoji'   — big emoji (e.g. 🌸) + small letter
+//
+// Each pair = two cards with the same letter but different representation
+// ══════════════════════════════════════════════════════════════════
+
+function buildRoundPairs(roundIdx) {
+  let pairs = [];
+  if (roundIdx === 0) {
+    // Round 1: 3 pairs — upper ↔ lower (F-H)
+    ['f','g','h'].forEach(l => {
+      pairs.push({ letter: l, typeA: 'upper', typeB: 'lower' });
+    });
+  } else if (roundIdx === 1) {
+    // Round 2: 4 pairs — upper ↔ lower (F-I)
+    ['f','g','h','i'].forEach(l => {
+      pairs.push({ letter: l, typeA: 'upper', typeB: 'lower' });
+    });
+  } else if (roundIdx === 2) {
+    // Round 3: 5 pairs — letter ↔ word/emoji (F-J)
+    ['f','g','h','i','j'].forEach(l => {
+      pairs.push({ letter: l, typeA: 'upper', typeB: 'emoji' });
+    });
+  } else {
+    // Round 4: 6 pairs — mix
+    pairs.push({ letter: 'f', typeA: 'upper', typeB: 'lower' });
+    pairs.push({ letter: 'g', typeA: 'upper', typeB: 'emoji' });
+    pairs.push({ letter: 'h', typeA: 'lower', typeB: 'word' });
+    pairs.push({ letter: 'i', typeA: 'upper', typeB: 'lower' });
+    pairs.push({ letter: 'j', typeA: 'upper', typeB: 'emoji' });
+    pairs.push({ letter: 'f', typeA: 'lower', typeB: 'word' }); // second f pair — different rep combo
+  }
+  return pairs;
+}
+
+const ROUND_META = [
+  { label: 'Round 1 — The Garden Awakens! 🌸', sub: '3 pairs — peek first!', cols: 3, peek: true },
+  { label: 'Round 2 — Deeper Into the Forest! 🌿', sub: '4 pairs — no peeking!', cols: 4, peek: false },
+  { label: 'Round 3 — Fairy Words! 🧚', sub: '5 pairs — letters meet flowers!', cols: 5, peek: false },
+  { label: 'Round 4 — The Grand Bloom! 🌺', sub: '6 pairs — the ultimate test!', cols: 4, peek: false },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 0, score = 0;
+let matches = 0, totalPairs = 0;
+let flippedCards = [], lockBoard = false;
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg(pairs) {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  pairs.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + i; d.textContent = p.letter.toUpperCase();
+    bar.appendChild(d);
+  });
+}
+function markProg(idx) {
+  const d = $('prog' + idx); if (d) d.classList.add('done');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS — wiggle after 4s, voice after 7s
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive || lockBoard) return;
+  hintTimer = setTimeout(() => {
+    const cards = [...document.querySelectorAll('.card:not(.matched):not(.flipped)')];
+    if (cards.length > 0) {
+      const target = cards[0];
+      target.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => target.classList.remove('hint-wiggle', 'hint-glow'), 1800);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD CONTENT — both cases always visible
+// ══════════════════════════════════════════════════════════════════
+function buildCardFront(letter, type) {
+  const front = document.createElement('div');
+  front.className = 'card-front';
+  const upper = letter.toUpperCase();
+  const lower = letter.toLowerCase();
+
+  if (type === 'upper') {
+    const bigEl = document.createElement('div');
+    bigEl.className = 'card-upper';
+    bigEl.textContent = upper;
+    front.appendChild(bigEl);
+    // Small lowercase always visible
+    const smallEl = document.createElement('div');
+    smallEl.className = 'card-small-letters';
+    smallEl.textContent = lower;
+    front.appendChild(smallEl);
+  } else if (type === 'lower') {
+    const bigEl = document.createElement('div');
+    bigEl.className = 'card-lower';
+    bigEl.textContent = lower;
+    front.appendChild(bigEl);
+    // Small uppercase always visible
+    const smallEl = document.createElement('div');
+    smallEl.className = 'card-small-letters';
+    smallEl.textContent = upper;
+    front.appendChild(smallEl);
+  } else if (type === 'emoji') {
+    const emojiEl = document.createElement('div');
+    emojiEl.className = 'card-emoji';
+    emojiEl.textContent = LETTER_EMOJI[lower] || '🌸';
+    front.appendChild(emojiEl);
+    // Both cases visible below
+    const dualEl = document.createElement('div');
+    dualEl.className = 'card-small-letters';
+    dualEl.textContent = upper + lower;
+    front.appendChild(dualEl);
+  } else if (type === 'word') {
+    const emojiEl = document.createElement('div');
+    emojiEl.className = 'card-emoji';
+    emojiEl.style.fontSize = 'clamp(22px, 5.5vw, 34px)';
+    emojiEl.textContent = LETTER_EMOJI[lower] || '🌸';
+    front.appendChild(emojiEl);
+    const wordEl = document.createElement('div');
+    wordEl.className = 'card-word';
+    wordEl.textContent = LETTER_WORDS[lower] || lower;
+    front.appendChild(wordEl);
+    // Both cases visible
+    const dualEl = document.createElement('div');
+    dualEl.className = 'card-small-letters';
+    dualEl.textContent = upper + lower;
+    front.appendChild(dualEl);
+  }
+
+  return front;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD GRID
+// ══════════════════════════════════════════════════════════════════
+let currentPairs = [];
+
+function buildGrid() {
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  const pairs = buildRoundPairs(round);
+  currentPairs = pairs;
+  totalPairs = pairs.length;
+  matches = 0;
+
+  // Create two cards per pair
+  let cards = [];
+  pairs.forEach((p, pairIdx) => {
+    cards.push({ letter: p.letter, type: p.typeA, pairIdx });
+    cards.push({ letter: p.letter, type: p.typeB, pairIdx });
+  });
+  shuffle(cards);
+
+  const meta = ROUND_META[round];
+  grid.className = 'card-grid cols-' + meta.cols;
+
+  cards.forEach((cardData, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.letter = cardData.letter;
+    card.dataset.pairIdx = cardData.pairIdx;
+    card.dataset.idx = idx;
+    card.dataset.type = cardData.type;
+
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+
+    // Back (face down — flower petal with glowing center)
+    const back = document.createElement('div');
+    back.className = 'card-back';
+    back.innerHTML = '<div class="card-back-icon">🌸</div><div class="card-back-sparkle">✨ ✨ ✨</div>';
+
+    // Front (face up — letter content)
+    const front = buildCardFront(cardData.letter, cardData.type);
+
+    inner.appendChild(back);
+    inner.appendChild(front);
+    card.appendChild(inner);
+
+    onTap(card, () => flipCard(card));
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLIP CARD
+// ══════════════════════════════════════════════════════════════════
+function flipCard(card) {
+  if (!gameActive || lockBoard) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  if (flippedCards.length >= 2) return;
+
+  resetHints();
+  card.classList.add('flipped');
+  audio.tone('flip');
+  flippedCards.push(card);
+
+  // Speak the letter on this card
+  const letter = card.dataset.letter;
+  audio.speakLetter(letter);
+
+  if (flippedCards.length === 2) {
+    lockBoard = true;
+    checkMatch();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECK MATCH — cross-representation: same pairIdx = match
+// ══════════════════════════════════════════════════════════════════
+async function checkMatch() {
+  const [a, b] = flippedCards;
+  const pairA = a.dataset.pairIdx;
+  const pairB = b.dataset.pairIdx;
+
+  await delay(600);
+
+  if (pairA === pairB && a.dataset.idx !== b.dataset.idx) {
+    // MATCH!
+    a.classList.add('matched');
+    b.classList.add('matched');
+
+    // Petal float away animation
+    a.classList.add('match-anim');
+    b.classList.add('match-anim');
+    setTimeout(() => { a.classList.remove('match-anim'); b.classList.remove('match-anim'); }, 1300);
+
+    matches++;
+    score++;
+    $('hudScore').textContent = score;
+
+    audio.tone('correct');
+    jumpChar();
+    starBurst(a);
+    starBurst(b);
+
+    // Find the pair index in currentPairs to mark progress
+    const progIdx = parseInt(pairA);
+    markProg(progIdx);
+
+    // Bloom a flower in the fairy garden
+    bloomFlower();
+
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    audio.play('correct'); // don't block — child can flip next card
+
+    flippedCards = [];
+    lockBoard = false;
+
+    // Check round complete
+    if (matches >= totalPairs) {
+      await delay(650);
+      advanceRound();
+    } else {
+      resetHints();
+    }
+
+  } else {
+    // NO MATCH
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    // Shake animation
+    a.style.animation = 'wrongShake 0.4s ease-in-out';
+    b.style.animation = 'wrongShake 0.4s ease-in-out';
+
+    audio.play('wrong'); // don't block
+    await delay(650);
+
+    a.style.animation = '';
+    b.style.animation = '';
+    a.classList.remove('flipped');
+    b.classList.remove('flipped');
+    flippedCards = [];
+    lockBoard = false;
+    resetHints();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ADVANCE ROUND
+// ══════════════════════════════════════════════════════════════════
+async function advanceRound() {
+  stopHints();
+  lockBoard = true;
+  round++;
+
+  if (round >= ROUND_META.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  // Round complete celebration
+  audio.tone('roundDone');
+  confetti(30, ['🌸','🌺','✨']);
+  showCharBubble('All flowers bloomed! 🎉', 2500);
+
+  $('roundTitle').textContent = '🌸 Round Complete! 🌸';
+  $('roundSub').textContent   = '';
+  $('roundBanner').classList.add('show');
+  audio.play('round-complete'); // don't await
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  // Reset garden for next round
+  resetGarden();
+
+  // Next round banner (snappy)
+  const cfg = ROUND_META[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1100);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  $('hudRound').textContent = `${round + 1}/4`;
+
+  // Build new grid
+  buildGrid();
+  const pairs = currentPairs;
+  buildProg(pairs);
+  flippedCards = [];
+  lockBoard = false;
+  gameActive = true;
+
+  // Peek in Round 1 only (already past R1 here, so no peek)
+  if (cfg.peek) {
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(300);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopHints();
+  audio.stopMusic();
+  $('hud').style.display       = 'none';
+  $('progBar').style.display    = 'none';
+  $('charArea').style.display   = 'none';
+  $('fairyGarden').style.display = 'none';
+  $('cardGrid').innerHTML       = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.tone('celeb');
+  await delay(400);
+  confetti(60, ['🌸','🌺','✨','🦋','🌷','🌟']);
+  butterflyParade();
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 4)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🌟 Magical! 🌟';
+  $('celebMsg').textContent   = `You restored Pip's fairy garden! The butterflies are dancing!`;
+  showScreen('scrCeleb');
+
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['🌸','🦋','🌟']), 2000);
+  setTimeout(() => butterflyParade(), 2400);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START GAME
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  // Reset
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0; score = 0; matches = 0;
+  flippedCards = []; lockBoard = false;
+  stopHints();
+  resetGarden();
+
+  $('hudScore').textContent    = '0';
+  $('hudRound').textContent    = '1/4';
+  $('hudPairs').textContent    = 'Find the matching petals!';
+  $('hud').style.display       = '';
+  $('charArea').style.display  = '';
+  $('fairyGarden').style.display = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.startMusic();
+
+  // Round 1 opening banner
+  const cfg = ROUND_META[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  buildGrid();
+  buildProg(currentPairs);
+  gameActive = true;
+
+  // Round 1 peek — show all cards briefly for 1.5s
+  if (cfg.peek) {
+    lockBoard = true;
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(400);
+    lockBoard = false;
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+</script>
+</body>
+</html>

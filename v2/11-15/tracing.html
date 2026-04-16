@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Draw with Sea Magic — Marina's Ocean Adventure</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep-blue: #031b3a;
+  --mid-blue: #0a3a6b;
+  --turquoise: #00bfa5;
+  --aqua: #7dd3c0;
+  --pearl: #f4faff;
+  --cyan: #48d6e0;
+  --gold: #ffd97a;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--deep-blue);
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background: linear-gradient(180deg,
+    #071a3a 0%,
+    #0a2e5c 18%,
+    #0a3a6b 40%,
+    #083558 65%,
+    #04213f 100%);
+}
+.bg-star {
+  position: fixed; pointer-events: none; z-index: 1;
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #fff;
+  animation: twinkle ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+.bg-bubble {
+  position: fixed; pointer-events: none; z-index: 2;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.55), rgba(125,211,192,0.18) 60%, rgba(0,191,165,0.04) 100%);
+  border: 1px solid rgba(255,255,255,0.25);
+  animation: bubbleRise linear infinite;
+  opacity: 0.75;
+}
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) translateX(0) scale(0.8); opacity: 0; }
+  10%  { opacity: 0.75; }
+  90%  { opacity: 0.75; }
+  100% { transform: translateY(-110vh) translateX(20px) scale(1.1); opacity: 0; }
+}
+.bg-jelly {
+  position: fixed; pointer-events: none; z-index: 2;
+  font-size: clamp(22px, 4.5vw, 34px);
+  opacity: 0.55;
+  animation: jellyDrift linear infinite;
+  filter: drop-shadow(0 0 10px rgba(125,211,192,0.5));
+}
+@keyframes jellyDrift {
+  0%   { transform: translateX(110vw) translateY(0) scale(1); }
+  25%  { transform: translateX(75vw) translateY(-18px) scale(1.05); }
+  50%  { transform: translateX(40vw) translateY(10px) scale(0.95); }
+  75%  { transform: translateX(15vw) translateY(-12px) scale(1.05); }
+  100% { transform: translateX(-80px) translateY(0) scale(1); }
+}
+.bg-wave {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 90px;
+  z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 20% 100%, rgba(125,211,192,0.12), transparent 60%),
+    radial-gradient(ellipse at 70% 100%, rgba(0,191,165,0.10), transparent 60%);
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--aqua);
+  text-shadow: 0 0 30px rgba(0,191,165,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 6px 0 8px;
+}
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: center;
+  margin-bottom: 10px;
+  font-size: clamp(36px, 9vw, 60px);
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #022; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.35);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, #7dd3c0, #00bfa5);
+  color: #032a2a;
+  margin-top: 18px;
+  animation: glow 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, #7dd3c0, #00bfa5); color: #032a2a; margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.22)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(3,27,58,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(0,191,165,0.25);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.42); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--aqua); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-center .hud-val { color: var(--pearl); font-size: clamp(14px,3vw,20px); }
+
+/* ── Character ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji {
+  font-size: clamp(40px,9vw,60px);
+  filter: drop-shadow(0 0 10px rgba(125,211,192,0.5));
+}
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: #033;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.3);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+@keyframes charJump {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-16px) rotate(-5deg); }
+  70%  { transform: translateY(-6px) rotate(3deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+/* ── Canvas area ── */
+.canvas-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+}
+.canvas-area canvas {
+  border-radius: 18px;
+  box-shadow:
+    0 0 40px rgba(0,191,165,0.22),
+    0 6px 30px rgba(0,0,0,0.55);
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(250,230,180,0.22), transparent 55%),
+    linear-gradient(180deg, rgba(10,58,107,0.65), rgba(10,30,58,0.75));
+}
+
+/* ── Number display ── */
+.number-display {
+  position: fixed;
+  top: 56px; right: 12px;
+  z-index: var(--z-ui);
+  pointer-events: none;
+  text-align: center;
+}
+.number-display .big-num {
+  font-size: clamp(40px,10vw,70px);
+  font-weight: 900;
+  color: var(--aqua);
+  text-shadow: 0 0 20px rgba(0,191,165,0.6);
+  line-height: 1;
+}
+.number-display .sub-label {
+  font-size: clamp(10px,2vw,14px);
+  color: rgba(255,255,255,0.55);
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui); height: 56px;
+  background: rgba(3,27,58,0.92); backdrop-filter: blur(6px);
+  border-top: 2px solid rgba(0,191,165,0.25);
+  display: flex; align-items: center; justify-content: center; gap: clamp(6px,2vw,14px);
+  padding: 0 12px;
+}
+.prog-dot {
+  width: clamp(32px,8vw,44px); height: clamp(32px,8vw,44px);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,3.2vw,20px); font-weight: 900;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35);
+  border: 2px solid rgba(255,255,255,0.08);
+  transition: all 0.4s;
+}
+.prog-dot.active {
+  background: rgba(0,191,165,0.22); color: var(--aqua);
+  border-color: var(--aqua);
+  box-shadow: 0 0 12px rgba(0,191,165,0.4);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, #7dd3c0, #00bfa5);
+  color: #032a2a; border-color: var(--pearl);
+  box-shadow: 0 0 16px rgba(125,211,192,0.5);
+}
+
+/* ── Spell Book ── */
+.spell-book {
+  position: fixed; top: 60px; left: 8px;
+  z-index: var(--z-char);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.spell-book-icon {
+  font-size: clamp(28px,6vw,40px);
+  filter: drop-shadow(0 0 8px rgba(0,191,165,0.55));
+}
+.spell-book-pages {
+  display: flex; gap: 2px; flex-wrap: wrap; max-width: 60px; justify-content: center;
+}
+.spell-page {
+  width: 8px; height: 10px; border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  transition: all 0.5s;
+}
+.spell-page.lit {
+  background: linear-gradient(135deg, #7dd3c0, #48d6e0);
+  box-shadow: 0 0 6px rgba(125,211,192,0.7);
+  animation: pagePop 0.5s ease-out;
+}
+@keyframes pagePop {
+  0% { transform: scale(0); } 50% { transform: scale(1.5); } 100% { transform: scale(1); }
+}
+
+/* ── Level banner ── */
+.level-banner {
+  position: fixed; inset: 0;
+  z-index: var(--z-celeb);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(4,21,45,0.94);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 0.4s;
+}
+.level-banner.show { opacity: 1; visibility: visible; pointer-events: auto; }
+.level-banner h2 {
+  font-size: clamp(24px,6vw,42px);
+  color: var(--aqua);
+  text-shadow: 0 0 20px rgba(0,191,165,0.55);
+  margin-bottom: 6px;
+}
+.level-banner p {
+  font-size: clamp(14px,3.5vw,20px);
+  color: var(--white85);
+}
+
+/* ── Confetti ── */
+.confetti {
+  position: fixed; pointer-events: none;
+  z-index: var(--z-celeb);
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+.starburst {
+  position: fixed; pointer-events: none; z-index: var(--z-celeb);
+  animation: starPop 0.8s ease-out forwards;
+}
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(0); opacity: 1; }
+  60%  { transform: scale(1.5) rotate(180deg); opacity: 0.85; }
+  100% { transform: scale(0.5) rotate(360deg) translateY(-40px); opacity: 0; }
+}
+
+/* ── Celebration screen ── */
+.screen-celeb h1 {
+  font-size: clamp(26px,6.5vw,46px);
+  color: var(--aqua);
+  text-shadow: 0 0 30px rgba(0,191,165,0.65), 2px 2px 0 rgba(0,0,0,0.35);
+  margin-bottom: 12px;
+}
+.screen-celeb p {
+  font-size: clamp(16px,4vw,22px);
+  color: var(--white85); line-height: 1.5;
+}
+.screen-celeb .final-book {
+  font-size: clamp(60px,15vw,100px);
+  margin: 16px 0;
+  animation: bookPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(125,211,192,0.6));
+}
+@keyframes bookPulse {
+  0%,100% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.05) rotate(-2deg); }
+  50% { transform: scale(1.12) rotate(0); }
+  75% { transform: scale(1.05) rotate(2deg); }
+}
+.final-score {
+  font-size: clamp(18px,4.5vw,28px);
+  color: var(--gold); font-weight: 900;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg" id="bg"></div>
+<div class="bg-wave"></div>
+
+<!-- Title Screen -->
+<div class="screen screen-title active" id="screenTitle">
+  <div class="icon-row"><span>🧜‍♀️</span><span>📖</span><span>🐚</span></div>
+  <h1>Draw with Sea Magic</h1>
+  <p>Help Marina the mermaid cast ocean spells! Trace each number with your magic pearl to write a spell on the sandy seabed!</p>
+  <button class="btn btn-start" id="btnStart">Cast Spells!</button>
+</div>
+
+<!-- Game Screen (HUD + Canvas + Progress) -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <div class="hud-label">LEVEL</div>
+    <div class="hud-val" id="hudLevel">1</div>
+  </div>
+  <div class="hud-center">
+    <div class="hud-val" id="hudNumber">11</div>
+  </div>
+  <div class="hud-right hud-score">
+    <div class="hud-label">SPELLS</div>
+    <div class="hud-val" id="hudScore">0</div>
+  </div>
+</div>
+
+<!-- Number display -->
+<div class="number-display" id="numDisplay" style="display:none">
+  <div class="big-num" id="bigNum">11</div>
+  <div class="sub-label" id="numSubLabel"></div>
+</div>
+
+<!-- Spell Book -->
+<div class="spell-book" id="spellBook" style="display:none">
+  <div class="spell-book-icon">📖</div>
+  <div class="spell-book-pages" id="spellPages"></div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-area" id="canvasArea" style="display:none">
+  <canvas id="traceCanvas"></canvas>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Character -->
+<div class="char-area" id="charArea" style="display:none">
+  <span class="char-emoji" id="charEmoji">🧜‍♀️</span>
+  <div class="char-bubble" id="charBubble"></div>
+</div>
+
+<!-- Level Banner -->
+<div class="level-banner" id="levelBanner">
+  <h2 id="bannerTitle">Level 1</h2>
+  <p id="bannerSub">Follow the pearl trail!</p>
+</div>
+
+<!-- Celebration Screen -->
+<div class="screen screen-celeb" id="screenCeleb">
+  <h1>Spell Book Complete!</h1>
+  <div class="final-book">📖✨</div>
+  <p>Marina's ocean spells glow with magic!<br>You are a true sea sorcerer!</p>
+  <div class="final-score" id="finalScore">20 Spells Cast!</div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// AUDIO
+// ══════════════════════════════════════════════════════════════════
+const AUDIO_BASE = '../../audio';
+
+const VOICE_A = {
+  greetings: ['voice-a/greetings/here-we-go.mp3','voice-a/greetings/lets-go.mp3','voice-a/greetings/come-on-lets-play.mp3','voice-a/greetings/are-you-ready.mp3','voice-a/greetings/this-is-going-to-be-fun.mp3'],
+  correct: ['voice-a/correct/amazing.mp3','voice-a/correct/brilliant.mp3','voice-a/correct/fantastic.mp3','voice-a/correct/i-knew-you-could-do-it.mp3','voice-a/correct/incredible.mp3','voice-a/correct/perfect.mp3','voice-a/correct/superstar.mp3','voice-a/correct/thats-right.mp3','voice-a/correct/well-done.mp3','voice-a/correct/wow-look-at-you-go.mp3','voice-a/correct/yes-youre-so-clever.mp3','voice-a/correct/you-got-it.mp3','voice-a/correct/youre-on-fire.mp3'],
+  wrong: ['voice-a/wrong/almost-have-another-go.mp3','voice-a/wrong/dont-worry-try-again.mp3','voice-a/wrong/keep-trying-youre-so-close.mp3','voice-a/wrong/nearly-give-it-another-go.mp3','voice-a/wrong/not-quite-you-can-do-it.mp3','voice-a/wrong/oops-not-that-one.mp3'],
+  thinking: ['voice-a/thinking/have-a-good-look.mp3','voice-a/thinking/i-believe-in-you.mp3','voice-a/thinking/take-your-time.mp3','voice-a/thinking/which-one-could-it-be.mp3','voice-a/thinking/you-can-do-it-keep-looking.mp3'],
+  'round-complete': ['voice-a/round-complete/brilliant-round-keep-going.mp3','voice-a/round-complete/round-complete-amazing.mp3','voice-a/round-complete/round-done-youre-doing-so-well.mp3','voice-a/round-complete/you-did-it-on-to-the-next.mp3'],
+  'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
+};
+
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Deeper, watery pentatonic for ocean mood
+    const notes = [174.61, 220.00, 261.63, 293.66, 349.23, 392.00, 440.00];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.10, this.ctx.currentTime + 0.3);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1600);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')    { p(440,t,0.12,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='checkpoint') {
+      p(680 + Math.random()*220, t, 0.08, 0.15, 'triangle');
+    }
+    else if (type==='boom') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(35,t+0.5);
+      g.gain.setValueAtTime(0.6,t); g.gain.linearRampToValueAtTime(0,t+0.55);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.6);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n) { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  clearQueue() { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT DATA
+// ══════════════════════════════════════════════════════════════════
+const CHECKPOINTS = {
+  // 11 = two vertical strokes (like 1 1)
+  '11_first':  [{x:0.30,y:0.15},{x:0.32,y:0.88}],
+  '11_second': [{x:0.68,y:0.15},{x:0.70,y:0.88}],
+  // 12 = a 1 then a 2
+  '12_first':  [{x:0.30,y:0.15},{x:0.32,y:0.88}],
+  '12_second': [{x:0.55,y:0.20},{x:0.75,y:0.15},{x:0.85,y:0.30},{x:0.78,y:0.50},{x:0.55,y:0.68},{x:0.55,y:0.88},{x:0.85,y:0.88}],
+  // 13 = a 1 then a 3
+  '13_first':  [{x:0.30,y:0.15},{x:0.32,y:0.88}],
+  '13_second': [{x:0.55,y:0.18},{x:0.78,y:0.18},{x:0.80,y:0.35},{x:0.65,y:0.48},{x:0.82,y:0.60},{x:0.80,y:0.80},{x:0.55,y:0.85}],
+  // 14 = a 1 then a 4
+  '14_first':  [{x:0.30,y:0.15},{x:0.32,y:0.88}],
+  '14_second': [{x:0.55,y:0.15},{x:0.53,y:0.55},{x:0.85,y:0.55},{x:0.80,y:0.15},{x:0.80,y:0.88}],
+  // 15 = a 1 then a 5
+  '15_first':  [{x:0.30,y:0.15},{x:0.32,y:0.88}],
+  '15_second': [{x:0.85,y:0.15},{x:0.55,y:0.15},{x:0.55,y:0.45},{x:0.78,y:0.48},{x:0.85,y:0.60},{x:0.82,y:0.80},{x:0.60,y:0.88},{x:0.55,y:0.75}],
+};
+
+// Each number is TWO traces: first digit, then second digit
+const TRACE_SEQUENCE = [
+  '11_first','11_second',
+  '12_first','12_second',
+  '13_first','13_second',
+  '14_first','14_second',
+  '15_first','15_second',
+];
+
+// Level configs
+const LEVELS = [
+  { label: 'Level 1 — Follow the Pearl!', sub: 'Watch the sparkle, then trace!', outlineOpacity: 1.0, showGuide: true },
+  { label: 'Level 2 — Trace the Glow!', sub: 'No guide this time!', outlineOpacity: 1.0, showGuide: false },
+  { label: 'Level 3 — Fading Outline!', sub: 'The outline is fading...', outlineOpacity: 0.5, showGuide: false },
+  { label: 'Level 4 — Sea Magic Memory!', sub: 'Can you remember the shapes?', outlineOpacity: 0.15, showGuide: false },
+];
+
+const BUBBLE_CORRECT = ['Spell cast! ✨','Magical! 🐚','Wonderful! 💫','Ocean magic! 🌊','Beautiful! 🐠'];
+const BUBBLE_WRONG   = ['Keep tracing! 🐚','Follow the pearl! ✨','Almost there! 💫','Try the glow! 🌟'];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let currentLevel = 0;
+let currentTraceIndex = 0;
+let score = 0;
+let totalSpells = 0;
+let spellPageCount = 0;
+
+// Tracing state
+let traceCheckpoints = [];
+let nextCheckpoint = 0;
+let isDrawing = false;
+let drawPoints = [];
+let hitRadius = 0;
+let canvas, ctx;
+let canvasW, canvasH, dpr;
+let guideAnimating = false;
+let hintTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Stars in the upper sky area
+  for (let i = 0; i < 50; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-star';
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = (Math.random() * 35) + 'vh';
+    el.style.animationDuration = (2 + Math.random() * 4) + 's';
+    el.style.animationDelay = (-Math.random() * 5) + 's';
+    el.style.width = el.style.height = (1 + Math.random() * 3) + 'px';
+    $('bg').appendChild(el);
+  }
+  // Bubbles rising
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-bubble';
+    const size = 8 + Math.random() * 22;
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.bottom = (-30 - Math.random() * 80) + 'px';
+    el.style.animationDuration = (8 + Math.random() * 10) + 's';
+    el.style.animationDelay = (-Math.random() * 12) + 's';
+    document.body.appendChild(el);
+  }
+  // Jellyfish drifting
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-jelly';
+    el.textContent = pick(['🪼','🐙','🐚']);
+    el.style.top = (25 + Math.random() * 55) + 'vh';
+    el.style.animationDuration = (16 + Math.random() * 14) + 's';
+    el.style.animationDelay = (-Math.random() * 18) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40) {
+  const all = ['⭐','✨','💫','🌟','🐚','🐠','🪼','🧜‍♀️','🐬','🌊','🫧'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurstAt(x, y) {
+  for (let i = 0; i < 10; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🐚','🫧','🌟']);
+    s.style.left = (x + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+function showGameUI(show) {
+  $('hud').style.display = show ? '' : 'none';
+  $('canvasArea').style.display = show ? '' : 'none';
+  $('progBar').style.display = show ? '' : 'none';
+  $('charArea').style.display = show ? '' : 'none';
+  $('spellBook').style.display = show ? '' : 'none';
+  $('numDisplay').style.display = show ? '' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SPELL BOOK
+// ══════════════════════════════════════════════════════════════════
+function buildSpellBook() {
+  const pages = $('spellPages');
+  pages.innerHTML = '';
+  // 10 traces per level × 4 levels = 40; but we light one page per number (5 × 4 = 20)
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'spell-page';
+    p.id = 'page' + i;
+    pages.appendChild(p);
+  }
+}
+
+function lightSpellPage() {
+  const p = $('page' + spellPageCount);
+  if (p) {
+    p.classList.add('lit');
+    spellPageCount++;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  const labels = [11, 12, 13, 14, 15];
+  labels.forEach((n, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'prog' + i;
+    d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+
+function updateProg() {
+  // Map trace index (0..9) to progress dot index (0..4)
+  // Each number = 2 traces, so dotIndex = floor(currentTraceIndex / 2)
+  const dotIndex = Math.floor(currentTraceIndex / 2);
+
+  for (let i = 0; i < 5; i++) {
+    const d = $('prog' + i);
+    if (!d) continue;
+    d.classList.remove('active', 'done');
+    if (i < dotIndex) d.classList.add('done');
+    else if (i === dotIndex) d.classList.add('active');
+  }
+}
+
+function markProgDone(idx) {
+  const d = $('prog' + idx);
+  if (d) { d.classList.remove('active'); d.classList.add('done'); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════════════════════
+function setupCanvas() {
+  canvas = $('traceCanvas');
+  const area = $('canvasArea');
+  const rect = area.getBoundingClientRect();
+  const pad = 16;
+  const w = rect.width - pad * 2;
+  const h = rect.height - pad * 2;
+  const size = Math.min(w, h, 440);
+
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+
+  ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  canvasW = size;
+  canvasH = size;
+  hitRadius = canvasW * 0.15;
+
+  // Touch/mouse events (attach once)
+  if (!canvas._eventsBound) {
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('mouseleave', onPointerUp);
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onPointerUp, { passive: false });
+    canvas._eventsBound = true;
+  }
+}
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+}
+
+function onPointerDown(e) {
+  if (!gameActive || guideAnimating) return;
+  audio.unlock();
+  isDrawing = true;
+  drawPoints = [];
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  checkCheckpoint(pos);
+}
+
+function onPointerMove(e) {
+  if (!isDrawing || !gameActive || guideAnimating) return;
+  const pos = getCanvasPos(e);
+  drawPoints.push(pos);
+  drawTraceLine();
+  checkCheckpoint(pos);
+}
+
+function onPointerUp() {
+  isDrawing = false;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DRAWING
+// ══════════════════════════════════════════════════════════════════
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvasW, canvasH);
+}
+
+function drawNumberOutline(key, opacity) {
+  const cps = CHECKPOINTS[key];
+  if (!cps || cps.length < 2) return;
+
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  // White/blue semi-transparent outline
+  ctx.strokeStyle = 'rgba(220,240,255,0.85)';
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(72,214,224,0.55)';
+  ctx.shadowBlur = 18;
+
+  ctx.beginPath();
+  const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+
+  ctx.moveTo(pts[0].x, pts[0].y);
+
+  if (pts.length === 2) {
+    ctx.lineTo(pts[1].x, pts[1].y);
+  } else {
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i+1].x) / 2;
+      const my = (pts[i].y + pts[i+1].y) / 2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  }
+
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCheckpointDots() {
+  const cps = traceCheckpoints;
+  for (let i = 0; i < cps.length; i++) {
+    const cp = cps[i];
+    const x = cp.x * canvasW;
+    const y = cp.y * canvasH;
+
+    if (i < nextCheckpoint) {
+      // Hit - glowing pearl dot
+      ctx.save();
+      ctx.shadowColor = 'rgba(125,211,192,0.95)';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(125,211,192,0.9)';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+function drawTraceLine() {
+  if (drawPoints.length < 2) return;
+
+  // Redraw everything
+  clearCanvas();
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const level = LEVELS[currentLevel];
+  drawNumberOutline(key, level.outlineOpacity);
+
+  // Three-layer glowing water trace: turquoise outer, aqua mid, pearl core
+  // Outer turquoise halo
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,191,165,0.85)';
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(72,214,224,0.95)';
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // Middle aqua band
+  ctx.save();
+  ctx.strokeStyle = '#7dd3c0';
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(125,211,192,0.8)';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // Inner pearl white core
+  ctx.save();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(255,255,255,0.9)';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+  for (let i = 1; i < drawPoints.length; i++) {
+    ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  drawCheckpointDots();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECKPOINT CHECKING
+// ══════════════════════════════════════════════════════════════════
+function checkCheckpoint(pos) {
+  if (nextCheckpoint >= traceCheckpoints.length) return;
+
+  const cp = traceCheckpoints[nextCheckpoint];
+  const cpx = cp.x * canvasW;
+  const cpy = cp.y * canvasH;
+  const dx = pos.x - cpx;
+  const dy = pos.y - cpy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist <= hitRadius) {
+    nextCheckpoint++;
+    audio.tone('checkpoint');
+    resetHints();
+
+    // Redraw to show hit dot
+    clearCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+    drawTraceLine();
+    drawCheckpointDots();
+
+    if (nextCheckpoint >= traceCheckpoints.length) {
+      // All checkpoints hit - trace complete!
+      onTraceComplete();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANIMATED GUIDE (Level 1)
+// ══════════════════════════════════════════════════════════════════
+function animateGuide(key) {
+  return new Promise(resolve => {
+    const cps = CHECKPOINTS[key];
+    if (!cps || cps.length < 2) { resolve(); return; }
+
+    guideAnimating = true;
+    const pts = cps.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
+    const totalDuration = 2000;
+    const start = performance.now();
+
+    // Build a dense path from checkpoints
+    const densePoints = [];
+    const steps = 80;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const totalLen = pts.length - 1;
+      const segment = t * totalLen;
+      const i = Math.min(Math.floor(segment), totalLen - 1);
+      const localT = segment - i;
+
+      if (pts.length === 2) {
+        densePoints.push({
+          x: pts[0].x + (pts[1].x - pts[0].x) * t,
+          y: pts[0].y + (pts[1].y - pts[0].y) * t
+        });
+      } else {
+        const p0 = pts[i];
+        const p1 = pts[Math.min(i + 1, pts.length - 1)];
+        densePoints.push({
+          x: p0.x + (p1.x - p0.x) * localT,
+          y: p0.y + (p1.y - p0.y) * localT
+        });
+      }
+    }
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const idx = Math.floor(progress * (densePoints.length - 1));
+
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+
+      // Draw turquoise sparkle trail
+      ctx.save();
+      const trailLen = 8;
+      for (let j = Math.max(0, idx - trailLen); j <= idx; j++) {
+        const p = densePoints[j];
+        const alpha = 1 - (idx - j) / trailLen;
+        ctx.fillStyle = `rgba(125,211,192,${alpha * 0.75})`;
+        ctx.shadowColor = `rgba(72,214,224,${alpha})`;
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5 + alpha * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Pearl head
+      if (idx < densePoints.length) {
+        const p = densePoints[idx];
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = 'rgba(255,255,255,1)';
+        ctx.shadowBlur = 22;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        guideAnimating = false;
+        clearCanvas();
+        drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer);
+  if (!gameActive) return;
+  hintTimer = setTimeout(() => {
+    if (!gameActive || guideAnimating) return;
+    if (nextCheckpoint < traceCheckpoints.length) {
+      const cp = traceCheckpoints[nextCheckpoint];
+      const x = cp.x * canvasW;
+      const y = cp.y * canvasH;
+
+      // Draw hint glow
+      const key = TRACE_SEQUENCE[currentTraceIndex];
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(72,214,224,0.32)';
+      ctx.shadowColor = 'rgba(72,214,224,0.9)';
+      ctx.shadowBlur = 28;
+      ctx.beginPath();
+      ctx.arc(x, y, hitRadius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      audio.tone('hint');
+      showCharBubble('Trace here! 🐚', 2000);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRACE COMPLETE
+// ══════════════════════════════════════════════════════════════════
+function getDisplayNumber(key) {
+  if (!key) return '';
+  return key.split('_')[0];
+}
+
+function isSecondPart(key) {
+  return key && key.endsWith('_second');
+}
+
+async function onTraceComplete() {
+  gameActive = false;
+  isDrawing = false;
+  clearTimeout(hintTimer);
+
+  score++;
+  totalSpells++;
+  $('hudScore').textContent = score;
+
+  // Sparkle burst on canvas center
+  const rect = canvas.getBoundingClientRect();
+  starBurstAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+  // Quick bubbles rising from canvas
+  for (let i = 0; i < 5; i++) {
+    const b = document.createElement('div');
+    b.className = 'bg-bubble';
+    const size = 10 + Math.random() * 16;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (rect.left + Math.random() * rect.width) + 'px';
+    b.style.bottom = (window.innerHeight - rect.bottom - 10) + 'px';
+    b.style.animationDuration = '2.5s';
+    b.style.animationDelay = (Math.random() * 0.3) + 's';
+    document.body.appendChild(b);
+    setTimeout(() => b.remove(), 3000);
+  }
+
+  audio.tone('correct');
+  jumpChar();
+
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const justFinishedWholeNumber = isSecondPart(key);
+
+  // Only light spell page and play big cheer when a whole number is done
+  if (justFinishedWholeNumber) {
+    lightSpellPage();
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+    await audio.play('correct');
+  } else {
+    // Part 1 done — brief cheer only
+    showCharBubble('Part 1 done! ✨', 1400);
+  }
+
+  await delay(justFinishedWholeNumber ? 500 : 250);
+
+  // Advance to next trace
+  currentTraceIndex++;
+
+  // Mark progress dot done after completing _second of a number
+  if (justFinishedWholeNumber) {
+    // Which number was this? 11→0, 12→1, 13→2, 14→3, 15→4
+    const dotIdx = Math.floor((currentTraceIndex - 1) / 2);
+    markProgDone(dotIdx);
+  }
+
+  if (currentTraceIndex >= TRACE_SEQUENCE.length) {
+    // Level complete
+    currentTraceIndex = 0;
+    currentLevel++;
+
+    if (currentLevel >= LEVELS.length) {
+      await onGameComplete();
+    } else {
+      await onLevelComplete();
+    }
+  } else {
+    await startTrace();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LEVEL COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onLevelComplete() {
+  audio.tone('roundDone');
+  confetti(30);
+  showCharBubble('Level complete! 🌊', 2200);
+
+  await audio.play('round-complete');
+  await delay(800);
+
+  await showLevelBanner();
+}
+
+async function showLevelBanner() {
+  const level = LEVELS[currentLevel];
+  $('bannerTitle').textContent = level.label;
+  $('bannerSub').textContent = level.sub;
+  $('levelBanner').classList.add('show');
+
+  audio.tone('reveal');
+  audio.play('greetings'); // non-blocking
+  await delay(1500);
+
+  $('levelBanner').classList.remove('show');
+  await delay(400);
+
+  await startLevel();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME COMPLETE
+// ══════════════════════════════════════════════════════════════════
+async function onGameComplete() {
+  showGameUI(false);
+
+  // Magical BOOM flash
+  audio.tone('boom');
+  document.body.style.background = '#fff';
+  await delay(120);
+  document.body.style.background = '';
+
+  audio.tone('celeb');
+  confetti(60);
+
+  $('finalScore').textContent = score + ' Spells Cast!';
+  showScreen('screenCeleb');
+
+  await delay(500);
+  confetti(40);
+
+  await audio.play('game-complete');
+  await delay(1200);
+  await audio.play('game-complete');
+  confetti(40);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START TRACE
+// ══════════════════════════════════════════════════════════════════
+async function startTrace() {
+  const key = TRACE_SEQUENCE[currentTraceIndex];
+  const cps = CHECKPOINTS[key];
+  traceCheckpoints = cps;
+  nextCheckpoint = 0;
+  isDrawing = false;
+  drawPoints = [];
+  gameActive = true;
+
+  // Update HUD
+  const level = LEVELS[currentLevel];
+  $('hudLevel').textContent = currentLevel + 1;
+
+  // Display number
+  const dispNum = getDisplayNumber(key);
+  const part = isSecondPart(key) ? 'part 2/2' : 'part 1/2';
+  const subLabel = `${dispNum}: ${part}`;
+
+  $('bigNum').textContent = dispNum;
+  $('numSubLabel').textContent = subLabel;
+  $('hudNumber').textContent = dispNum;
+
+  updateProg();
+
+  // Draw the outline
+  clearCanvas();
+  drawNumberOutline(key, level.outlineOpacity);
+
+  // Speak the number ONCE at start (only for part 1 to avoid repeating)
+  if (!isSecondPart(key)) {
+    audio.speakNumber(Number(dispNum));
+  }
+
+  // Level 1: show animated guide first
+  if (level.showGuide) {
+    await delay(250);
+    await animateGuide(key);
+    showCharBubble('Your turn! Trace it! 🐚', 1800);
+  } else {
+    const bubbleText = isSecondPart(key) ? 'Now the next digit! ✨' : 'Trace the number! 🧜‍♀️';
+    showCharBubble(bubbleText, 1800);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START LEVEL
+// ══════════════════════════════════════════════════════════════════
+async function startLevel() {
+  currentTraceIndex = 0;
+  buildProg();
+  await startTrace();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GAME START
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  audio.unlock();
+  showScreen(null);
+  currentLevel = 0;
+  currentTraceIndex = 0;
+  score = 0;
+  totalSpells = 0;
+  spellPageCount = 0;
+
+  $('hudScore').textContent = '0';
+  showGameUI(true);
+  buildSpellBook();
+  setupCanvas();
+
+  audio.startMusic();
+
+  // Show level 1 banner
+  await showLevelBanner();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+
+// Unlock audio on any touch
+document.addEventListener('touchstart', () => audio.unlock(), { once: true, passive: true });
+document.addEventListener('click', () => audio.unlock(), { once: true });
+
+// Re-setup canvas on resize
+window.addEventListener('resize', () => {
+  if ($('canvasArea').style.display !== 'none' && canvas) {
+    setupCanvas();
+    const key = TRACE_SEQUENCE[currentTraceIndex];
+    if (key) {
+      clearCanvas();
+      drawNumberOutline(key, LEVELS[currentLevel].outlineOpacity);
+      drawCheckpointDots();
+    }
+  }
+});
+</script>
+</body>
+</html>

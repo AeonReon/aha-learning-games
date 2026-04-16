@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Catch the Fish!</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep: #03254c; --mid: #0a5f8e; --shallow: #1aa7c4; --turq: #30e3ca;
+  --coral: #ff7a7a; --coral-deep: #ff4d6d; --sunny: #ffd166; --cream: #fff4d6;
+  --white85: rgba(255,255,255,0.9); --glow-turq: rgba(48,227,202,0.6); --glow-coral: rgba(255,122,122,0.55);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(180deg, #03254c 0%, #0a5f8e 40%, #1aa7c4 80%, #30e3ca 100%);
+}
+
+/* Tiny rising bubbles */
+.bg-bubble {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  width: clamp(6px, 1.5vw, 14px); height: clamp(6px, 1.5vw, 14px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7), rgba(255,255,255,0.2));
+  border: 1px solid rgba(255,255,255,0.35);
+  opacity: 0.55;
+  animation: bubbleRise linear infinite;
+}
+@keyframes bubbleRise {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  10%  { opacity: 0.55; }
+  90%  { opacity: 0.45; }
+  100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
+}
+
+/* Swaying seaweed */
+.bg-seaweed {
+  position: fixed; bottom: -10px; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(40px, 10vw, 70px);
+  opacity: 0.55;
+  transform-origin: bottom center;
+  animation: sway ease-in-out infinite;
+}
+@keyframes sway {
+  0%,100% { transform: rotate(-6deg); }
+  50%     { transform: rotate(6deg); }
+}
+
+/* Distant fish schools */
+.bg-schoolfish {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(14px, 2.5vw, 20px);
+  opacity: 0.3;
+  animation: schoolSwim linear infinite;
+}
+@keyframes schoolSwim {
+  0%   { transform: translateX(-60px) scaleX(1); }
+  49%  { transform: translateX(55vw) scaleX(1); }
+  50%  { transform: translateX(55vw) scaleX(-1); }
+  100% { transform: translateX(110vw) scaleX(-1); }
+}
+
+/* Screen system */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* Title screen */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--turq);
+  text-shadow: 0 0 30px var(--glow-turq), 2px 2px 0 rgba(0,0,0,0.5);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 380px; line-height: 1.45;
+}
+
+/* Buttons */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start { background: linear-gradient(135deg, #ff7a7a, #ff4d6d); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again { background: linear-gradient(135deg, #ff7a7a, #ff4d6d); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* HUD */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(3,37,76,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(48,227,202,0.2);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--turq); }
+.hud-score .hud-val { color: var(--sunny); }
+.hud-target {
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-target-label { font-size: clamp(10px,2.2vw,12px); color: rgba(255,255,255,0.55); font-weight: bold; }
+.hud-target-num {
+  font-size: clamp(28px,6vw,42px); font-weight: 900;
+  color: var(--turq);
+  text-shadow: 0 0 20px var(--glow-turq), 0 0 40px var(--glow-turq);
+  line-height: 1;
+}
+.hud-target-word {
+  font-size: clamp(12px,2.5vw,16px); font-weight: bold;
+  color: var(--sunny); opacity: 0.9;
+}
+
+/* Aquarium net area */
+.net-area {
+  position: fixed; bottom: 60px; right: 10px;
+  z-index: var(--z-char);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.net-emoji {
+  font-size: clamp(40px, 10vw, 65px);
+  filter: drop-shadow(0 0 8px rgba(48,227,202,0.3));
+  transition: filter 0.5s;
+}
+.net-emoji.glow-1 { filter: drop-shadow(0 0 12px rgba(48,227,202,0.5)); }
+.net-emoji.glow-2 { filter: drop-shadow(0 0 18px rgba(48,227,202,0.7)); }
+.net-emoji.glow-3 { filter: drop-shadow(0 0 25px rgba(255,209,102,0.85)); }
+.net-emoji.glow-4 { filter: drop-shadow(0 0 35px rgba(255,209,102,1)); }
+.net-emoji.glow-full {
+  filter: drop-shadow(0 0 40px rgba(255,209,102,1));
+  animation: netPulse 0.8s ease-in-out infinite;
+}
+@keyframes netPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+.net-count {
+  font-size: clamp(14px,3vw,20px); font-weight: 900;
+  color: var(--sunny); margin-top: 2px;
+}
+
+/* Character (Marina) */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.3);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* Fish play area */
+.play-area {
+  position: fixed;
+  top: 65px; left: 0; right: 0; bottom: 50px;
+  z-index: var(--z-game);
+  overflow: hidden;
+}
+
+/* Fish (cute CSS) */
+.fish {
+  position: absolute;
+  width: clamp(78px, 19vw, 110px);
+  height: clamp(62px, 16vw, 86px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  z-index: var(--z-game);
+  transition: transform 0.1s;
+}
+.fish:active { transform: scale(0.92); }
+
+.fish-body {
+  position: relative;
+  width: 82%; height: 100%;
+  margin-left: 0;
+  background: linear-gradient(135deg, #ffb870, #ff8a45);
+  border-radius: 55% 40% 48% 42% / 55% 50% 50% 45%;
+  box-shadow: inset -6px -4px 10px rgba(0,0,0,0.18), inset 4px 4px 8px rgba(255,255,255,0.35), 0 3px 10px rgba(0,0,0,0.25);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+/* Tail fin */
+.fish-body::before {
+  content: '';
+  position: absolute;
+  right: -22%;
+  top: 20%;
+  width: 40%;
+  height: 60%;
+  background: linear-gradient(135deg, #ff8a45, #ff6a25);
+  clip-path: polygon(0% 50%, 100% 0%, 80% 50%, 100% 100%);
+}
+/* Top fin */
+.fish-body::after {
+  content: '';
+  position: absolute;
+  top: -12%;
+  left: 30%;
+  width: 28%;
+  height: 35%;
+  background: linear-gradient(135deg, #ff8a45, #ff6a25);
+  clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+}
+/* Eye (using a separate div for clarity) */
+.fish-eye {
+  position: absolute;
+  top: 26%;
+  left: 18%;
+  width: clamp(12px,3vw,18px);
+  height: clamp(12px,3vw,18px);
+  background: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+.fish-eye::after {
+  content: '';
+  width: 60%; height: 60%;
+  background: #0a3a5e;
+  border-radius: 50%;
+  box-shadow: 1px -1px 0 rgba(255,255,255,0.6) inset;
+}
+/* Number label */
+.fish-number {
+  position: relative; z-index: 2;
+  font-size: clamp(20px, 4.8vw, 30px);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 3px rgba(0,0,0,0.4), 0 0 6px rgba(0,0,0,0.3);
+  margin-top: 4px;
+  margin-left: 18%;
+}
+.fish-word {
+  position: relative; z-index: 2;
+  font-size: clamp(9px, 2vw, 12px);
+  font-weight: bold;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  margin-left: 18%;
+  margin-top: 1px;
+}
+.fish-dots {
+  position: relative; z-index: 2;
+  font-size: clamp(8px, 1.8vw, 11px);
+  line-height: 1.1;
+  text-align: center;
+  max-width: 75%;
+  margin-left: 18%;
+}
+
+/* Fish colour variations */
+.fish.v-coral .fish-body { background: linear-gradient(135deg, #ff8fa8, #ff5d7a); }
+.fish.v-coral .fish-body::before, .fish.v-coral .fish-body::after { background: linear-gradient(135deg, #ff5d7a, #e0395a); }
+.fish.v-yellow .fish-body { background: linear-gradient(135deg, #ffe699, #ffc34d); }
+.fish.v-yellow .fish-body::before, .fish.v-yellow .fish-body::after { background: linear-gradient(135deg, #ffc34d, #f5a000); }
+.fish.v-aqua .fish-body { background: linear-gradient(135deg, #7ae7d5, #30c8b2); }
+.fish.v-aqua .fish-body::before, .fish.v-aqua .fish-body::after { background: linear-gradient(135deg, #30c8b2, #15a08a); }
+.fish.v-purple .fish-body { background: linear-gradient(135deg, #c9a7ff, #9d6aff); }
+.fish.v-purple .fish-body::before, .fish.v-purple .fish-body::after { background: linear-gradient(135deg, #9d6aff, #7340d9); }
+
+/* Fish float + wobble */
+.fish-floating {
+  animation: fishSwim linear forwards;
+}
+@keyframes fishSwim {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  3%   { opacity: 1; }
+  25%  { transform: translateY(-25vh) translateX(12px) rotate(-4deg); }
+  50%  { transform: translateY(-50vh) translateX(-12px) rotate(4deg); }
+  75%  { transform: translateY(-75vh) translateX(10px) rotate(-3deg); }
+  92%  { opacity: 1; }
+  100% { transform: translateY(calc(-100vh - 140px)) translateX(0) rotate(0deg); opacity: 0; }
+}
+
+/* Wrong tap wiggle */
+.fish-wrong {
+  animation: fishWiggle 0.5s ease-in-out;
+}
+@keyframes fishWiggle {
+  0%,100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-12deg) scale(1.05); }
+  40% { transform: rotate(10deg) scale(1.05); }
+  60% { transform: rotate(-8deg) scale(1.02); }
+  80% { transform: rotate(6deg) scale(1.02); }
+}
+
+/* Caught - fly into net */
+.fish-caught {
+  transition: all 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  opacity: 0 !important;
+  transform: scale(0.25) rotate(180deg) !important;
+}
+
+/* NOPE text */
+.nope-text {
+  position: absolute;
+  font-size: clamp(16px,4vw,24px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,77,109,0.9);
+  pointer-events: none;
+  animation: nopeFloat 0.8s ease-out forwards;
+  z-index: calc(var(--z-game) + 5);
+}
+@keyframes nopeFloat {
+  0% { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+}
+
+/* Progress bar */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(3,37,76,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(14px,2.8vw,18px);
+  color: rgba(255,255,255,0.25);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--turq), var(--shallow));
+  border-color: var(--sunny); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* Round banner */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(3,37,76,0.94); backdrop-filter: blur(12px);
+  border: 2px solid rgba(48,227,202,0.3); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--turq); text-shadow: 0 0 15px var(--glow-turq);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.75); margin-top: 5px;
+}
+
+/* Celebration screen */
+.screen-celeb {
+  background: rgba(3,37,76,0.92); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--sunny);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.95); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-marina-dance { animation: dance 1s ease-in-out infinite; display: inline-block; }
+
+/* Particles */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* Keyframes */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes charSpin    { 0%{transform:rotate(0) scale(1)} 50%{transform:rotate(180deg) scale(1.15)} 100%{transform:rotate(360deg) scale(1)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center hud-target">
+    <span class="hud-target-label">CATCH THE</span>
+    <span class="hud-target-num" id="hudTargetNum">11</span>
+    <span class="hud-target-word" id="hudTargetWord">eleven</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">PEARLS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Fish play area -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Marina character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">&#x1F9DC;&#x200D;&#x2640;&#xFE0F;</div>
+</div>
+
+<!-- Net / aquarium -->
+<div class="net-area" id="netArea" style="display:none">
+  <div class="net-emoji" id="netEmoji">&#x1FAB8;</div>
+  <div class="net-count" id="netCount">0/5</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- TITLE SCREEN -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>&#x1F420;</span>
+    <span>&#x1F9DC;&#x200D;&#x2640;&#xFE0F;</span>
+    <span>&#x1F420;</span>
+  </div>
+  <h1>Catch the Fish!</h1>
+  <p>Friendly fish are swimming up with Marina's numbers! Tap the right fish to help Marina catch them in her net!</p>
+  <button class="btn btn-start" id="btnStart">Let's Dive In!</button>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>&#x1F420;</span>
+    <span class="celeb-marina-dance">&#x1F9DC;&#x200D;&#x2640;&#xFE0F;</span>
+    <span>&#x1F41F;</span>
+  </div>
+  <h2 id="celebTitle">All Fish Caught!</h2>
+  <p id="celebMsg">Marina's aquarium is full of fish!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again!</button>
+</div>
+
+<script>
+// ====================================================================
+//  Aha! -- Ocean Adventure (11-15)
+//  Catch fish carrying Marina's numbers!
+//  Voice A (en-US-AnaNeural)
+// ====================================================================
+
+const AUDIO_BASE = '../../audio';
+
+const VOICE_A = {
+  greetings: ['voice-a/greetings/here-we-go.mp3','voice-a/greetings/lets-go.mp3','voice-a/greetings/come-on-lets-play.mp3','voice-a/greetings/are-you-ready.mp3','voice-a/greetings/this-is-going-to-be-fun.mp3'],
+  correct: ['voice-a/correct/amazing.mp3','voice-a/correct/brilliant.mp3','voice-a/correct/fantastic.mp3','voice-a/correct/i-knew-you-could-do-it.mp3','voice-a/correct/incredible.mp3','voice-a/correct/perfect.mp3','voice-a/correct/superstar.mp3','voice-a/correct/thats-right.mp3','voice-a/correct/well-done.mp3','voice-a/correct/wow-look-at-you-go.mp3','voice-a/correct/yes-youre-so-clever.mp3','voice-a/correct/you-got-it.mp3','voice-a/correct/youre-on-fire.mp3'],
+  wrong: ['voice-a/wrong/almost-have-another-go.mp3','voice-a/wrong/dont-worry-try-again.mp3','voice-a/wrong/keep-trying-youre-so-close.mp3','voice-a/wrong/nearly-give-it-another-go.mp3','voice-a/wrong/not-quite-you-can-do-it.mp3','voice-a/wrong/oops-not-that-one.mp3'],
+  thinking: ['voice-a/thinking/have-a-good-look.mp3','voice-a/thinking/i-believe-in-you.mp3','voice-a/thinking/take-your-time.mp3','voice-a/thinking/which-one-could-it-be.mp3','voice-a/thinking/you-can-do-it-keep-looking.mp3'],
+  'round-complete': ['voice-a/round-complete/brilliant-round-keep-going.mp3','voice-a/round-complete/round-complete-amazing.mp3','voice-a/round-complete/round-done-youre-doing-so-well.mp3','voice-a/round-complete/you-did-it-on-to-the-next.mp3'],
+  'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
+};
+
+// ====================================================================
+// AUDIO CLASS (AudioContext-first for iOS)
+// ====================================================================
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.05; this.sfxVol = 0.3; this.musicDucked = 0.015;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Ocean: dreamy major pentatonic
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.10, this.ctx.currentTime + 0.3);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 700 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')   { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')     { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')     { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone') { p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='pop')       {
+      // Bubble pop
+      p(800,t,0.06,0.28);
+      p(500,t+0.03,0.08,0.2);
+    }
+    else if (type==='hint')      { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')    {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='reveal')    { p(440,t,0.1,0.2); p(554.37,t+0.08,0.12,0.25); p(659.25,t+0.16,0.15,0.3); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ====================================================================
+// UTILITIES
+// ====================================================================
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+const NUMBER_WORDS = {11:'eleven',12:'twelve',13:'thirteen',14:'fourteen',15:'fifteen'};
+const ALL_NUMBERS = [11,12,13,14,15];
+const FISH_VARIANTS = ['', 'v-coral', 'v-yellow', 'v-aqua', 'v-purple'];
+
+const BUBBLE_CORRECT = ['Got one!','Splish!','Caught it!','Into the net!','Sparkly catch!','Yay!'];
+const BUBBLE_WRONG   = ['NOPE!','Not that one!','Try again!','Wrong fish!','Keep looking!'];
+
+// ====================================================================
+// VISUAL EFFECTS
+// ====================================================================
+function confetti(count = 40, extra = []) {
+  const all = ['✨','💫','🌟','🫧','🐚','🐠','🐟','🌊','⭐','💎', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(x, y) {
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🫧','🌟','💎']);
+    s.style.left = (x + (Math.random()-0.5)*100) + 'px';
+    s.style.top  = (y + (Math.random()-0.5)*100) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charArea');
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'charJump 0.5s ease-out';
+}
+
+function spinChar() {
+  const el = $('charEmoji');
+  el.style.display = 'inline-block';
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'charSpin 1s ease-in-out';
+}
+
+// Make dots pattern for a number
+function makeDots(n) {
+  return '🐠'.repeat(n);
+}
+
+// ====================================================================
+// BACKGROUND
+// ====================================================================
+function createBackground() {
+  // Rising bubbles
+  for (let i = 0; i < 28; i++) {
+    const b = document.createElement('div');
+    b.className = 'bg-bubble';
+    b.style.left = (Math.random()*100)+'vw';
+    b.style.bottom = '-20px';
+    const dur = 8 + Math.random()*10;
+    b.style.animationDuration = dur + 's';
+    b.style.animationDelay = (Math.random()*dur)+'s';
+    const size = 4 + Math.random()*12;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    document.body.appendChild(b);
+  }
+  // Swaying seaweed (4 clumps along bottom)
+  const seaweedPos = [5, 25, 65, 88];
+  seaweedPos.forEach((pos, i) => {
+    const s = document.createElement('div');
+    s.className = 'bg-seaweed';
+    s.textContent = '🌿';
+    s.style.left = pos + 'vw';
+    s.style.animationDuration = (3 + Math.random()*2) + 's';
+    s.style.animationDelay = (Math.random()*2) + 's';
+    document.body.appendChild(s);
+  });
+  // Distant school fish
+  for (let i = 0; i < 3; i++) {
+    const f = document.createElement('div');
+    f.className = 'bg-schoolfish';
+    f.textContent = '🐟🐟🐟';
+    f.style.top = (15 + Math.random()*55)+'vh';
+    f.style.animationDuration = (18 + Math.random()*14)+'s';
+    f.style.animationDelay = (Math.random()*10)+'s';
+    document.body.appendChild(f);
+  }
+}
+
+// ====================================================================
+// PROGRESS BAR
+// ====================================================================
+function buildProgBar() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'progDot'+i;
+    d.textContent = (i+1);
+    bar.appendChild(d);
+  }
+}
+
+function markProgDone(round) {
+  const d = $('progDot'+round);
+  if (d) d.classList.add('done');
+}
+
+// ====================================================================
+// NET / AQUARIUM
+// ====================================================================
+function updateNet(caught, needed) {
+  $('netCount').textContent = caught + '/' + needed;
+  const ratio = caught / needed;
+  const emoji = $('netEmoji');
+  emoji.className = 'net-emoji';
+  if (ratio >= 1)        emoji.classList.add('glow-full');
+  else if (ratio >= 0.8) emoji.classList.add('glow-4');
+  else if (ratio >= 0.6) emoji.classList.add('glow-3');
+  else if (ratio >= 0.4) emoji.classList.add('glow-2');
+  else if (ratio >= 0.2) emoji.classList.add('glow-1');
+}
+
+// ====================================================================
+// FISH CREATION
+// ====================================================================
+function createFish(number, displayMode, floatDuration) {
+  const fish = document.createElement('div');
+  fish.className = 'fish ' + pick(FISH_VARIANTS);
+  fish.dataset.number = number;
+
+  const body = document.createElement('div');
+  body.className = 'fish-body';
+
+  // Eye
+  const eye = document.createElement('div');
+  eye.className = 'fish-eye';
+  body.appendChild(eye);
+
+  // Number display based on mode
+  if (displayMode === 'numeral-word') {
+    const numEl = document.createElement('div');
+    numEl.className = 'fish-number';
+    numEl.textContent = number;
+    body.appendChild(numEl);
+    const wordEl = document.createElement('div');
+    wordEl.className = 'fish-word';
+    wordEl.textContent = NUMBER_WORDS[number];
+    body.appendChild(wordEl);
+  } else if (displayMode === 'numeral') {
+    const numEl = document.createElement('div');
+    numEl.className = 'fish-number';
+    numEl.textContent = number;
+    body.appendChild(numEl);
+  } else if (displayMode === 'dots') {
+    const dotsEl = document.createElement('div');
+    dotsEl.className = 'fish-dots';
+    dotsEl.textContent = makeDots(number);
+    body.appendChild(dotsEl);
+    const numEl = document.createElement('div');
+    numEl.className = 'fish-number';
+    numEl.style.fontSize = 'clamp(14px,3vw,20px)';
+    numEl.textContent = number;
+    body.appendChild(numEl);
+  } else if (displayMode === 'mixed') {
+    const style = pick(['numeral', 'dots-num', 'word-num']);
+    if (style === 'numeral') {
+      const numEl = document.createElement('div');
+      numEl.className = 'fish-number';
+      numEl.textContent = number;
+      body.appendChild(numEl);
+    } else if (style === 'dots-num') {
+      const dotsEl = document.createElement('div');
+      dotsEl.className = 'fish-dots';
+      dotsEl.textContent = makeDots(number);
+      body.appendChild(dotsEl);
+      const numEl = document.createElement('div');
+      numEl.className = 'fish-number';
+      numEl.style.fontSize = 'clamp(14px,3vw,20px)';
+      numEl.textContent = number;
+      body.appendChild(numEl);
+    } else {
+      const wordEl = document.createElement('div');
+      wordEl.className = 'fish-word';
+      wordEl.style.fontSize = 'clamp(11px,2.5vw,14px)';
+      wordEl.textContent = NUMBER_WORDS[number];
+      body.appendChild(wordEl);
+      const numEl = document.createElement('div');
+      numEl.className = 'fish-number';
+      numEl.textContent = number;
+      body.appendChild(numEl);
+    }
+  }
+
+  fish.appendChild(body);
+
+  // Position at bottom, random x
+  const areaW = $('playArea').clientWidth;
+  const fishW = 100;
+  const maxX = areaW - fishW - 10;
+  const x = 10 + Math.random() * maxX;
+
+  fish.style.left = x + 'px';
+  fish.style.bottom = '-130px';
+  fish.style.animationDuration = floatDuration + 's';
+  fish.classList.add('fish-floating');
+
+  return fish;
+}
+
+// ====================================================================
+// GAME STATE
+// ====================================================================
+const audio = new GameAudio();
+let currentRound = 0;
+let totalScore = 0;
+let roundCaught = 0;
+const NEEDED_PER_ROUND = 5;
+let targetNumber = 0;
+let roundActive = false;
+let spawnTimer = null;
+let thinkTimer = null;
+let fishOnScreen = [];
+let spawnCount = 0;
+const MAX_SPAWNS = 25;
+
+// Round configs — matching reference speed/pacing
+const ROUNDS = [
+  { display: 'numeral-word', speed: 15, targetDisplay: 'numeral-word' },
+  { display: 'numeral',      speed: 12, targetDisplay: 'numeral' },
+  { display: 'dots',         speed: 15, targetDisplay: 'numeral-word' },
+  { display: 'mixed',        speed: 10, targetDisplay: 'numeral' },
+];
+
+// ====================================================================
+// GAME FLOW
+// ====================================================================
+async function startGame() {
+  $('scrTitle').classList.remove('active');
+  $('hud').style.display = 'flex';
+  $('charArea').style.display = 'block';
+  $('netArea').style.display = 'flex';
+  $('progBar').style.display = 'flex';
+  buildProgBar();
+  currentRound = 0;
+  totalScore = 0;
+  $('hudScore').textContent = '0';
+  audio.startMusic();
+  await audio.play('greetings');
+  await delay(400);
+  startRound();
+}
+
+async function startRound() {
+  roundCaught = 0;
+  spawnCount = 0;
+  fishOnScreen = [];
+  $('playArea').innerHTML = '';
+
+  const available = ALL_NUMBERS.filter(n => n !== targetNumber || ALL_NUMBERS.length <= 1);
+  targetNumber = pick(available);
+
+  const cfg = ROUNDS[currentRound];
+
+  $('hudRound').textContent = (currentRound+1)+'/4';
+  $('hudTargetNum').textContent = targetNumber;
+  if (cfg.targetDisplay === 'numeral-word') {
+    $('hudTargetWord').textContent = NUMBER_WORDS[targetNumber];
+    $('hudTargetWord').style.display = 'block';
+  } else {
+    $('hudTargetWord').style.display = 'none';
+  }
+
+  updateNet(0, NEEDED_PER_ROUND);
+
+  const banner = $('roundBanner');
+  $('roundTitle').textContent = 'Round ' + (currentRound+1);
+  $('roundSub').textContent = 'Catch the ' + targetNumber + 's!';
+  banner.classList.add('show');
+  audio.tone('reveal');
+  await delay(600);
+
+  await audio.speakNumber(targetNumber);
+  await delay(800);
+  banner.classList.remove('show');
+  await delay(300);
+
+  showCharBubble('Catch the ' + targetNumber + 's!', 3000);
+
+  roundActive = true;
+  startSpawning();
+  startThinkingPrompts();
+}
+
+function startSpawning() {
+  const cfg = ROUNDS[currentRound];
+  const spawnFish = () => {
+    if (!roundActive) return;
+    if (spawnCount >= MAX_SPAWNS && roundCaught < NEEDED_PER_ROUND) {
+      spawnCount = 0;
+    }
+
+    const isTarget = Math.random() < 0.4;
+    let num;
+    if (isTarget) {
+      num = targetNumber;
+    } else {
+      const distractors = ALL_NUMBERS.filter(n => n !== targetNumber);
+      num = pick(distractors);
+    }
+
+    const fish = createFish(num, cfg.display, cfg.speed);
+    $('playArea').appendChild(fish);
+    fishOnScreen.push(fish);
+    spawnCount++;
+
+    onTap(fish, (e) => {
+      e.stopPropagation();
+      if (!roundActive) return;
+      if (fish.dataset.tapped) return;
+      handleFishTap(fish, parseInt(fish.dataset.number));
+    });
+
+    fish.addEventListener('animationend', () => {
+      if (!fish.dataset.tapped) {
+        fish.remove();
+        fishOnScreen = fishOnScreen.filter(g => g !== fish);
+      }
+    });
+
+    if (roundActive) {
+      const interval = 800 + Math.random() * 1200;
+      spawnTimer = setTimeout(spawnFish, interval);
+    }
+  };
+
+  spawnFish();
+}
+
+function startThinkingPrompts() {
+  const prompt = () => {
+    if (!roundActive) return;
+    audio.speakNumber(targetNumber);
+    showCharBubble('Find the ' + targetNumber + '!', 2500);
+    thinkTimer = setTimeout(prompt, 5500 + Math.random() * 1000);
+  };
+  thinkTimer = setTimeout(prompt, 5500);
+}
+
+function stopTimers() {
+  roundActive = false;
+  clearTimeout(spawnTimer);
+  clearTimeout(thinkTimer);
+}
+
+async function handleFishTap(fish, number) {
+  fish.dataset.tapped = 'true';
+
+  if (number === targetNumber) {
+    // CORRECT
+    roundCaught++;
+    totalScore += 10;
+    $('hudScore').textContent = totalScore;
+
+    audio.tone('pop');
+    const rect = fish.getBoundingClientRect();
+    starBurst(rect.left + rect.width/2, rect.top + rect.height/2);
+
+    // Animate to net
+    const netRect = $('netEmoji').getBoundingClientRect();
+    fish.style.position = 'fixed';
+    fish.style.left = rect.left + 'px';
+    fish.style.top = rect.top + 'px';
+    fish.style.bottom = 'auto';
+    fish.classList.remove('fish-floating');
+    fish.style.animation = 'none';
+
+    fish.offsetHeight;
+    fish.classList.add('fish-caught');
+    fish.style.left = netRect.left + 'px';
+    fish.style.top = netRect.top + 'px';
+
+    updateNet(roundCaught, NEEDED_PER_ROUND);
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+    jumpChar();
+
+    audio.speakNumber(number);
+    audio.play('correct');
+
+    setTimeout(() => {
+      fish.remove();
+      fishOnScreen = fishOnScreen.filter(g => g !== fish);
+    }, 700);
+
+    if (roundCaught >= NEEDED_PER_ROUND) {
+      // Net is full — Marina happy spin!
+      spinChar();
+      await delay(500);
+      endRound();
+    }
+  } else {
+    // WRONG
+    audio.tone('wrong');
+
+    const nope = document.createElement('div');
+    nope.className = 'nope-text';
+    nope.textContent = 'NOPE!';
+    const rect = fish.getBoundingClientRect();
+    nope.style.left = (rect.left + rect.width/2 - 28) + 'px';
+    nope.style.top = (rect.top - 10) + 'px';
+    document.body.appendChild(nope);
+    setTimeout(() => nope.remove(), 900);
+
+    fish.classList.remove('fish-floating');
+    fish.style.animation = 'none';
+    fish.offsetHeight;
+    fish.classList.add('fish-wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    setTimeout(() => {
+      fish.dataset.tapped = '';
+      fish.classList.remove('fish-wrong');
+      if (fish.parentNode) {
+        fish.classList.add('fish-floating');
+      }
+    }, 550);
+
+    audio.play('wrong');
+  }
+}
+
+async function endRound() {
+  stopTimers();
+
+  $('playArea').innerHTML = '';
+  fishOnScreen = [];
+
+  markProgDone(currentRound);
+  audio.tone('roundDone');
+  confetti(25, ['🐠','🐟','🫧']);
+
+  if (currentRound < 3) {
+    const banner = $('roundBanner');
+    $('roundTitle').textContent = 'Round Complete!';
+    $('roundSub').textContent = 'Great fish catching!';
+    banner.classList.add('show');
+    await audio.play('round-complete');
+    await delay(1200);
+    banner.classList.remove('show');
+    await delay(400);
+    currentRound++;
+    startRound();
+  } else {
+    await delay(600);
+    showCelebration();
+  }
+}
+
+async function showCelebration() {
+  audio.tone('celeb');
+  confetti(60, ['🐠','🐟','🫧','🌊','💎']);
+
+  const stars = Math.min(5, Math.max(3, Math.floor(totalScore / 40)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = 'All Fish Caught!';
+  $('celebMsg').textContent = 'Marina\'s aquarium is overflowing! Score: ' + totalScore;
+
+  $('scrCeleb').classList.add('active');
+
+  await audio.play('game-complete');
+  await delay(800);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['🐠','🐟','✨','🌟']), 2000);
+}
+
+function resetGame() {
+  $('scrCeleb').classList.remove('active');
+  $('hud').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('netArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('playArea').innerHTML = '';
+  audio.stopMusic();
+  audio.clearQueue();
+  $('scrTitle').classList.add('active');
+}
+
+// ====================================================================
+// INIT
+// ====================================================================
+createBackground();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.clearQueue();
+  resetGame();
+  setTimeout(() => {
+    audio.unlock();
+    startGame();
+  }, 300);
+});
+</script>
+</body>
+</html>

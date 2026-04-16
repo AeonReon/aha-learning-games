@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Space Explorer Pairs 🧑‍🚀</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep-navy: #05081f; --navy: #0a1038; --purple: #2a1458; --cyan: #4fd7ff;
+  --gold: #ffd84d; --star-yellow: #ffe680; --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: radial-gradient(ellipse at 20% 10%, #1a2060 0%, #0a1038 40%, #05081f 100%);
+}
+
+/* ── Background starfield and drifting planets ── */
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(10px, 2vw, 16px);
+  opacity: 0.5;
+  animation: sparkleFloat linear infinite;
+}
+@keyframes sparkleFloat {
+  0%   { transform: translateY(105vh) rotate(0deg) scale(0.6); opacity: 0; }
+  8%   { opacity: 0.55; }
+  92%  { opacity: 0.55; }
+  100% { transform: translateY(-60px) rotate(360deg) scale(1.1); opacity: 0; }
+}
+.bg-star {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px #fff, 0 0 12px rgba(79,215,255,0.4);
+  animation: twinkle ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; transform: scale(0.7); }
+  50%     { opacity: 1;   transform: scale(1.3); }
+}
+.bg-planet {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(24px, 5vw, 40px);
+  opacity: 0.35;
+  animation: planetDrift linear infinite;
+}
+@keyframes planetDrift {
+  0%   { transform: translateX(-15vw) rotate(0deg); }
+  100% { transform: translateX(115vw) rotate(360deg); }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,216,77,0.6), 2px 2px 0 rgba(0,0,0,0.4);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 380px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #05081f; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.35);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start  { background: linear-gradient(135deg, #ffe680, #ffb700); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; color: #05081f; }
+.btn-again  { background: linear-gradient(135deg, #ffe680, #ffb700); margin-top: 16px; color: #05081f; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(5,8,31,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(79,215,255,0.25);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--cyan); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-pairs-text { color: var(--cyan); font-size: clamp(14px,3vw,20px); font-weight: 900; text-shadow: 0 0 10px rgba(79,215,255,0.5); }
+
+/* ── Character (Captain Nova) ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 0 10px rgba(79,215,255,0.5)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.97); color: var(--deep-navy);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(79,215,255,0.4);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.97);
+}
+
+/* ── Card Grid ── */
+.card-grid {
+  position: fixed;
+  top: 55px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-game);
+  display: grid;
+  gap: clamp(6px,1.5vw,10px);
+  padding: 8px;
+  justify-items: center; align-items: center;
+}
+.card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.card-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* ── Card ── */
+.card {
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.card:active { transform: scale(0.95); }
+.card-inner {
+  position: relative;
+  width: clamp(66px, 17vw, 96px);
+  height: clamp(86px, 23vw, 116px);
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+.card.flipped .card-inner  { transform: rotateY(180deg); }
+.card.matched .card-inner  { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+/* Card back — dark circle with glowing star cluster */
+.card-back {
+  background: radial-gradient(circle at 50% 50%, #1a2060 0%, #0a1038 60%, #05081f 100%);
+  border: 3px solid rgba(79,215,255,0.45);
+  box-shadow: 0 0 18px rgba(79,215,255,0.25), 0 4px 12px rgba(0,0,0,0.4);
+  gap: 2px;
+}
+.card-back-icon { font-size: clamp(26px,6.5vw,38px); line-height: 1; animation: starClusterGlow 2.6s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255,216,77,0.7)); }
+@keyframes starClusterGlow { 0%,100%{opacity:0.75;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
+.card-back-sparkle { font-size: 10px; color: var(--cyan); letter-spacing: 2px; }
+
+/* Card front — dark cosmic background with content */
+.card-front {
+  background: linear-gradient(135deg, #0a1038, #1a2060);
+  border: 3px solid rgba(79,215,255,0.55);
+  transform: rotateY(180deg);
+  gap: 2px;
+  padding: 4px;
+}
+
+/* Card content types */
+.card-numeral {
+  font-size: clamp(30px, 7.5vw, 46px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 15px rgba(255,216,77,0.65), 1px 1px 0 rgba(0,0,0,0.4);
+  line-height: 1;
+}
+.card-stars {
+  font-size: clamp(11px, 2.4vw, 15px);
+  line-height: 1.2;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.card-word {
+  font-size: clamp(13px, 3.2vw, 18px);
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(79,215,255,0.55);
+  text-transform: uppercase;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+}
+.card-small-num {
+  font-size: clamp(11px, 2.5vw, 14px);
+  font-weight: 900;
+  color: rgba(255,216,77,0.8);
+  margin-top: 2px;
+}
+
+/* Matched cards — star burst */
+.card.matched .card-front {
+  background: linear-gradient(135deg, #1a4a70, #0a2d58);
+  border-color: var(--gold);
+  box-shadow: 0 0 18px rgba(255,216,77,0.5);
+}
+.card.matched .card-inner {
+  animation: cardmatch 0.4s ease-out;
+}
+.card.match-anim .card-front::after {
+  content: '🌟✨';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(26px, 6.5vw, 40px);
+  background: rgba(10,45,88,0.85);
+  border-radius: 11px;
+  animation: starFloat 1.2s ease-out forwards;
+}
+@keyframes starFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.5) rotate(180deg); }
+}
+
+/* Hint styles */
+.hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(79,215,255,0.7), 0 0 50px rgba(79,215,255,0.4) !important; border-radius: 14px; }
+
+/* ── Galaxy Map ── */
+.galaxy-map {
+  position: fixed; bottom: 52px; right: 8px;
+  z-index: var(--z-char);
+  width: clamp(70px,16vw,110px);
+  pointer-events: none;
+}
+.galaxy-svg { width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(79,215,255,0.25)); }
+.galaxy-star {
+  fill: rgba(79,215,255,0.15);
+  stroke: rgba(79,215,255,0.35);
+  stroke-width: 0.6;
+  transition: fill 0.6s, filter 0.6s, stroke 0.6s;
+}
+.galaxy-star.lit {
+  fill: var(--gold);
+  stroke: #fff;
+  filter: drop-shadow(0 0 6px rgba(255,216,77,0.9));
+}
+.galaxy-line {
+  stroke: rgba(79,215,255,0.15);
+  stroke-width: 0.8;
+  transition: stroke 0.6s, filter 0.6s;
+  fill: none;
+}
+.galaxy-line.lit {
+  stroke: var(--gold);
+  filter: drop-shadow(0 0 3px rgba(255,216,77,0.7));
+}
+.galaxy-complete { animation: galaxyGlow 1.5s ease-in-out infinite; }
+@keyframes galaxyGlow { 0%,100%{filter:drop-shadow(0 0 8px rgba(255,216,77,0.4))} 50%{filter:drop-shadow(0 0 28px rgba(255,216,77,0.95))} }
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(5,8,31,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.25);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--gold),#ffb700);
+  border-color: var(--cyan); color: #05081f;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(5,8,31,0.95); backdrop-filter: blur(12px);
+  border: 2px solid rgba(79,215,255,0.35); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 0 40px rgba(79,215,255,0.2);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--gold); text-shadow: 0 0 15px rgba(255,216,77,0.5), 1px 1px 0 rgba(0,0,0,0.3);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.65); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(5,8,31,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--gold);
+  text-shadow: 0 0 22px rgba(255,216,77,0.6), 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.92); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cardmatch   { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.15)} 100%{transform:rotateY(180deg) scale(1)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-pairs-text" id="hudPairs">Match the cosmic tiles!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Card Grid -->
+<div class="card-grid" id="cardGrid"></div>
+
+<!-- Captain Nova -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧑‍🚀</div>
+</div>
+
+<!-- Galaxy Map -->
+<div class="galaxy-map" id="galaxyMap" style="display:none">
+  <svg class="galaxy-svg" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Constellation lines (connect the stars, appear when lit) -->
+    <polyline class="galaxy-line" id="gl0" points="30,30 60,20" />
+    <polyline class="galaxy-line" id="gl1" points="60,20 90,35" />
+    <polyline class="galaxy-line" id="gl2" points="30,30 45,65" />
+    <polyline class="galaxy-line" id="gl3" points="45,65 75,70" />
+    <polyline class="galaxy-line" id="gl4" points="75,70 90,35" />
+    <polyline class="galaxy-line" id="gl5" points="45,65 30,105" />
+    <polyline class="galaxy-line" id="gl6" points="30,105 70,110" />
+    <polyline class="galaxy-line" id="gl7" points="70,110 75,70" />
+    <!-- Constellation stars (6 key stars to light up) -->
+    <polygon class="galaxy-star" id="gs0" points="30,24 32,29 37,30 33,33 34,38 30,35 26,38 27,33 23,30 28,29" />
+    <polygon class="galaxy-star" id="gs1" points="60,14 62,19 67,20 63,23 64,28 60,25 56,28 57,23 53,20 58,19" />
+    <polygon class="galaxy-star" id="gs2" points="90,29 92,34 97,35 93,38 94,43 90,40 86,43 87,38 83,35 88,34" />
+    <polygon class="galaxy-star" id="gs3" points="45,59 47,64 52,65 48,68 49,73 45,70 41,73 42,68 38,65 43,64" />
+    <polygon class="galaxy-star" id="gs4" points="75,64 77,69 82,70 78,73 79,78 75,75 71,78 72,73 68,70 73,69" />
+    <polygon class="galaxy-star" id="gs5" points="30,99 32,104 37,105 33,108 34,113 30,110 26,113 27,108 23,105 28,104" />
+  </svg>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🚀</span>
+    <span>🧑‍🚀</span>
+    <span>🪐</span>
+  </div>
+  <h1>Space Explorer Pairs 🧑‍🚀</h1>
+  <p>Captain Nova's spaceship computer scrambled all the star maps! Flip the cosmic tiles to find matching pairs and restore the constellation.<br>🌌 Light up the galaxy! 🌌</p>
+  <button class="btn btn-start" id="btnStart">Let's Launch! 🚀</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🧑‍🚀</span>
+    <span>🌌</span>
+  </div>
+  <h2 id="celebTitle">🌟 Galaxy Restored! 🌟</h2>
+  <p id="celebMsg">You lit up every star — the constellation shines again!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Fly Again! 🚀</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Space Explorer Pairs (16–20)  🧑‍🚀                     ║
+// ║  Cross-representation memory matching — numerals, star-dots,    ║
+// ║  word cards. Voice A · Cosmic theme                             ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+const NUMBER_WORDS = {16:'sixteen',17:'seventeen',18:'eighteen',19:'nineteen',20:'twenty'};
+
+// ── Voice A clip pools ──
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first for iOS)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Cosmic pentatonic — airy, floating feel
+    const notes = [220.00, 261.63, 329.63, 392.00, 493.88, 587.33];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 2 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.11, this.ctx.currentTime + 0.3);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3.0);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1600);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='flip')     { p(600,t,0.06,0.15); p(800,t+0.03,0.08,0.12); }
+    else if (type==='reveal')   { p(440,t,0.08,0.2); p(660,t+0.06,0.1,0.18); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='pop')      { p(880,t,0.05,0.2); p(1100,t+0.04,0.06,0.15); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+// Star-dots patterns — ⭐ repeated to show quantity, always with small numeral
+function makeStarDots(n) {
+  if (n === 16) return '⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐';
+  if (n === 17) return '⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐';
+  if (n === 18) return '⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐';
+  if (n === 19) return '⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐';
+  if (n === 20) return '⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐\n⭐⭐⭐⭐⭐';
+  return '⭐'.repeat(n);
+}
+
+const BUBBLE_CORRECT = ['A match! 🌟','Stellar! 🚀','That\'s it! ✨','Well done! 🪐','Cosmic! 💫','Brilliant! 🌌'];
+const BUBBLE_WRONG   = ['Not a match!','Try again! 🚀','Almost! 🪐','Keep going! 🌠','Remember! 💫'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','🌟','✨','💫','🌠','🚀','🪐','🧑‍🚀','🌌','☄️', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['⭐','✨','💫','🌟','🌠','☄️']);
+    s.style.left = (cx + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — starfield + drifting planets
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Floating space emojis
+  const emojis = ['⭐','🌟','✨','💫','🌠','☄️'];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*20) + 's';
+    el.style.animationDuration = (12 + Math.random()*14) + 's';
+    document.body.appendChild(el);
+  }
+  // Static twinkling stars
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-star';
+    s.style.left = (Math.random()*100) + 'vw';
+    s.style.top  = (Math.random()*100) + 'vh';
+    s.style.animationDelay    = (Math.random()*3) + 's';
+    s.style.animationDuration = (1.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(s);
+  }
+  // Drifting planets
+  const planets = ['🪐','🌕','🌑','🌎','🌝'];
+  for (let i = 0; i < 3; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-planet';
+    p.textContent = pick(planets);
+    p.style.top = (10 + Math.random()*70) + 'vh';
+    p.style.animationDelay    = (-Math.random()*40) + 's';
+    p.style.animationDuration = (40 + Math.random()*30) + 's';
+    document.body.appendChild(p);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GALAXY MAP — constellation stars light up as pairs are matched
+// ══════════════════════════════════════════════════════════════════
+let galaxyStarIdx = 0;
+function resetGalaxy() {
+  galaxyStarIdx = 0;
+  for (let i = 0; i < 6; i++) {
+    const s = $('gs' + i);
+    if (s) s.classList.remove('lit');
+  }
+  for (let i = 0; i < 8; i++) {
+    const l = $('gl' + i);
+    if (l) l.classList.remove('lit');
+  }
+  const svg = document.querySelector('.galaxy-svg');
+  if (svg) svg.classList.remove('galaxy-complete');
+}
+function lightStar() {
+  if (galaxyStarIdx < 6) {
+    const s = $('gs' + galaxyStarIdx);
+    if (s) { s.classList.add('lit'); audio.tone('pop'); }
+    // Light the connecting line(s) too when appropriate
+    if (galaxyStarIdx >= 1) {
+      const l = $('gl' + (galaxyStarIdx - 1));
+      if (l) l.classList.add('lit');
+    }
+    galaxyStarIdx++;
+  }
+  // When all 6 stars lit, light the remaining lines and sparkle the whole galaxy
+  if (galaxyStarIdx >= 6) {
+    for (let i = 0; i < 8; i++) {
+      const l = $('gl' + i);
+      if (l) l.classList.add('lit');
+    }
+    const svg = document.querySelector('.galaxy-svg');
+    if (svg) svg.classList.add('galaxy-complete');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG — 4 rounds, progressive difficulty with cross-rep
+//
+// Card types:
+//   'numeral'  — big digit (e.g. "17")
+//   'stars'    — star emoji dots + small numeral
+//   'word'     — word (e.g. "nineteen") + small numeral
+// ══════════════════════════════════════════════════════════════════
+
+// Round 1: 3 pairs (6 cards) — numeral ↔ star-dots. Nums 16,17,18. 1.5s peek.
+// Round 2: 4 pairs (8 cards) — numeral ↔ star-dots. Nums 16-19. No peek.
+// Round 3: 5 pairs (10 cards) — numeral ↔ word. Nums 16-20. No peek.
+// Round 4: 6 pairs (12 cards) — mix of numeral/stars/word. Nums 16-20 + extra. No peek.
+
+function buildRoundPairs(roundIdx) {
+  let pairs = [];
+  if (roundIdx === 0) {
+    [16,17,18].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'stars' });
+    });
+  } else if (roundIdx === 1) {
+    [16,17,18,19].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'stars' });
+    });
+  } else if (roundIdx === 2) {
+    [16,17,18,19,20].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
+    });
+  } else {
+    pairs.push({ num: 16, typeA: 'numeral', typeB: 'stars' });
+    pairs.push({ num: 17, typeA: 'numeral', typeB: 'word' });
+    pairs.push({ num: 18, typeA: 'stars',   typeB: 'word' });
+    pairs.push({ num: 19, typeA: 'numeral', typeB: 'stars' });
+    pairs.push({ num: 20, typeA: 'numeral', typeB: 'word' });
+    pairs.push({ num: 16, typeA: 'stars',   typeB: 'word' });
+  }
+  return pairs;
+}
+
+const ROUND_META = [
+  { label: 'Round 1 — Blast Off! 🚀', sub: '3 pairs — peek first!', cols: 3, peek: true },
+  { label: 'Round 2 — Deep Space! 🌌', sub: '4 pairs — no peeking!', cols: 4, peek: false },
+  { label: 'Round 3 — Star Words! ✨', sub: '5 pairs — numbers meet words!', cols: 5, peek: false },
+  { label: 'Round 4 — Galactic Mission! 🪐', sub: '6 pairs — the ultimate test!', cols: 4, peek: false },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 0, score = 0;
+let matches = 0, totalPairs = 0;
+let flippedCards = [], lockBoard = false;
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg(pairs) {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  pairs.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + i; d.textContent = p.num;
+    bar.appendChild(d);
+  });
+}
+function markProg(idx) {
+  const d = $('prog' + idx); if (d) d.classList.add('done');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS — wiggle after 4s, voice after 7s
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive || lockBoard) return;
+  hintTimer = setTimeout(() => {
+    const cards = [...document.querySelectorAll('.card:not(.matched):not(.flipped)')];
+    if (cards.length > 0) {
+      const target = cards[0];
+      target.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => target.classList.remove('hint-wiggle', 'hint-glow'), 1800);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD CONTENT
+// ══════════════════════════════════════════════════════════════════
+function buildCardFront(num, type) {
+  const front = document.createElement('div');
+  front.className = 'card-front';
+
+  if (type === 'numeral') {
+    const numEl = document.createElement('div');
+    numEl.className = 'card-numeral';
+    numEl.textContent = num;
+    front.appendChild(numEl);
+  } else if (type === 'stars') {
+    const starEl = document.createElement('div');
+    starEl.className = 'card-stars';
+    starEl.textContent = makeStarDots(num);
+    starEl.style.whiteSpace = 'pre-line';
+    front.appendChild(starEl);
+    const smallNum = document.createElement('div');
+    smallNum.className = 'card-small-num';
+    smallNum.textContent = num;
+    front.appendChild(smallNum);
+  } else if (type === 'word') {
+    const wordEl = document.createElement('div');
+    wordEl.className = 'card-word';
+    wordEl.textContent = NUMBER_WORDS[num] || num;
+    front.appendChild(wordEl);
+    const smallNum = document.createElement('div');
+    smallNum.className = 'card-small-num';
+    smallNum.textContent = num;
+    front.appendChild(smallNum);
+  }
+
+  return front;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD GRID
+// ══════════════════════════════════════════════════════════════════
+let currentPairs = [];
+
+function buildGrid() {
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  const pairs = buildRoundPairs(round);
+  currentPairs = pairs;
+  totalPairs = pairs.length;
+  matches = 0;
+
+  let cards = [];
+  pairs.forEach((p, pairIdx) => {
+    cards.push({ num: p.num, type: p.typeA, pairIdx });
+    cards.push({ num: p.num, type: p.typeB, pairIdx });
+  });
+  shuffle(cards);
+
+  const meta = ROUND_META[round];
+  grid.className = 'card-grid cols-' + meta.cols;
+
+  cards.forEach((cardData, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.num = cardData.num;
+    card.dataset.pairIdx = cardData.pairIdx;
+    card.dataset.idx = idx;
+    card.dataset.type = cardData.type;
+
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+
+    // Back (face down — dark circle with glowing star cluster)
+    const back = document.createElement('div');
+    back.className = 'card-back';
+    back.innerHTML = '<div class="card-back-icon">✨</div><div class="card-back-sparkle">⋆ ⋆ ⋆</div>';
+
+    // Front (face up — number content)
+    const front = buildCardFront(cardData.num, cardData.type);
+
+    inner.appendChild(back);
+    inner.appendChild(front);
+    card.appendChild(inner);
+
+    onTap(card, () => flipCard(card));
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLIP CARD
+// ══════════════════════════════════════════════════════════════════
+function flipCard(card) {
+  if (!gameActive || lockBoard) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  if (flippedCards.length >= 2) return;
+
+  resetHints();
+  card.classList.add('flipped');
+  audio.tone('flip');
+  flippedCards.push(card);
+
+  // Speak the number on this card
+  const num = parseInt(card.dataset.num);
+  audio.speakNumber(num);
+
+  if (flippedCards.length === 2) {
+    lockBoard = true;
+    checkMatch();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECK MATCH — cross-representation: same pairIdx = match
+// ══════════════════════════════════════════════════════════════════
+async function checkMatch() {
+  const [a, b] = flippedCards;
+  const pairA = a.dataset.pairIdx;
+  const pairB = b.dataset.pairIdx;
+
+  await delay(600);
+
+  if (pairA === pairB && a.dataset.idx !== b.dataset.idx) {
+    // MATCH!
+    a.classList.add('matched');
+    b.classList.add('matched');
+
+    // Star float away animation
+    a.classList.add('match-anim');
+    b.classList.add('match-anim');
+    setTimeout(() => { a.classList.remove('match-anim'); b.classList.remove('match-anim'); }, 1300);
+
+    matches++;
+    score++;
+    $('hudScore').textContent = score;
+
+    audio.tone('correct');
+    jumpChar();
+    starBurst(a);
+    starBurst(b);
+
+    const progIdx = parseInt(pairA);
+    markProg(progIdx);
+
+    // Light a star on the galaxy map
+    lightStar();
+
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    audio.play('correct'); // don't block — child can flip next card
+
+    flippedCards = [];
+    lockBoard = false;
+
+    if (matches >= totalPairs) {
+      await delay(650);
+      advanceRound();
+    } else {
+      resetHints();
+    }
+
+  } else {
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    a.style.animation = 'wrongShake 0.4s ease-in-out';
+    b.style.animation = 'wrongShake 0.4s ease-in-out';
+
+    audio.play('wrong'); // don't block
+    await delay(650);
+
+    a.style.animation = '';
+    b.style.animation = '';
+    a.classList.remove('flipped');
+    b.classList.remove('flipped');
+    flippedCards = [];
+    lockBoard = false;
+    resetHints();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ADVANCE ROUND
+// ══════════════════════════════════════════════════════════════════
+async function advanceRound() {
+  stopHints();
+  lockBoard = true;
+  round++;
+
+  if (round >= ROUND_META.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  audio.tone('roundDone');
+  confetti(30, ['⭐','🌟','✨']);
+  showCharBubble('Constellation lit! 🌌', 2500);
+
+  $('roundTitle').textContent = '🌟 Round Complete! 🌟';
+  $('roundSub').textContent   = '';
+  $('roundBanner').classList.add('show');
+  audio.play('round-complete'); // don't await
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  resetGalaxy();
+
+  const cfg = ROUND_META[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1100);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  $('hudRound').textContent = `${round + 1}/4`;
+
+  buildGrid();
+  const pairs = currentPairs;
+  buildProg(pairs);
+  flippedCards = [];
+  lockBoard = false;
+  gameActive = true;
+
+  if (cfg.peek) {
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(300);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopHints();
+  audio.stopMusic();
+  $('hud').style.display         = 'none';
+  $('progBar').style.display      = 'none';
+  $('charArea').style.display     = 'none';
+  $('galaxyMap').style.display    = 'none';
+  $('cardGrid').innerHTML         = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.tone('celeb');
+  await delay(400);
+  confetti(60, ['⭐','🌟','✨','🚀','🪐','💫']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 4)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🌟 Galaxy Restored! 🌟';
+  $('celebMsg').textContent   = `Captain Nova's star map shines again! Mission complete!`;
+  showScreen('scrCeleb');
+
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['⭐','🌟','🚀']), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START GAME
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0; score = 0; matches = 0;
+  flippedCards = []; lockBoard = false;
+  stopHints();
+  resetGalaxy();
+
+  $('hudScore').textContent    = '0';
+  $('hudRound').textContent    = '1/4';
+  $('hudPairs').textContent    = 'Match the cosmic tiles!';
+  $('hud').style.display       = '';
+  $('charArea').style.display  = '';
+  $('galaxyMap').style.display = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.startMusic();
+
+  const cfg = ROUND_META[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  buildGrid();
+  buildProg(currentPairs);
+  gameActive = true;
+
+  // Round 1 peek — show all cards briefly for 1.5s
+  if (cfg.peek) {
+    lockBoard = true;
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(400);
+    lockBoard = false;
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Launch the Rocket 16–20 — Captain Nova! 🚀</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep-space: #02041a; --nebula-purple: #4a1a8a; --cyan: #22d3ee; --gold: #fbbf24;
+  --rocket-red: #ef4444; --rocket-white: #f8fafc; --flame-orange: #fb923c;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Background ── */
+.bg {
+  position: fixed; inset: 0; z-index: var(--z-bg);
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(74,26,138,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(34,211,238,0.28) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 40%, rgba(251,146,60,0.15) 0%, transparent 60%),
+    linear-gradient(170deg, #02041a 0%, #0a0a2e 35%, #1a0a3e 65%, #02041a 100%);
+}
+/* Static star layer */
+.bg::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 25% 70%, #fff, transparent),
+    radial-gradient(1px 1px at 40% 30%, #fff, transparent),
+    radial-gradient(2px 2px at 55% 55%, #fff, transparent),
+    radial-gradient(1px 1px at 68% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 80% 78%, #fff, transparent),
+    radial-gradient(2px 2px at 90% 40%, #fff, transparent),
+    radial-gradient(1px 1px at 15% 85%, #fff, transparent),
+    radial-gradient(1px 1px at 72% 92%, #fff, transparent),
+    radial-gradient(1px 1px at 35% 95%, #fff, transparent);
+  animation: twinkle 4s ease-in-out infinite;
+  opacity: 0.7;
+  pointer-events: none;
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.55; }
+  50%     { opacity: 0.9; }
+}
+.bg-element {
+  position: fixed; pointer-events: none; z-index: 1;
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.35;
+  animation: bgFloat linear infinite;
+}
+@keyframes bgFloat {
+  0%   { transform: translateY(105vh) translateX(0) rotate(0deg) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.38; }
+  92%  { opacity: 0.38; }
+  100% { transform: translateY(-60px) translateX(var(--drift,0px)) rotate(360deg) scale(1.1); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 14px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(40px, 10vw, 68px); }
+.screen-title h1 {
+  font-size: clamp(24px, 6vw, 42px);
+  color: var(--cyan);
+  text-shadow: 0 0 30px rgba(34,211,238,0.7), 2px 2px 0 rgba(0,0,0,0.5);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(13px, 3.2vw, 19px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.45);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start { background: linear-gradient(135deg,#22d3ee,#0891b2); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again { background: linear-gradient(135deg,#22d3ee,#0891b2); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.25)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(2,4,26,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(34,211,238,0.2);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--cyan); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-center .hud-val { color: var(--cyan); font-size: clamp(13px,3vw,18px); }
+
+/* ── Captain Nova (bottom-left) ── */
+.char-area {
+  position: fixed; bottom: 120px; left: 8px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(44px,10vw,66px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep-space);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(11px,2.4vw,15px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.35);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Play area (fuel cells) ── */
+.play-area {
+  position: fixed;
+  top: 56px; left: 0; right: 0; bottom: 230px;
+  z-index: var(--z-game);
+  pointer-events: none;
+}
+.play-area.active { pointer-events: auto; }
+
+/* Timer background shift (round 4) */
+.play-area.timer-warning { animation: timerShift 30s ease-in-out forwards; }
+@keyframes timerShift {
+  0%   { background: transparent; }
+  50%  { background: rgba(34,211,238,0.05); }
+  100% { background: rgba(239,68,68,0.08); }
+}
+
+/* ── Fuel Cells ── */
+.fuel-cell {
+  position: absolute;
+  width: clamp(72px, 18vw, 102px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  border: 3px solid rgba(255,255,255,0.4);
+  box-shadow: 0 4px 22px rgba(0,0,0,0.45), inset 0 0 20px rgba(255,255,255,0.08);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.3s, opacity 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  z-index: 2;
+  opacity: 0; transform: scale(0.5);
+  padding: 10px 6px 12px;
+  border-radius: 14px;
+  background-clip: padding-box;
+}
+/* Cell cap on top */
+.fuel-cell::before {
+  content: '';
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  width: 55%; height: 10px;
+  background: linear-gradient(180deg, #94a3b8 0%, #475569 100%);
+  border: 2px solid rgba(255,255,255,0.35);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+/* Nozzle at bottom */
+.fuel-cell::after {
+  content: '';
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  width: 35%; height: 8px;
+  background: linear-gradient(180deg, #64748b 0%, #334155 100%);
+  border-radius: 0 0 4px 4px;
+}
+.fuel-cell.show { opacity: 1; transform: scale(1); }
+.fuel-cell:active { transform: scale(0.93) !important; }
+.fuel-cell.r4-size {
+  width: clamp(62px, 15vw, 86px);
+}
+.fuel-cell.r4-size .cell-numeral { font-size: clamp(22px, 5.5vw, 34px); }
+
+.cell-numeral {
+  font-weight: 900; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.45), 0 0 12px rgba(255,255,255,0.25);
+  font-size: clamp(26px, 6.5vw, 40px);
+  line-height: 1;
+}
+.cell-emoji {
+  font-size: clamp(16px, 4vw, 24px);
+  line-height: 1; margin-top: 3px;
+}
+.cell-word {
+  font-size: clamp(9px, 2vw, 12px);
+  font-weight: bold; color: rgba(255,255,255,0.82);
+  text-transform: lowercase; line-height: 1;
+  margin-top: 2px; letter-spacing: 0.5px;
+}
+.cell-dots {
+  font-size: clamp(10px, 2.5vw, 15px);
+  line-height: 1.1; white-space: pre;
+  text-align: center; letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+/* Cell states */
+.fuel-cell.activated {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 30px rgba(251,191,36,0.8), 0 0 60px rgba(251,191,36,0.35), 0 4px 22px rgba(0,0,0,0.45) !important;
+  transform: scale(1.08) !important;
+}
+.fuel-cell.next-hint { animation: pulseHint 1.5s ease-in-out infinite; }
+@keyframes pulseHint {
+  0%,100% { box-shadow: 0 0 12px rgba(34,211,238,0.35), 0 4px 22px rgba(0,0,0,0.45); }
+  50%     { box-shadow: 0 0 32px rgba(34,211,238,0.85), 0 0 55px rgba(34,211,238,0.4), 0 4px 22px rgba(0,0,0,0.45); }
+}
+.fuel-cell.wrong-tap { animation: wrongShake 0.45s ease-in-out; }
+.fuel-cell.wiggle { animation: wiggleHint 0.6s ease-in-out; }
+@keyframes wiggleHint {
+  0%,100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-5deg); }
+  80% { transform: rotate(5deg); }
+}
+
+/* Fly-to-rocket animation */
+.fuel-cell.flying {
+  transition: none !important;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── ROCKET ── */
+.rocket-area {
+  position: fixed;
+  bottom: 42px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-ui);
+  pointer-events: none;
+  display: flex; flex-direction: column; align-items: center;
+  transition: transform 0.3s;
+}
+.rocket {
+  position: relative;
+  width: clamp(82px, 20vw, 120px);
+  height: clamp(130px, 32vw, 190px);
+  display: flex; flex-direction: column; align-items: center;
+  transform-origin: 50% 100%;
+}
+
+/* Rocket nose cone */
+.rocket-nose {
+  width: 50%;
+  height: 22%;
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  position: relative;
+  z-index: 3;
+}
+/* Rocket body */
+.rocket-body {
+  width: 70%;
+  height: 55%;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+  border-radius: 10px 10px 4px 4px;
+  position: relative;
+  margin-top: -1px;
+  overflow: hidden;
+  box-shadow: inset -8px 0 16px rgba(0,0,0,0.25), inset 6px 0 12px rgba(255,255,255,0.3);
+  z-index: 2;
+}
+/* Fuel gauge inside body (rises) */
+.rocket-fuel {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 0%;
+  background: linear-gradient(180deg, rgba(251,191,36,0.95) 0%, rgba(251,146,60,0.95) 50%, rgba(239,68,68,0.95) 100%);
+  transition: height 0.7s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 1;
+}
+.rocket-fuel::before {
+  /* Wavy fuel surface */
+  content: '';
+  position: absolute;
+  top: -6px; left: 0; right: 0;
+  height: 12px;
+  background: radial-gradient(ellipse at 30% 100%, rgba(251,191,36,0.95), transparent 40%),
+              radial-gradient(ellipse at 70% 100%, rgba(251,146,60,0.95), transparent 40%);
+  animation: fuelWave 1.8s ease-in-out infinite;
+}
+@keyframes fuelWave {
+  0%,100% { transform: translateX(-4px); }
+  50%     { transform: translateX(4px); }
+}
+/* Rocket window (alien here at end) */
+.rocket-window {
+  position: absolute;
+  top: 18%; left: 50%; transform: translateX(-50%);
+  width: 45%; aspect-ratio: 1;
+  background: radial-gradient(circle at 35% 30%, #7dd3fc 0%, #0ea5e9 60%, #0369a1 100%);
+  border: 3px solid #475569;
+  border-radius: 50%;
+  box-shadow: inset 2px 2px 6px rgba(255,255,255,0.4), 0 0 10px rgba(125,211,252,0.5);
+  z-index: 4;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(16px, 4vw, 26px);
+  overflow: hidden;
+}
+.rocket-window .alien {
+  opacity: 0;
+  transition: opacity 0.5s, transform 0.5s;
+  transform: translateY(10px);
+}
+.rocket-window.show-alien .alien {
+  opacity: 1;
+  transform: translateY(0);
+  animation: alienWave 1.5s ease-in-out infinite;
+}
+@keyframes alienWave {
+  0%,100% { transform: translateY(0) rotate(-5deg); }
+  50%     { transform: translateY(-3px) rotate(5deg); }
+}
+/* Fins */
+.rocket-fins {
+  position: absolute;
+  bottom: 18%; left: 0; right: 0;
+  height: 22%;
+  pointer-events: none;
+  z-index: 1;
+}
+.rocket-fin {
+  position: absolute;
+  width: 22%; height: 100%;
+  background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+}
+.rocket-fin.left {
+  left: -8%;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.rocket-fin.right {
+  right: -8%;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+/* Flame cluster (bottom) */
+.rocket-flame {
+  position: relative;
+  width: 50%;
+  height: 20%;
+  margin-top: -2px;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.rocket-flame::before,
+.rocket-flame::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  width: 100%;
+  height: 100%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 0%, #fff7 0%, #fde047 25%, #fb923c 55%, #ef4444 85%, transparent 100%);
+  clip-path: polygon(50% 100%, 0% 30%, 25% 0%, 50% 25%, 75% 0%, 100% 30%);
+  animation: flameFlicker 0.2s ease-in-out infinite alternate;
+}
+.rocket-flame::after {
+  width: 65%;
+  height: 70%;
+  background: radial-gradient(ellipse at 50% 0%, #fff 0%, #fef3c7 30%, #fb923c 70%, transparent 100%);
+  animation-duration: 0.13s;
+}
+@keyframes flameFlicker {
+  0%   { transform: translateX(-50%) scaleY(1) scaleX(1); }
+  100% { transform: translateX(-50%) scaleY(1.15) scaleX(0.9); }
+}
+.rocket-flame.on { opacity: 1; }
+
+/* Rocket stages */
+.rocket.stage-glow {
+  animation: rocketGlow 1.2s ease-in-out infinite;
+}
+@keyframes rocketGlow {
+  0%,100% { filter: drop-shadow(0 0 12px rgba(251,191,36,0.5)); }
+  50%     { filter: drop-shadow(0 0 28px rgba(251,191,36,0.9)) drop-shadow(0 0 40px rgba(251,146,60,0.5)); }
+}
+.rocket.stage-shake {
+  animation: rocketShake 0.07s linear infinite, rocketGlow 1.2s ease-in-out infinite;
+}
+@keyframes rocketShake {
+  0%,100% { transform: translate(0,0); }
+  25%     { transform: translate(-1.5px, 0); }
+  50%     { transform: translate(1.5px, -1px); }
+  75%     { transform: translate(-1px, 1px); }
+}
+.rocket.launching {
+  animation: launchBlast 2.2s cubic-bezier(0.55,0,0.2,1) forwards;
+}
+@keyframes launchBlast {
+  0%   { transform: translateY(0); filter: drop-shadow(0 0 18px rgba(251,191,36,0.8)); }
+  20%  { transform: translateY(20px); }
+  100% { transform: translateY(-140vh) scale(0.6); filter: drop-shadow(0 0 60px rgba(251,146,60,1)); }
+}
+
+/* Launch pad */
+.launch-pad {
+  width: clamp(100px, 26vw, 150px);
+  height: 10px;
+  background: linear-gradient(180deg, #64748b 0%, #334155 100%);
+  border-radius: 4px;
+  margin-top: 2px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+/* Rocket glow ring */
+.rocket-glow {
+  position: absolute; inset: -15px;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: box-shadow 0.8s, opacity 0.8s;
+  opacity: 0;
+}
+.rocket-glow.active {
+  opacity: 1;
+}
+.rocket-glow.g1 { box-shadow: 0 0 25px rgba(251,191,36,0.4), 0 0 50px rgba(251,191,36,0.2); }
+.rocket-glow.g2 { box-shadow: 0 0 30px rgba(251,146,60,0.5), 0 0 60px rgba(251,146,60,0.25); }
+.rocket-glow.g3 { box-shadow: 0 0 35px rgba(34,211,238,0.5), 0 0 70px rgba(34,211,238,0.3); }
+.rocket-glow.g4 { box-shadow: 0 0 40px rgba(168,85,247,0.55), 0 0 80px rgba(168,85,247,0.3); }
+.rocket-glow.g5 {
+  box-shadow: 0 0 55px rgba(251,191,36,0.6), 0 0 95px rgba(251,146,60,0.4), 0 0 130px rgba(34,211,238,0.3);
+  animation: glowPulse 1s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%,100% { opacity: 0.7; }
+  50%     { opacity: 1; }
+}
+
+/* Launch exhaust trail (floats upward during launch) */
+.exhaust-particle {
+  position: fixed;
+  font-size: clamp(18px, 4vw, 28px);
+  pointer-events: none;
+  z-index: calc(var(--z-celeb) + 1);
+  animation: exhaustFall 1.6s ease-out forwards;
+}
+@keyframes exhaustFall {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(60vh) scale(0.4); opacity: 0; }
+}
+
+/* Splash / ignition effect */
+.splash {
+  position: absolute;
+  font-size: 18px;
+  animation: splashPop 0.5s ease-out forwards;
+  pointer-events: none; z-index: 60;
+}
+@keyframes splashPop {
+  0%   { transform: translateY(0) scale(0.5); opacity: 1; }
+  100% { transform: translateY(-30px) scale(1.5); opacity: 0; }
+}
+
+/* Sparkle trail */
+.sparkle-trail {
+  position: fixed;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 55;
+  animation: trailFade 0.4s ease-out forwards;
+}
+@keyframes trailFade {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.3) translateY(10px); opacity: 0; }
+}
+
+/* Launch counter (mini rockets) */
+.launch-counter {
+  display: flex; gap: 5px; justify-content: center;
+  margin-top: 6px;
+}
+.launch-pip {
+  width: clamp(16px, 4vw, 22px);
+  height: clamp(22px, 5.5vw, 30px);
+  border-radius: 50% 50% 4px 4px / 35% 35% 4px 4px;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.18);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+  position: relative;
+}
+.launch-pip.filled {
+  border-color: var(--gold);
+  animation: pipFill 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.launch-pip.filled:nth-child(1) { background: linear-gradient(180deg, #fbbf24, #b45309); }
+.launch-pip.filled:nth-child(2) { background: linear-gradient(180deg, #ef4444, #7f1d1d); }
+.launch-pip.filled:nth-child(3) { background: linear-gradient(180deg, #fb923c, #9a3412); }
+.launch-pip.filled:nth-child(4) { background: linear-gradient(180deg, #a855f7, #4c1d95); }
+@keyframes pipFill { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.3)} 100%{transform:scale(1.15)} }
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: calc(var(--z-ui) + 5);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(6px,1.5vw,10px);
+  padding: 4px 10px 6px;
+  background: rgba(2,4,26,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(30px,5.8vw,40px);
+  height: clamp(30px,5.8vw,40px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(13px,2.8vw,18px); font-weight: 900;
+  color: rgba(255,255,255,0.28);
+  transition: all 0.3s;
+}
+.prog-dot.current {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 10px rgba(34,211,238,0.6);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--gold),#b45309);
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 45%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(2,4,26,0.96); backdrop-filter: blur(12px);
+  border: 2px solid rgba(34,211,238,0.3); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 0 40px rgba(34,211,238,0.2);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--cyan); text-shadow: 1px 1px 0 rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.5);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.7); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(2,4,26,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(24px,6vw,44px); color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.5), 0 0 25px rgba(251,191,36,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(13px,3.2vw,20px); color: rgba(255,255,255,0.9); margin: 6px 0; }
+.celeb-stars { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row { display:flex; gap:14px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span { font-size:clamp(50px,13vw,82px); }
+.celeb-alien { font-size: clamp(60px, 16vw, 100px); animation: alienBob 2s ease-in-out infinite; }
+.celeb-alien-text {
+  font-size: clamp(14px, 3.5vw, 22px);
+  color: var(--cyan); font-weight: bold;
+  margin: 8px 0;
+  animation: fadeInUp 1s ease-out 0.5s both;
+}
+@keyframes alienBob {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-12px) scale(1.05); }
+}
+@keyframes fadeInUp {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Rocket launch explosion particles ── */
+.launch-particle {
+  position: fixed;
+  font-size: 22px;
+  pointer-events: none;
+  z-index: calc(var(--z-celeb) + 3);
+  animation: erupt 1.8s ease-out forwards;
+}
+@keyframes erupt {
+  0%   { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(var(--ey)) translateX(var(--ex)) scale(0.3); opacity: 0; }
+}
+
+/* ── Particles & shared ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+
+/* Screen flash for launch */
+.screen-flash {
+  position: fixed; inset: 0; z-index: calc(var(--z-celeb) + 10);
+  background: radial-gradient(circle at 50% 80%, rgba(255,255,255,0.9) 0%, rgba(251,191,36,0.6) 40%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  animation: flashBlast 0.9s ease-out;
+}
+@keyframes flashBlast {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">LOAD NEXT</div>
+    <div class="hud-val" id="hudFind">--</div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Play area — fuel cells -->
+<div class="play-area" id="playArea"></div>
+
+<!-- Rocket (bottom-center) -->
+<div class="rocket-area" id="rocketArea">
+  <div class="rocket" id="rocket">
+    <div class="rocket-glow" id="rocketGlow"></div>
+    <div class="rocket-nose"></div>
+    <div class="rocket-body">
+      <div class="rocket-window" id="rocketWindow">
+        <span class="alien">👽</span>
+      </div>
+      <div class="rocket-fuel" id="rocketFuel"></div>
+    </div>
+    <div class="rocket-fins">
+      <div class="rocket-fin left"></div>
+      <div class="rocket-fin right"></div>
+    </div>
+    <div class="rocket-flame" id="rocketFlame"></div>
+  </div>
+  <div class="launch-pad"></div>
+  <div class="launch-counter" id="launchCounter">
+    <div class="launch-pip" id="pip0"></div>
+    <div class="launch-pip" id="pip1"></div>
+    <div class="launch-pip" id="pip2"></div>
+    <div class="launch-pip" id="pip3"></div>
+  </div>
+</div>
+
+<!-- Captain Nova (bottom-left) + speech bubble -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧑‍🚀</div>
+</div>
+
+<!-- Progress bar (5 cells per sequence) -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round transition banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🧑‍🚀</span>
+    <span>🚀</span>
+    <span>👽</span>
+  </div>
+  <h1>Launch the Rocket! 🚀</h1>
+  <p>Captain Nova needs fuel cells!<br>Tap them in order<br>16, 17, 18, 19, 20 to blast off!</p>
+  <button class="btn btn-start" id="btnStart">Let's Launch! 🚀</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-alien">👽</div>
+  <div class="celeb-alien-text">"Safe travels, space friend!"</div>
+  <h2 id="celebTitle">Mission Complete!</h2>
+  <p  id="celebMsg">You launched all 4 rockets!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🚀</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Sequence 16–20: Launch the Rocket!  🚀                  ║
+// ║  Tap fuel cells in ascending order to fuel rockets and launch.   ║
+// ║  Voice A (en-US-AnaNeural) · Space Explorer theme                ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+// ── Voice A clip pools ─────────────────────────────────────────────
+const VOICE_A = {
+  greetings: ['voice-a/greetings/here-we-go.mp3','voice-a/greetings/lets-go.mp3','voice-a/greetings/come-on-lets-play.mp3','voice-a/greetings/are-you-ready.mp3','voice-a/greetings/this-is-going-to-be-fun.mp3'],
+  correct: ['voice-a/correct/amazing.mp3','voice-a/correct/brilliant.mp3','voice-a/correct/fantastic.mp3','voice-a/correct/i-knew-you-could-do-it.mp3','voice-a/correct/incredible.mp3','voice-a/correct/perfect.mp3','voice-a/correct/superstar.mp3','voice-a/correct/thats-right.mp3','voice-a/correct/well-done.mp3','voice-a/correct/wow-look-at-you-go.mp3','voice-a/correct/yes-youre-so-clever.mp3','voice-a/correct/you-got-it.mp3','voice-a/correct/youre-on-fire.mp3'],
+  wrong: ['voice-a/wrong/almost-have-another-go.mp3','voice-a/wrong/dont-worry-try-again.mp3','voice-a/wrong/keep-trying-youre-so-close.mp3','voice-a/wrong/nearly-give-it-another-go.mp3','voice-a/wrong/not-quite-you-can-do-it.mp3','voice-a/wrong/oops-not-that-one.mp3'],
+  thinking: ['voice-a/thinking/have-a-good-look.mp3','voice-a/thinking/i-believe-in-you.mp3','voice-a/thinking/take-your-time.mp3','voice-a/thinking/which-one-could-it-be.mp3','voice-a/thinking/you-can-do-it-keep-looking.mp3'],
+  'round-complete': ['voice-a/round-complete/brilliant-round-keep-going.mp3','voice-a/round-complete/round-complete-amazing.mp3','voice-a/round-complete/round-done-youre-doing-so-well.mp3','voice-a/round-complete/you-did-it-on-to-the-next.mp3'],
+  'game-complete': ['voice-a/game-complete/what-a-fantastic-player.mp3','voice-a/game-complete/you-are-a-superstar.mp3','voice-a/game-complete/you-did-the-whole-thing.mp3','voice-a/game-complete/you-finished-so-proud.mp3','voice-a/game-complete/youre-incredible-we-did-it.mp3'],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first with iOS fallback)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.07; this.sfxVol = 0.3; this.musicDucked = 0.02;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Floating space ambience — dreamy, wide intervals
+    const notes = [220.00, 261.63, 329.63, 392.00, 440.00, 523.25, 659.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.65 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.4);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3.2);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.4);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1800);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(440,t,0.15,0.2); p(554,t+0.1,0.18,0.25); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='load') {
+      // Fuel load sound — short metallic clank with fuel whoosh
+      p(180, t, 0.06, 0.2);
+      p(320, t+0.04, 0.1, 0.18);
+      p(140, t+0.1, 0.14, 0.14);
+    }
+    else if (type==='ignite') {
+      // Ignition ignite — whoosh into rumble
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sawtooth'; o.frequency.setValueAtTime(80,t); o.frequency.exponentialRampToValueAtTime(180,t+0.6);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.35,t+0.1); g.gain.linearRampToValueAtTime(0.15,t+0.8); g.gain.linearRampToValueAtTime(0,t+1.3);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+1.4);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='blastoff') {
+      // BLAST OFF! — big descending roar
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sawtooth'; o.frequency.setValueAtTime(220,t); o.frequency.exponentialRampToValueAtTime(60,t+1.5);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.4,t+0.15); g.gain.linearRampToValueAtTime(0.3,t+1.0); g.gain.linearRampToValueAtTime(0,t+1.8);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+1.9);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+      // Add high sparkle
+      p(1200, t+0.2, 0.4, 0.2);
+      p(1600, t+0.35, 0.3, 0.15);
+      p(2000, t+0.55, 0.25, 0.12);
+    }
+  }
+  // Ascending sequence chime — pitch rises with each fuel cell (0=sixteen low, 4=twenty high)
+  toneSequence(idx) {
+    this._init(); const t = this.ctx.currentTime;
+    const freqs = [261.63, 329.63, 392.00, 440.00, 523.25]; // C E G A C ascending
+    const f = freqs[Math.min(idx, freqs.length-1)];
+    const p = (freq, s, d, v, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    p(f, t, 0.25, 0.4);
+    p(f * 1.5, t + 0.05, 0.2, 0.15);
+    p(f * 2, t + 0.08, 0.15, 0.1, 'triangle');
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+const NUMBER_WORDS = { 16:'sixteen', 17:'seventeen', 18:'eighteen', 19:'nineteen', 20:'twenty' };
+const NUMBERS = [16,17,18,19,20];
+const SPACE_EMOJI = { 16:'🚀', 17:'⭐', 18:'🪐', 19:'👽', 20:'🌙' };
+const SPACE_NAME  = { 16:'sixteen', 17:'seventeen', 18:'eighteen', 19:'nineteen', 20:'twenty' };
+
+function makeDots(n) {
+  const emoji = SPACE_EMOJI[n];
+  // 16 = 4x4, 17 = 4x4+1, 18 = 3 rows of 6 (2 rows of 6 + 6), 19 = 4 rows, 20 = 4 rows of 5
+  if (n === 16) return emoji.repeat(4) + '\n' + emoji.repeat(4) + '\n' + emoji.repeat(4) + '\n' + emoji.repeat(4);
+  if (n === 17) return emoji.repeat(5) + '\n' + emoji.repeat(4) + '\n' + emoji.repeat(4) + '\n' + emoji.repeat(4);
+  if (n === 18) return emoji.repeat(5) + '\n' + emoji.repeat(5) + '\n' + emoji.repeat(4) + '\n' + emoji.repeat(4);
+  if (n === 19) return emoji.repeat(5) + '\n' + emoji.repeat(5) + '\n' + emoji.repeat(5) + '\n' + emoji.repeat(4);
+  if (n === 20) return emoji.repeat(5) + '\n' + emoji.repeat(5) + '\n' + emoji.repeat(5) + '\n' + emoji.repeat(5);
+  return emoji.repeat(n);
+}
+
+const CELL_COLORS = {
+  16: 'linear-gradient(135deg,#0c4a6e 0%,#22d3ee 100%)',
+  17: 'linear-gradient(135deg,#713f12 0%,#fbbf24 100%)',
+  18: 'linear-gradient(135deg,#581c87 0%,#a855f7 100%)',
+  19: 'linear-gradient(135deg,#064e3b 0%,#10b981 100%)',
+  20: 'linear-gradient(135deg,#7f1d1d 0%,#ef4444 100%)',
+};
+
+const BUBBLE_CORRECT = ['Fuel loaded! 🚀','To infinity! ✨','Systems go! 💫','Nice one, Captain! 🧑‍🚀','Fueling up! ⭐','Stellar! 🌟'];
+const BUBBLE_WRONG   = ['Wrong cell! 🚀','Try another! ✨','Check the order! 💫','Nearly! 🌟'];
+const BUBBLE_LAUNCH  = ['Rocket launched! 🚀','Blast off! ✨','We have liftoff! 💫','Off to the stars! ⭐'];
+
+// Destinations per round
+const DESTINATIONS = [
+  { emoji:'🌙', name:'the Moon' },
+  { emoji:'🔴', name:'Mars' },
+  { emoji:'🪐', name:'Jupiter' },
+  { emoji:'🪐', name:'Saturn' },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['⭐','✨','💫','🌟','🎉','🚀','🪐','👽','🌙','☄️', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['✨','💫','⭐','🌟','🚀','☄️']);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.15) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// Sparkle trail effect during fly animation
+function spawnTrail(x, y) {
+  const t = document.createElement('div');
+  t.className = 'sparkle-trail';
+  t.textContent = pick(['✨','💫','⭐','☄️']);
+  t.style.left = (x + (Math.random()-0.5)*20) + 'px';
+  t.style.top  = (y + (Math.random()-0.5)*20) + 'px';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 500);
+}
+
+// Splash effect when fuel cell hits rocket
+function rocketLoadSplash() {
+  const rocket = $('rocket');
+  const r = rocket.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height*0.4;
+  const splashEmojis = ['✨','💫','⭐','🌟','💨'];
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'splash';
+    s.textContent = pick(splashEmojis);
+    s.style.left = (cx + (Math.random()-0.5)*60) + 'px';
+    s.style.top  = (cy + Math.random()*10) + 'px';
+    s.style.position = 'fixed';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 600);
+  }
+}
+
+// Rocket launch particle burst from the exhaust
+function launchBurst() {
+  const rocket = $('rocket');
+  const r = rocket.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.bottom;
+  const emojis = ['🔥','💥','✨','💫','⭐','🌟','☁️','💨'];
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('div');
+    p.className = 'launch-particle';
+    p.textContent = pick(emojis);
+    p.style.left = cx + 'px';
+    p.style.top  = cy + 'px';
+    p.style.fontSize = (18 + Math.random()*18) + 'px';
+    p.style.setProperty('--ex', ((Math.random()-0.5)*400) + 'px');
+    p.style.setProperty('--ey', (60 + Math.random()*220) + 'px');
+    p.style.animationDelay = (Math.random()*0.5) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2500);
+  }
+}
+
+// Sustained exhaust during launch travel
+function spawnExhaustStream(duration = 1800) {
+  const rocket = $('rocket');
+  if (!rocket) return;
+  const end = performance.now() + duration;
+  const tick = () => {
+    if (performance.now() >= end) return;
+    const r = rocket.getBoundingClientRect();
+    for (let i = 0; i < 4; i++) {
+      const p = document.createElement('div');
+      p.className = 'exhaust-particle';
+      p.textContent = pick(['🔥','💨','☁️','✨']);
+      p.style.left = (r.left + r.width/2 + (Math.random()-0.5)*r.width*0.6) + 'px';
+      p.style.top  = (r.bottom - 10) + 'px';
+      p.style.fontSize = (16 + Math.random()*18) + 'px';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1700);
+    }
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+function screenFlash() {
+  const f = document.createElement('div');
+  f.className = 'screen-flash';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 900);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROCKET MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+let fuelLoaded = 0;     // 0-5 per sequence
+let rocketsLaunched = 0; // 0-4 total
+
+function resetRocket() {
+  fuelLoaded = 0;
+  const rocket = $('rocket');
+  rocket.classList.remove('stage-glow','stage-shake','launching');
+  rocket.style.transform = '';
+  rocket.style.animation = '';
+  $('rocketFuel').style.height = '0%';
+  $('rocketFlame').classList.remove('on');
+  $('rocketWindow').classList.remove('show-alien');
+  $('rocketArea').style.display = '';
+  $('rocketArea').style.transform = 'translateX(-50%)';
+  $('rocketArea').style.opacity = '1';
+  updateRocketGlow();
+}
+
+function updateRocketGlow() {
+  const glow = $('rocketGlow');
+  glow.classList.remove('active','g1','g2','g3','g4','g5');
+  if (fuelLoaded > 0) {
+    glow.classList.add('active', 'g' + fuelLoaded);
+  }
+}
+
+function setFuelLevel(level) {
+  // level 0..5  →  0%, 20%, 40%, 60%, 80%, 100%
+  const pct = (level / 5) * 100;
+  $('rocketFuel').style.height = pct + '%';
+}
+
+function markLaunch(idx) {
+  const pip = $('pip' + idx);
+  if (pip) pip.classList.add('filled');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — floating stars and planets
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const emojis = ['⭐','✨','💫','🌟','☄️','🛰️','🪐','🌑','🌙'];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-element';
+    el.textContent = pick(emojis);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.setProperty('--drift', ((Math.random()-0.5)*60) + 'px');
+    el.style.animationDelay    = (-Math.random()*22) + 's';
+    el.style.animationDuration = (14 + Math.random()*18) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG
+// ══════════════════════════════════════════════════════════════════
+const ROUNDS = [
+  { label:'Round 1 — Load the Fuel! 🚀',        sub:'Tap cells 16 to 20 in order! Hints will help.',  display:'full', hintMode:'strong', dest:0 },
+  { label:'Round 2 — Mission to Mars! 🔴',      sub:'No hints this time! You know the order.',         display:'full', hintMode:'none',   dest:1 },
+  { label:'Round 3 — Count the Stars! ⭐',       sub:'Count the patterns to load the cells!',           display:'dots', hintMode:'none',   dest:2 },
+  { label:'Round 4 — Fast Launch! 🏆',           sub:'Quick! The countdown is starting!',               display:'full', hintMode:'none',   timer:true, smaller:true, dest:3 },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false;
+let round = 0, score = 0;
+let nextTapIdx = 0; // index into NUMBERS array (0-4)
+let cellEls = {}; // keyed by number
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR — 5 cells per sequence
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  for (let i = 0; i < 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'pdot' + i;
+    d.textContent = NUMBERS[i];
+    bar.appendChild(d);
+  }
+}
+function markProg(idx) {
+  const d = $('pdot' + idx);
+  if (d) {
+    d.textContent = SPACE_EMOJI[NUMBERS[idx]];
+    d.classList.add('done');
+  }
+}
+function highlightProg(idx) {
+  for (let i = 0; i < 5; i++) {
+    const d = $('pdot' + i);
+    if (d) d.classList.toggle('current', i === idx);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINT SYSTEM
+// ══════════════════════════════════════════════════════════════════
+function clearHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+function resetHints() {
+  clearHints();
+  if (!gameActive) return;
+  const cfg = ROUNDS[round];
+  if (cfg.hintMode === 'none') return;
+
+  hintTimer = setTimeout(() => {
+    const targetNum = NUMBERS[nextTapIdx];
+    const cell = cellEls[targetNum];
+    if (cell && gameActive) {
+      cell.classList.add('wiggle');
+      audio.tone('hint');
+      setTimeout(() => cell.classList.remove('wiggle'), 700);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) {
+      audio.play('thinking');
+      setTimeout(() => { if (gameActive) audio.speakNumber(NUMBERS[nextTapIdx]); }, 1200);
+    }
+  }, 7000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// POSITION GENERATION — random positions with minimum spacing
+// ══════════════════════════════════════════════════════════════════
+function generatePositions(count, smaller) {
+  const area = $('playArea');
+  const areaW = area.clientWidth;
+  const areaH = area.clientHeight;
+  const cellW = smaller ? Math.min(Math.max(62, areaW * 0.15), 86) : Math.min(Math.max(72, areaW * 0.18), 102);
+  const cellH = cellW * 1.35;
+  const margin = cellW * 0.5;
+  const minDist = cellW * 1.4;
+
+  const positions = [];
+  for (let i = 0; i < count; i++) {
+    let tries = 0;
+    let x, y;
+    do {
+      x = margin + Math.random() * (areaW - margin * 2 - cellW);
+      y = margin + 10 + Math.random() * (areaH - margin * 2 - cellH);
+      tries++;
+      if (tries > 300) break;
+    } while (positions.some(p => {
+      const dx = p.x - x, dy = p.y - y;
+      return Math.sqrt(dx*dx + dy*dy) < minDist;
+    }));
+    positions.push({ x, y });
+  }
+  return positions;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER FUEL CELLS
+// ══════════════════════════════════════════════════════════════════
+function renderCells() {
+  const area = $('playArea');
+  const cfg = ROUNDS[round];
+
+  area.querySelectorAll('.fuel-cell').forEach(n => n.remove());
+  cellEls = {};
+
+  const positions = generatePositions(5, cfg.smaller);
+  const shuffledOrder = shuffle([...Array(5).keys()]); // random placement order
+
+  shuffledOrder.forEach((seqIdx, posIdx) => {
+    const num = NUMBERS[seqIdx];
+    const cell = document.createElement('div');
+    cell.className = 'fuel-cell';
+    if (cfg.smaller) cell.classList.add('r4-size');
+    cell.style.background = CELL_COLORS[num];
+    cell.style.left = positions[posIdx].x + 'px';
+    cell.style.top  = positions[posIdx].y + 'px';
+    cell.dataset.num = num;
+
+    let inner = '';
+    if (cfg.display === 'full') {
+      inner = `<div class="cell-numeral">${num}</div>
+               <div class="cell-emoji">${SPACE_EMOJI[num]}</div>
+               <div class="cell-word">${SPACE_NAME[num]}</div>`;
+    } else if (cfg.display === 'dots') {
+      // Dots + small numeral always visible
+      inner = `<div class="cell-numeral" style="font-size:clamp(12px,3vw,16px);opacity:0.7">${num}</div>
+               <div class="cell-dots">${makeDots(num)}</div>`;
+    }
+    cell.innerHTML = inner;
+
+    onTap(cell, () => handleCellTap(cell, num));
+    area.appendChild(cell);
+    cellEls[num] = cell;
+
+    setTimeout(() => cell.classList.add('show'), 100 + posIdx * 120);
+  });
+
+  area.classList.add('active');
+
+  // Initial hint for round 1
+  setTimeout(() => {
+    if (cfg.hintMode === 'strong') {
+      const firstCell = cellEls[NUMBERS[0]];
+      if (firstCell) firstCell.classList.add('next-hint');
+    }
+  }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLY-TO-ROCKET ANIMATION
+// ══════════════════════════════════════════════════════════════════
+function flyToRocket(cell) {
+  return new Promise(resolve => {
+    const cellRect = cell.getBoundingClientRect();
+    const rocket = $('rocket');
+    const rocketRect = rocket.getBoundingClientRect();
+
+    const startX = cellRect.left;
+    const startY = cellRect.top;
+    const endX = rocketRect.left + rocketRect.width/2 - cellRect.width/2;
+    const endY = rocketRect.top + rocketRect.height * 0.35 - cellRect.height/2;
+
+    cell.classList.add('flying');
+    cell.style.position = 'fixed';
+    cell.style.left = startX + 'px';
+    cell.style.top  = startY + 'px';
+    cell.style.zIndex = '55';
+
+    const duration = 350;
+    const startTime = performance.now();
+    let lastTrail = 0;
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease-in for satisfying arrival
+      const ease = progress * progress;
+
+      const curX = startX + (endX - startX) * ease;
+      // Arc upward first then down
+      const arcHeight = -60;
+      const curY = startY + (endY - startY) * ease + arcHeight * Math.sin(progress * Math.PI);
+
+      const scale = 1 - progress * 0.65;
+      cell.style.left = curX + 'px';
+      cell.style.top  = curY + 'px';
+      cell.style.transform = `scale(${scale}) rotate(${progress * 360}deg)`;
+
+      // Sparkle trail every ~45ms
+      if (now - lastTrail > 45) {
+        spawnTrail(curX + cellRect.width/2, curY + cellRect.height/2);
+        lastTrail = now;
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Hit rocket!
+        cell.style.display = 'none';
+        audio.tone('load');
+        rocketLoadSplash();
+        resolve();
+      }
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════════════════════
+function updateHud() {
+  const targetNum = NUMBERS[nextTapIdx];
+  if (nextTapIdx < 5) {
+    $('hudFind').textContent = `Tap ${targetNum}`;
+  } else {
+    $('hudFind').textContent = '🚀 Launching!';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HANDLE FUEL CELL TAP
+// ══════════════════════════════════════════════════════════════════
+async function handleCellTap(cellEl, num) {
+  if (!gameActive) return;
+  clearHints();
+
+  const targetNum = NUMBERS[nextTapIdx];
+
+  if (num === targetNum) {
+    // ✓ CORRECT
+    gameActive = false;
+
+    cellEl.classList.remove('next-hint', 'wiggle');
+    cellEl.classList.add('activated');
+    starBurst(cellEl);
+
+    // Ascending chime
+    audio.toneSequence(nextTapIdx);
+
+    score++;
+    $('hudScore').textContent = score;
+
+    // Character reacts
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT), 1800);
+
+    // Voice: speak the number ONCE (fire-and-forget)
+    audio.speakNumber(num);
+
+    // Mark progress
+    markProg(nextTapIdx);
+
+    await delay(180);
+
+    // Fly cell to rocket!
+    await flyToRocket(cellEl);
+
+    // Update rocket state
+    fuelLoaded++;
+    setFuelLevel(fuelLoaded);
+    updateRocketGlow();
+
+    // Rocket glows more strongly as fuel increases
+    const rocket = $('rocket');
+    if (fuelLoaded >= 3) rocket.classList.add('stage-glow');
+
+    await delay(150);
+
+    nextTapIdx++;
+    highlightProg(nextTapIdx);
+    updateHud();
+
+    if (nextTapIdx >= 5) {
+      // Sequence complete! LAUNCH!
+      await celebrateSequence();
+    } else {
+      // Highlight next cell hint (round 1 only)
+      const cfg = ROUNDS[round];
+      if (cfg.hintMode === 'strong') {
+        const nextCell = cellEls[NUMBERS[nextTapIdx]];
+        if (nextCell) nextCell.classList.add('next-hint');
+      }
+      gameActive = true;
+      resetHints();
+    }
+
+  } else {
+    // ✗ WRONG
+    cellEl.classList.add('wrong-tap');
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1900);
+
+    audio.play('wrong');
+    // Speak the correct target number after a beat
+    setTimeout(() => audio.speakNumber(targetNum), 600);
+    setTimeout(() => {
+      cellEl.classList.remove('wrong-tap');
+      resetHints();
+    }, 480);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CELEBRATE SEQUENCE COMPLETION — ROCKET LAUNCH!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateSequence() {
+  $('playArea').classList.remove('timer-warning');
+
+  // Full fuel + max glow
+  fuelLoaded = 5;
+  setFuelLevel(5);
+  updateRocketGlow();
+
+  const rocket = $('rocket');
+  rocket.classList.add('stage-glow');
+
+  showCharBubble(pick(BUBBLE_LAUNCH), 2200);
+  audio.tone('celeb');
+
+  // Mark this launch's pip
+  markLaunch(rocketsLaunched);
+  rocketsLaunched++;
+
+  // Pre-launch shake for dramatic pause
+  await delay(250);
+  rocket.classList.add('stage-shake');
+  audio.tone('ignite');
+
+  // Ignite flame
+  $('rocketFlame').classList.add('on');
+
+  await delay(800);
+
+  // BLAST OFF!
+  rocket.classList.remove('stage-shake','stage-glow');
+  rocket.classList.add('launching');
+  audio.tone('blastoff');
+  screenFlash();
+  launchBurst();
+  spawnExhaustStream(1500);
+  confetti(35, ['🚀','⭐','✨','🌟','☄️','🪐','👽']);
+
+  // Let launch play out
+  await delay(900);
+  audio.play('correct'); // fire-and-forget — no await
+
+  await delay(600);
+  await finishRound();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND TRANSITIONS
+// ══════════════════════════════════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearHints();
+
+  $('playArea').querySelectorAll('.fuel-cell').forEach(n => n.remove());
+  $('playArea').classList.remove('active', 'timer-warning');
+
+  audio.tone('roundDone');
+  confetti(30, ['🚀','⭐','✨','💫']);
+  round++;
+
+  if (round >= ROUNDS.length) {
+    await delay(600);
+    celebrateFinish();
+    return;
+  }
+
+  // ── Round complete banner (snappy) ──
+  const dest = DESTINATIONS[ROUNDS[round-1].dest];
+  $('roundTitle').textContent = `${dest.emoji} Reached ${dest.name}!`;
+  $('roundSub').textContent   = 'Captain Nova salutes you!';
+  $('roundBanner').classList.add('show');
+  audio.play('round-complete'); // fire-and-forget
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(200);
+
+  // ── Next round intro banner (snappy) ──
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1100);
+  $('roundBanner').classList.remove('show');
+  await delay(150);
+
+  startRound();
+}
+
+function startRound() {
+  const cfg = ROUNDS[round];
+  $('hudRound').textContent = `${round + 1}/4`;
+  resetRocket();
+  buildProg();
+  startAttempt();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START ATTEMPT (each round = 1 sequence)
+// ══════════════════════════════════════════════════════════════════
+async function startAttempt() {
+  nextTapIdx = 0;
+  updateHud();
+  highlightProg(0);
+  renderCells();
+  gameActive = true;
+
+  audio.tone('reveal');
+  // Speak the first number but don't block — keep it snappy
+  audio.speakNumber(16);
+
+  resetHints();
+
+  if (ROUNDS[round].timer) {
+    $('playArea').classList.remove('timer-warning');
+    void $('playArea').offsetWidth;
+    $('playArea').classList.add('timer-warning');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION — ALIEN WAVES FROM WINDOW!
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display       = 'none';
+  $('progBar').style.display   = 'none';
+  $('roundBanner').classList.remove('show');
+  $('playArea').classList.remove('active');
+
+  // One more big launch burst + alien reveal
+  launchBurst();
+  audio.tone('celeb');
+  await delay(600);
+
+  // Hide the rocket area after final launch
+  $('rocketArea').style.display = 'none';
+  $('charArea').style.display   = 'none';
+
+  confetti(60, ['🚀','👽','🪐','🌙','⭐','✨','🌟','🎉','☄️']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 5)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+
+  showScreen('scrCeleb');
+  audio.tone('celeb');
+  await delay(200);
+
+  // Two celebration voice clips
+  await audio.play('game-complete');
+  await delay(400);
+  confetti(50, ['👽','🚀','🪐','🌟']);
+  await audio.play('game-complete');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT & START
+// ══════════════════════════════════════════════════════════════════
+function resetGame() {
+  round = 0; score = 0; rocketsLaunched = 0;
+  nextTapIdx = 0;
+  fuelLoaded = 0;
+  $('hudScore').textContent = '0';
+
+  // Reset launch pips
+  for (let i = 0; i < 4; i++) {
+    const pip = $('pip' + i);
+    if (pip) pip.classList.remove('filled');
+  }
+
+  // Reset rocket
+  resetRocket();
+}
+
+async function startGame() {
+  audio.startMusic();
+
+  resetGame();
+  showScreen(null);
+
+  $('hud').style.display     = '';
+  $('charArea').style.display = '';
+
+  // First round intro (snappy)
+  const cfg = ROUNDS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  audio.play('greetings'); // fire-and-forget
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(200);
+
+  startRound();
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────
+buildScenery();
+
+onTap($('btnStart'), () => { audio.unlock(); startGame(); });
+onTap($('btnAgain'), () => {
+  showScreen(null);
+  startGame();
+});
+</script>
+</body>
+</html>

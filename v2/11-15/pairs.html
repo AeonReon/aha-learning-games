@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ocean Adventure Memory 🧜‍♀️</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --deep-blue: #0a2e5c; --ocean: #0d3a70; --turquoise: #00bfa5; --coral: #ff6b9d;
+  --seafoam: #7dd3c0; --gold: #ffd47a; --white85: rgba(255,255,255,0.88);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: linear-gradient(180deg, #051c3a 0%, #0a2e5c 30%, #0d3a70 60%, #0a4a6e 100%);
+}
+
+/* ── Background bubbles & fish ── */
+.bg-sparkle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(12px, 2.5vw, 22px);
+  opacity: 0.5;
+  animation: bubbleRise linear infinite;
+}
+@keyframes bubbleRise {
+  0%   { transform: translateY(105vh) translateX(0) scale(0.7); opacity: 0; }
+  8%   { opacity: 0.5; }
+  50%  { transform: translateY(50vh) translateX(15px) scale(1); }
+  92%  { opacity: 0.4; }
+  100% { transform: translateY(-60px) translateX(-10px) scale(1.1); opacity: 0; }
+}
+
+.bg-fish {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(16px, 3vw, 26px);
+  opacity: 0.5;
+  animation: fishSwim linear infinite;
+}
+@keyframes fishSwim {
+  0%   { transform: translateX(-80px) translateY(0); opacity: 0; }
+  10%  { opacity: 0.5; }
+  50%  { transform: translateX(50vw) translateY(-12px); }
+  90%  { opacity: 0.5; }
+  100% { transform: translateX(110vw) translateY(0); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .icon-row {
+  display: flex; gap: 10px;
+  justify-content: center; align-items: flex-end;
+  margin-bottom: 10px;
+}
+.screen-title .icon-row span { font-size: clamp(36px, 9vw, 60px); }
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 50px);
+  color: var(--seafoam);
+  text-shadow: 0 0 30px rgba(125,211,192,0.65), 2px 2px 0 rgba(0,0,0,0.45);
+  margin: 6px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.35);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start  { background: linear-gradient(135deg, #00bfa5, #007b68); margin-top: 18px; animation: glow 2.4s ease-in-out infinite; }
+.btn-again  { background: linear-gradient(135deg, #ff6b9d, #c23c6b); margin-top: 16px; }
+@keyframes glow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(5,28,58,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(0,191,165,0.22);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.42); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--turquoise); }
+.hud-score .hud-val { color: var(--gold); }
+.hud-pairs-text { color: var(--seafoam); font-size: clamp(14px,3vw,20px); font-weight: 900; }
+
+/* ── Character (Marina the mermaid) ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 0 10px rgba(255,107,157,0.4)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--deep-blue);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,0,0,0.25);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Card Grid ── */
+.card-grid {
+  position: fixed;
+  top: 55px; left: 50%; transform: translateX(-50%);
+  z-index: var(--z-game);
+  display: grid;
+  gap: clamp(6px,1.5vw,10px);
+  padding: 8px;
+  justify-items: center; align-items: center;
+}
+.card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.card-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* ── Card ── */
+.card {
+  position: relative;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.card:active { transform: scale(0.95); }
+.card-inner {
+  position: relative;
+  width: clamp(70px, 18vw, 100px);
+  height: clamp(90px, 24vw, 120px);
+  transition: transform 0.5s;
+  transform-style: preserve-3d;
+}
+.card.flipped .card-inner  { transform: rotateY(180deg); }
+.card.matched .card-inner  { transform: rotateY(180deg); }
+
+.card-front, .card-back {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Card back — shimmering bubble with seashell */
+.card-back {
+  background: linear-gradient(135deg, #00bfa5 0%, #0a4a6e 60%, #0a2e5c 100%);
+  border: 3px solid rgba(125,211,192,0.55);
+  box-shadow: 0 0 15px rgba(0,191,165,0.3), 0 4px 12px rgba(0,0,0,0.3);
+  gap: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.card-back::before {
+  content: '';
+  position: absolute;
+  top: -20%; left: -20%;
+  width: 80%; height: 80%;
+  background: radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%, 100% { transform: translate(0,0) scale(1); opacity: 0.7; }
+  50%      { transform: translate(30%,30%) scale(1.2); opacity: 0.3; }
+}
+.card-back-icon { font-size: clamp(28px,7vw,42px); line-height: 1; animation: bubbleBob 2.6s ease-in-out infinite; z-index: 1; }
+@keyframes bubbleBob { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-3px) scale(1.06)} }
+.card-back-sparkle { font-size: 10px; color: var(--seafoam); z-index: 1; }
+
+/* Card front — ocean background with content */
+.card-front {
+  background: linear-gradient(135deg, #0d3a70, #06213f);
+  border: 3px solid rgba(125,211,192,0.55);
+  transform: rotateY(180deg);
+  gap: 2px;
+  padding: 4px;
+}
+
+/* Card content types */
+.card-numeral {
+  font-size: clamp(32px, 8vw, 50px);
+  font-weight: 900;
+  color: var(--seafoam);
+  text-shadow: 0 0 15px rgba(125,211,192,0.65), 1px 1px 0 rgba(0,0,0,0.4);
+  line-height: 1;
+}
+.card-fish {
+  font-size: clamp(12px, 2.6vw, 16px);
+  line-height: 1.25;
+  text-align: center;
+  letter-spacing: -1px;
+}
+.card-word {
+  font-size: clamp(14px, 3.6vw, 20px);
+  font-weight: 900;
+  color: var(--coral);
+  text-shadow: 0 0 10px rgba(255,107,157,0.55);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.card-small-num {
+  font-size: clamp(11px, 2.5vw, 14px);
+  font-weight: 900;
+  color: rgba(255,212,122,0.85);
+  margin-top: 2px;
+}
+
+/* Matched cards — swim away effect */
+.card.matched .card-front {
+  background: linear-gradient(135deg, #00806b, #003d33);
+  border-color: var(--gold);
+}
+.card.matched .card-inner {
+  animation: cardmatch 0.4s ease-out;
+}
+.card.match-anim .card-front::after {
+  content: '🐠✨';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(28px, 7vw, 42px);
+  background: rgba(0,128,107,0.85);
+  border-radius: 11px;
+  animation: fishSwimAway 1.2s ease-out forwards;
+}
+@keyframes fishSwimAway {
+  0%   { opacity: 1; transform: translateX(0) translateY(0) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translateX(60px) translateY(-30px) scale(0.6) rotate(20deg); }
+}
+
+/* Hint styles */
+.hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(125,211,192,0.75), 0 0 50px rgba(0,191,165,0.45) !important; border-radius: 14px; }
+
+/* ── Coral Reef ── */
+.coral-reef {
+  position: fixed; bottom: 52px; right: 8px;
+  z-index: var(--z-char);
+  width: clamp(80px,18vw,120px);
+  pointer-events: none;
+}
+.reef-svg { width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(0,191,165,0.3)); }
+.coral-piece {
+  fill: rgba(45,65,100,0.55);
+  stroke: rgba(125,211,192,0.45);
+  transition: fill 0.6s, filter 0.6s, stroke 0.6s;
+}
+.coral-piece.lit-1 { fill: #ff6b9d; stroke: #ffd47a; filter: drop-shadow(0 0 5px rgba(255,107,157,0.8)); }
+.coral-piece.lit-2 { fill: #ffd47a; stroke: #ff6b9d; filter: drop-shadow(0 0 5px rgba(255,212,122,0.8)); }
+.coral-piece.lit-3 { fill: #ff9950; stroke: #ffd47a; filter: drop-shadow(0 0 5px rgba(255,153,80,0.8)); }
+.coral-piece.lit-4 { fill: #c77bff; stroke: #ff6b9d; filter: drop-shadow(0 0 5px rgba(199,123,255,0.8)); }
+.coral-piece.lit-5 { fill: #7dd3c0; stroke: #ffd47a; filter: drop-shadow(0 0 5px rgba(125,211,192,0.9)); }
+.coral-piece.lit-6 { fill: #ffa6c9; stroke: #ffd47a; filter: drop-shadow(0 0 5px rgba(255,166,201,0.85)); }
+.reef-fish {
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.reef-fish.show { opacity: 1; animation: reefFishSwim 4s ease-in-out infinite; }
+@keyframes reefFishSwim {
+  0%,100% { transform: translateX(0); }
+  50%     { transform: translateX(8px); }
+}
+.reef-complete { animation: reefGlow 1.5s ease-in-out infinite; }
+@keyframes reefGlow { 0%,100%{filter:drop-shadow(0 0 10px rgba(0,191,165,0.4))} 50%{filter:drop-shadow(0 0 25px rgba(255,212,122,0.9))} }
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(5,28,58,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.25);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg,var(--turquoise),#007b68);
+  border-color: var(--gold); color: #fff;
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(5,28,58,0.94); backdrop-filter: blur(12px);
+  border: 2px solid rgba(0,191,165,0.3); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--seafoam); text-shadow: 0 0 15px rgba(125,211,192,0.5), 1px 1px 0 rgba(0,0,0,0.4);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.65); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(5,28,58,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--seafoam);
+  text-shadow: 0 0 20px rgba(125,211,192,0.6), 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.92); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-icon-row{ display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px; }
+.celeb-icon-row span{ font-size:clamp(50px,13vw,82px); animation: dance 1s ease-in-out infinite; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes cardmatch   { 0%{transform:rotateY(180deg) scale(1)} 50%{transform:rotateY(180deg) scale(1.15)} 100%{transform:rotateY(180deg) scale(1)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+@keyframes wrongShake  { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-pairs-text" id="hudPairs">Find the matching pairs!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Card Grid -->
+<div class="card-grid" id="cardGrid"></div>
+
+<!-- Marina the mermaid -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧜‍♀️</div>
+</div>
+
+<!-- Coral Reef -->
+<div class="coral-reef" id="coralReef" style="display:none">
+  <svg class="reef-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+    <!-- Sea floor -->
+    <ellipse cx="70" cy="130" rx="68" ry="8" fill="#0a2e5c" opacity="0.6"/>
+    <!-- Coral piece 1 — big left coral -->
+    <path class="coral-piece" id="cp0" d="M 20 130 Q 18 95 25 85 Q 32 75 28 60 Q 25 55 35 55 Q 42 58 38 72 Q 34 85 42 95 Q 48 105 45 130 Z" stroke-width="1.2"/>
+    <!-- Coral piece 2 — center tall coral -->
+    <path class="coral-piece" id="cp1" d="M 55 130 Q 52 100 58 85 Q 62 70 56 55 Q 54 45 64 45 Q 70 45 68 58 Q 66 72 72 85 Q 76 100 73 130 Z" stroke-width="1.2"/>
+    <!-- Coral piece 3 — branching right -->
+    <path class="coral-piece" id="cp2" d="M 85 130 L 85 95 L 78 82 L 85 82 L 85 70 L 78 60 L 88 60 L 88 50 L 95 60 L 95 75 L 100 85 L 93 85 L 93 130 Z" stroke-width="1.2"/>
+    <!-- Coral piece 4 — round brain coral -->
+    <path class="coral-piece" id="cp3" d="M 110 130 Q 100 125 102 110 Q 96 102 105 95 Q 102 85 115 85 Q 125 88 122 100 Q 128 108 120 118 Q 122 128 110 130 Z" stroke-width="1.2"/>
+    <!-- Coral piece 5 — sea fan top left -->
+    <path class="coral-piece" id="cp4" d="M 18 55 Q 12 45 18 35 Q 22 28 30 32 Q 35 25 42 30 Q 48 28 48 38 Q 52 42 48 50 Q 45 54 38 50 Q 32 55 25 52 Q 20 58 18 55 Z" stroke-width="1.2"/>
+    <!-- Coral piece 6 — small bush right -->
+    <path class="coral-piece" id="cp5" d="M 108 55 Q 105 50 108 42 Q 112 38 118 42 Q 122 38 128 44 Q 132 50 128 55 Q 125 60 118 58 Q 112 60 108 55 Z" stroke-width="1.2"/>
+    <!-- Swimming fish (shown when lit) -->
+    <text class="reef-fish" id="rf0" x="10" y="25" font-size="10">🐠</text>
+    <text class="reef-fish" id="rf1" x="62" y="22" font-size="10">🐟</text>
+    <text class="reef-fish" id="rf2" x="100" y="40" font-size="10">🐡</text>
+    <text class="reef-fish" id="rf3" x="45" y="75" font-size="10">🐠</text>
+    <text class="reef-fish" id="rf4" x="125" y="70" font-size="10">🐟</text>
+    <text class="reef-fish" id="rf5" x="30" y="110" font-size="10">🐡</text>
+  </svg>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p  id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="icon-row">
+    <span>🐠</span>
+    <span>🧜‍♀️</span>
+    <span>🐚</span>
+  </div>
+  <h1>Ocean Adventure 🧜‍♀️</h1>
+  <p>The reef has been scrambled! Flip the bubble tiles to find matching sea-creature pairs and restore Marina's coral reef.<br>🌊 Dive in and help Marina! 🌊</p>
+  <button class="btn btn-start" id="btnStart">Let's Dive! 🌊</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon-row">
+    <span>🧜‍♀️</span>
+    <span>🐠</span>
+  </div>
+  <h2 id="celebTitle">🌟 Splashtastic! 🌟</h2>
+  <p id="celebMsg">You restored Marina's coral reef!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Play Again! 🌊</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Ocean Adventure Memory (11–15)  🧜‍♀️                     ║
+// ║  Cross-representation memory matching — numerals, fish-dots,    ║
+// ║  word cards. Voice A (en-US-AnaNeural) · Ocean theme            ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+const NUMBER_WORDS = {11:'eleven',12:'twelve',13:'thirteen',14:'fourteen',15:'fifteen'};
+
+// ── Voice A clip pools ──
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first for iOS)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Dreamy ocean pentatonic — major key, gentle flowing feel
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.6 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.11, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.8);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.0);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1400);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='flip')     { p(600,t,0.06,0.15); p(800,t+0.03,0.08,0.12); }
+    else if (type==='reveal')   { p(440,t,0.08,0.2); p(660,t+0.06,0.1,0.18); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='pop')      { p(880,t,0.05,0.2); p(1100,t+0.04,0.06,0.15); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a)    { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click',      e => { if(t)return; fn(e); });
+}
+
+// Fish-dots patterns — 🐠 repeated to show quantity, always with small numeral
+function makeFishDots(n) {
+  if (n === 11) return '🐠🐠🐠🐠\n🐠🐠🐠🐠\n🐠🐠🐠';
+  if (n === 12) return '🐠🐠🐠🐠\n🐠🐠🐠🐠\n🐠🐠🐠🐠';
+  if (n === 13) return '🐠🐠🐠🐠🐠\n🐠🐠🐠🐠\n🐠🐠🐠🐠';
+  if (n === 14) return '🐠🐠🐠🐠🐠\n🐠🐠🐠🐠🐠\n🐠🐠🐠🐠';
+  if (n === 15) return '🐠🐠🐠🐠🐠\n🐠🐠🐠🐠🐠\n🐠🐠🐠🐠🐠';
+  return '🐠'.repeat(n);
+}
+
+const BUBBLE_CORRECT = ['A match! 🐠','Splash! 🌊','That\'s it! ✨','Well done! 🐚','Marvellous! 💫','Bubbles! 🫧'];
+const BUBBLE_WRONG   = ['Not a match!','Try again! 🫧','Almost! 🐚','Keep going! 🌊','Remember! 💫'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['🐠','🐟','🐡','🫧','✨','💫','🌟','🐚','🧜‍♀️','🌊','⭐','🦀', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  for (let i = 0; i < 7; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['🐠','✨','💫','🫧','🌟','🐚']);
+    s.style.left = (cx + (Math.random()-0.5)*120) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*120) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — bubbles rising + fish swimming across
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  const bubbles = ['🫧','✨','💫','⭐','🐚'];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-sparkle';
+    el.textContent = pick(bubbles);
+    el.style.left              = (Math.random()*100) + 'vw';
+    el.style.animationDelay    = (-Math.random()*22) + 's';
+    el.style.animationDuration = (11 + Math.random()*14) + 's';
+    document.body.appendChild(el);
+  }
+  // Fish swim across
+  const fish = ['🐠','🐟','🐡','🦈','🐙'];
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-fish';
+    el.textContent = pick(fish);
+    el.style.top               = (10 + Math.random()*80) + 'vh';
+    el.style.animationDelay    = (-Math.random()*25) + 's';
+    el.style.animationDuration = (16 + Math.random()*14) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORAL REEF — coral formations light up + fish appear as pairs matched
+// ══════════════════════════════════════════════════════════════════
+let coralIdx = 0;
+function resetReef() {
+  coralIdx = 0;
+  for (let i = 0; i < 6; i++) {
+    const c = $('cp' + i);
+    const f = $('rf' + i);
+    if (c) { c.classList.remove('lit-1','lit-2','lit-3','lit-4','lit-5','lit-6'); }
+    if (f) { f.classList.remove('show'); }
+  }
+  const svg = document.querySelector('.reef-svg');
+  if (svg) svg.classList.remove('reef-complete');
+}
+function lightCoral() {
+  if (coralIdx < 6) {
+    const c = $('cp' + coralIdx);
+    const f = $('rf' + coralIdx);
+    if (c) { c.classList.add('lit-' + (coralIdx + 1)); audio.tone('pop'); }
+    if (f) { f.classList.add('show'); }
+    coralIdx++;
+  }
+  // Check if all lit
+  if (coralIdx >= 6) {
+    const svg = document.querySelector('.reef-svg');
+    if (svg) svg.classList.add('reef-complete');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG — 4 rounds, progressive difficulty with cross-rep
+//
+// Card types:
+//   'numeral'  — big digit (e.g. "13")
+//   'fish'     — fish emoji dots (🐠 repeated) + small numeral
+//   'word'     — word (e.g. "thirteen") + small numeral
+// ══════════════════════════════════════════════════════════════════
+
+function buildRoundPairs(roundIdx) {
+  let pairs = [];
+  if (roundIdx === 0) {
+    // 3 pairs: numeral ↔ fish-dots for 11,12,13
+    [11,12,13].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'fish' });
+    });
+  } else if (roundIdx === 1) {
+    // 4 pairs: numeral ↔ fish-dots for 11,12,13,14
+    [11,12,13,14].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'fish' });
+    });
+  } else if (roundIdx === 2) {
+    // 5 pairs: numeral ↔ word for 11,12,13,14,15
+    [11,12,13,14,15].forEach(n => {
+      pairs.push({ num: n, typeA: 'numeral', typeB: 'word' });
+    });
+  } else {
+    // 6 pairs: mix of representations
+    pairs.push({ num: 11, typeA: 'numeral', typeB: 'fish' });
+    pairs.push({ num: 12, typeA: 'numeral', typeB: 'word' });
+    pairs.push({ num: 13, typeA: 'fish',    typeB: 'word' });
+    pairs.push({ num: 14, typeA: 'numeral', typeB: 'fish' });
+    pairs.push({ num: 15, typeA: 'numeral', typeB: 'word' });
+    pairs.push({ num: 11, typeA: 'fish',    typeB: 'word' }); // second 11 pair — different rep combo
+  }
+  return pairs;
+}
+
+const ROUND_META = [
+  { label: 'Round 1 — Dive In! 🌊',        sub: '3 pairs — peek first!',         cols: 3, peek: true  },
+  { label: 'Round 2 — Into the Deep! 🐠',  sub: '4 pairs — no peeking!',         cols: 4, peek: false },
+  { label: 'Round 3 — Sea Words! 🐚',      sub: '5 pairs — numbers meet words!', cols: 5, peek: false },
+  { label: 'Round 4 — The Great Reef! 🧜‍♀️', sub: '6 pairs — the final dive!',     cols: 4, peek: false },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 0, score = 0;
+let matches = 0, totalPairs = 0;
+let flippedCards = [], lockBoard = false;
+let hintTimer = null, hintVoiceTimer = null;
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg(pairs) {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.className = 'prog-bar'; bar.style.display = '';
+  pairs.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + i; d.textContent = p.num;
+    bar.appendChild(d);
+  });
+}
+function markProg(idx) {
+  const d = $('prog' + idx); if (d) d.classList.add('done');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS — wiggle after 4s, voice after 7s
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive || lockBoard) return;
+  hintTimer = setTimeout(() => {
+    const cards = [...document.querySelectorAll('.card:not(.matched):not(.flipped)')];
+    if (cards.length > 0) {
+      const target = cards[0];
+      target.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => target.classList.remove('hint-wiggle', 'hint-glow'), 1800);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD CONTENT
+// ══════════════════════════════════════════════════════════════════
+function buildCardFront(num, type) {
+  const front = document.createElement('div');
+  front.className = 'card-front';
+
+  if (type === 'numeral') {
+    const numEl = document.createElement('div');
+    numEl.className = 'card-numeral';
+    numEl.textContent = num;
+    front.appendChild(numEl);
+  } else if (type === 'fish') {
+    const fishEl = document.createElement('div');
+    fishEl.className = 'card-fish';
+    fishEl.textContent = makeFishDots(num);
+    fishEl.style.whiteSpace = 'pre-line';
+    front.appendChild(fishEl);
+    // Small numeral always visible
+    const smallNum = document.createElement('div');
+    smallNum.className = 'card-small-num';
+    smallNum.textContent = num;
+    front.appendChild(smallNum);
+  } else if (type === 'word') {
+    const wordEl = document.createElement('div');
+    wordEl.className = 'card-word';
+    wordEl.textContent = NUMBER_WORDS[num] || num;
+    front.appendChild(wordEl);
+    // Small numeral always visible
+    const smallNum = document.createElement('div');
+    smallNum.className = 'card-small-num';
+    smallNum.textContent = num;
+    front.appendChild(smallNum);
+  }
+
+  return front;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD CARD GRID
+// ══════════════════════════════════════════════════════════════════
+let currentPairs = [];
+
+function buildGrid() {
+  const grid = $('cardGrid');
+  grid.innerHTML = '';
+  const pairs = buildRoundPairs(round);
+  currentPairs = pairs;
+  totalPairs = pairs.length;
+  matches = 0;
+
+  // Create two cards per pair
+  let cards = [];
+  pairs.forEach((p, pairIdx) => {
+    cards.push({ num: p.num, type: p.typeA, pairIdx });
+    cards.push({ num: p.num, type: p.typeB, pairIdx });
+  });
+  shuffle(cards);
+
+  const meta = ROUND_META[round];
+  grid.className = 'card-grid cols-' + meta.cols;
+
+  cards.forEach((cardData, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.num = cardData.num;
+    card.dataset.pairIdx = cardData.pairIdx;
+    card.dataset.idx = idx;
+    card.dataset.type = cardData.type;
+
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+
+    // Back (face down — shimmering bubble with seashell)
+    const back = document.createElement('div');
+    back.className = 'card-back';
+    back.innerHTML = '<div class="card-back-icon">🐚</div><div class="card-back-sparkle">🫧🫧🫧</div>';
+
+    // Front (face up — number content)
+    const front = buildCardFront(cardData.num, cardData.type);
+
+    inner.appendChild(back);
+    inner.appendChild(front);
+    card.appendChild(inner);
+
+    onTap(card, () => flipCard(card));
+    grid.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FLIP CARD
+// ══════════════════════════════════════════════════════════════════
+function flipCard(card) {
+  if (!gameActive || lockBoard) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+  if (flippedCards.length >= 2) return;
+
+  resetHints();
+  card.classList.add('flipped');
+  audio.tone('flip');
+  flippedCards.push(card);
+
+  // Speak the number on this card (once per flip)
+  const num = parseInt(card.dataset.num);
+  audio.speakNumber(num);
+
+  if (flippedCards.length === 2) {
+    lockBoard = true;
+    checkMatch();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHECK MATCH — cross-representation: same pairIdx = match
+// ══════════════════════════════════════════════════════════════════
+async function checkMatch() {
+  const [a, b] = flippedCards;
+  const pairA = a.dataset.pairIdx;
+  const pairB = b.dataset.pairIdx;
+
+  await delay(600);
+
+  if (pairA === pairB && a.dataset.idx !== b.dataset.idx) {
+    // MATCH!
+    a.classList.add('matched');
+    b.classList.add('matched');
+
+    // Fish swim away animation
+    a.classList.add('match-anim');
+    b.classList.add('match-anim');
+    setTimeout(() => { a.classList.remove('match-anim'); b.classList.remove('match-anim'); }, 1300);
+
+    matches++;
+    score++;
+    $('hudScore').textContent = score;
+
+    audio.tone('correct');
+    jumpChar();
+    starBurst(a);
+    starBurst(b);
+
+    // Find the pair index in currentPairs to mark progress
+    const progIdx = parseInt(pairA);
+    markProg(progIdx);
+
+    // Light a coral formation on the reef
+    lightCoral();
+
+    showCharBubble(pick(BUBBLE_CORRECT), 1600);
+    audio.play('correct'); // don't block — child can flip next card
+
+    flippedCards = [];
+    lockBoard = false;
+
+    // Check round complete
+    if (matches >= totalPairs) {
+      await delay(650);
+      advanceRound();
+    } else {
+      resetHints();
+    }
+
+  } else {
+    // NO MATCH
+    audio.tone('wrong');
+    showCharBubble(pick(BUBBLE_WRONG), 1500);
+
+    // Shake animation
+    a.style.animation = 'wrongShake 0.4s ease-in-out';
+    b.style.animation = 'wrongShake 0.4s ease-in-out';
+
+    audio.play('wrong'); // don't block
+    await delay(650);
+
+    a.style.animation = '';
+    b.style.animation = '';
+    a.classList.remove('flipped');
+    b.classList.remove('flipped');
+    flippedCards = [];
+    lockBoard = false;
+    resetHints();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ADVANCE ROUND
+// ══════════════════════════════════════════════════════════════════
+async function advanceRound() {
+  stopHints();
+  lockBoard = true;
+  round++;
+
+  if (round >= ROUND_META.length) {
+    await celebrateFinish();
+    return;
+  }
+
+  // Round complete celebration
+  audio.tone('roundDone');
+  confetti(30, ['🐠','🫧','✨']);
+  showCharBubble('Reef restored! 🎉', 2500);
+
+  $('roundTitle').textContent = '🐠 Round Complete! 🐠';
+  $('roundSub').textContent   = '';
+  $('roundBanner').classList.add('show');
+  audio.play('round-complete'); // don't await
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  // Reset reef for next round
+  resetReef();
+
+  // Next round banner (snappy)
+  const cfg = ROUND_META[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1100);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  $('hudRound').textContent = `${round + 1}/4`;
+
+  // Build new grid
+  buildGrid();
+  const pairs = currentPairs;
+  buildProg(pairs);
+  flippedCards = [];
+  lockBoard = false;
+  gameActive = true;
+
+  // Peek in Round 1 only (already past R1 here, so no peek)
+  if (cfg.peek) {
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(300);
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FINAL CELEBRATION
+// ══════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  stopHints();
+  audio.stopMusic();
+  $('hud').style.display       = 'none';
+  $('progBar').style.display    = 'none';
+  $('charArea').style.display   = 'none';
+  $('coralReef').style.display  = 'none';
+  $('cardGrid').innerHTML       = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.tone('celeb');
+  await delay(400);
+  confetti(60, ['🐠','🐟','🫧','🐚','🧜‍♀️','🌟']);
+
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 4)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebTitle').textContent = '🌟 Splashtastic! 🌟';
+  $('celebMsg').textContent   = `You restored the whole reef! Marina is so proud!`;
+  showScreen('scrCeleb');
+
+  await audio.play('game-complete');
+  await delay(280);
+  await audio.play('game-complete');
+
+  setTimeout(() => confetti(35, ['🐠','🫧','🌟']), 2000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START GAME
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  // Reset
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0; score = 0; matches = 0;
+  flippedCards = []; lockBoard = false;
+  stopHints();
+  resetReef();
+
+  $('hudScore').textContent    = '0';
+  $('hudRound').textContent    = '1/4';
+  $('hudPairs').textContent    = 'Find the matching pairs!';
+  $('hud').style.display       = '';
+  $('charArea').style.display  = '';
+  $('coralReef').style.display = '';
+  $('roundBanner').classList.remove('show');
+
+  audio.startMusic();
+
+  // Round 1 opening banner
+  const cfg = ROUND_META[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await audio.play('greetings');
+  await delay(2000);
+  $('roundBanner').classList.remove('show');
+  await delay(280);
+
+  buildGrid();
+  buildProg(currentPairs);
+  gameActive = true;
+
+  // Round 1 peek — show all cards briefly for 1.5s
+  if (cfg.peek) {
+    lockBoard = true;
+    const allCards = document.querySelectorAll('.card');
+    allCards.forEach(c => c.classList.add('flipped'));
+    await delay(1500);
+    allCards.forEach(c => c.classList.remove('flipped'));
+    await delay(400);
+    lockBoard = false;
+  }
+
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  audio.tone('whoosh');
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+</script>
+</body>
+</html>

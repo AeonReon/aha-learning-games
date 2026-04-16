@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Match Captain Nova's Space Cards</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  --tap: 80px;
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  --space-navy: #050a2e; --cosmic-purple: #4a0e7c; --neon-cyan: #00f5d4;
+  --star-gold: #ffd700; --rocket-red: #ff5e5b;
+  --glow-cyan: rgba(0,245,212,0.6); --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
+  width: 100vw;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: radial-gradient(ellipse at top, #0a1550 0%, #050a2e 40%, #1a0540 70%, #4a0e7c 100%);
+}
+
+/* ── Twinkling stars ── */
+.bg-star {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  width: 3px; height: 3px; border-radius: 50%;
+  background: #fff;
+  animation: twinkle linear infinite;
+}
+.bg-star.big { width: 4px; height: 4px; box-shadow: 0 0 6px #fff; }
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; transform: scale(0.6); }
+  50%     { opacity: 1;    transform: scale(1.2); }
+}
+
+/* ── Drifting planets ── */
+.bg-planet {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(18px, 3vw, 28px);
+  opacity: 0.45;
+  animation: planetDrift linear infinite;
+}
+@keyframes planetDrift {
+  0%   { transform: translateX(-10vw) translateY(0) rotate(0); opacity: 0; }
+  10%  { opacity: 0.45; }
+  90%  { opacity: 0.45; }
+  100% { transform: translateX(110vw) translateY(-40px) rotate(360deg); opacity: 0; }
+}
+
+/* ── Shooting star ── */
+.shooting-star {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  width: 80px; height: 2px;
+  background: linear-gradient(90deg, transparent, #fff, var(--neon-cyan));
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--neon-cyan);
+  animation: shoot 1.5s ease-out forwards;
+}
+@keyframes shoot {
+  0%   { transform: translate(-100px, 20vh) rotate(20deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(110vw, 80vh) rotate(20deg); opacity: 0; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  transition: opacity 0.45s;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  z-index: var(--z-screen);
+}
+.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+/* ── Title screen ── */
+.screen-title .rocket-icon {
+  font-size: clamp(60px, 15vw, 100px);
+  animation: rocketBob 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px var(--glow-cyan));
+}
+@keyframes rocketBob { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-14px) rotate(5deg)} }
+.screen-title .crew-row {
+  display: flex; gap: 14px; justify-content: center; align-items: center; margin-bottom: 8px;
+}
+.screen-title .crew-row span { font-size: clamp(44px, 11vw, 70px); }
+.screen-title h1 {
+  font-size: clamp(24px, 6vw, 44px);
+  color: var(--neon-cyan);
+  text-shadow: 0 0 30px var(--glow-cyan), 2px 2px 0 rgba(0,0,0,0.5);
+  margin: 6px 0 6px;
+}
+.screen-title p {
+  font-size: clamp(13px, 3.2vw, 18px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+
+/* ── Buttons ── */
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer; box-shadow: 0 5px 22px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, #00f5d4, #0080ff);
+  margin-top: 18px;
+  animation: glowBtn 2.4s ease-in-out infinite;
+}
+.btn-again { background: linear-gradient(135deg, #00f5d4, #0080ff); margin-top: 16px; }
+@keyframes glowBtn { 0%,100%{filter:brightness(1); box-shadow:0 0 20px rgba(0,245,212,0.4)} 50%{filter:brightness(1.2); box-shadow:0 0 40px rgba(0,245,212,0.7)} }
+
+/* ── HUD ── */
+.hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px;
+  background: rgba(5,10,46,0.92); backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(0,245,212,0.2);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label { font-size: clamp(10px,2.2vw,13px); color: rgba(255,255,255,0.45); font-weight: bold; letter-spacing: 0.05em; }
+.hud-val   { font-size: clamp(16px,3.5vw,24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--neon-cyan); }
+.hud-score .hud-val { color: var(--star-gold); }
+.hud-target-text { color: var(--star-gold); font-size: clamp(13px,2.8vw,18px); font-weight: 900; }
+
+/* ── Captain Nova character ── */
+.char-area {
+  position: fixed; bottom: 58px; left: 10px;
+  z-index: var(--z-char); pointer-events: none;
+}
+.char-emoji { font-size: clamp(40px,9vw,60px); filter: drop-shadow(0 0 8px var(--glow-cyan)); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96); color: var(--cosmic-purple);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px,2.6vw,16px); font-weight: bold;
+  white-space: nowrap; box-shadow: 0 3px 14px rgba(0,245,212,0.4);
+  opacity: 0; transition: opacity 0.28s; pointer-events: none;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* ── Game area ── */
+.game-area {
+  position: fixed;
+  top: 60px; left: 0; right: 0; bottom: 56px;
+  z-index: var(--z-game);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: clamp(8px,2vw,16px);
+  gap: clamp(10px,2.5vw,20px);
+}
+
+/* ── Target card ── */
+.target-area {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.target-label {
+  font-size: clamp(12px,2.8vw,16px); color: rgba(255,255,255,0.65);
+  font-weight: bold; letter-spacing: 0.05em;
+}
+.target-card {
+  background: linear-gradient(135deg, #1a0540, #4a0e7c);
+  border: 3px solid var(--neon-cyan);
+  border-radius: 18px;
+  padding: clamp(12px,3vw,20px) clamp(16px,4vw,28px);
+  min-width: clamp(120px,30vw,200px);
+  min-height: clamp(60px,12vw,90px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+  box-shadow: 0 0 25px rgba(0,245,212,0.4), 0 4px 15px rgba(0,0,0,0.5);
+  animation: targetGlow 2s ease-in-out infinite;
+}
+@keyframes targetGlow { 0%,100%{box-shadow:0 0 20px rgba(0,245,212,0.4), 0 4px 15px rgba(0,0,0,0.5)} 50%{box-shadow:0 0 40px rgba(0,245,212,0.7), 0 4px 15px rgba(0,0,0,0.5)} }
+.target-numeral {
+  font-size: clamp(32px,8vw,52px); font-weight: 900; color: var(--star-gold);
+  text-shadow: 0 0 15px rgba(255,215,0,0.6);
+}
+.target-emoji {
+  font-size: clamp(20px,5vw,34px); line-height: 1.2;
+}
+.target-word {
+  font-size: clamp(14px,3.2vw,20px); color: var(--neon-cyan); font-weight: bold;
+  text-shadow: 0 0 8px rgba(0,245,212,0.5);
+}
+.target-small-num {
+  font-size: clamp(14px,3vw,18px); color: var(--star-gold); font-weight: 900;
+  opacity: 0.85;
+}
+
+/* ── Option cards ── */
+.options-area {
+  display: flex; flex-wrap: wrap;
+  justify-content: center; align-items: center;
+  gap: clamp(8px,2vw,14px);
+}
+.option-card {
+  background: linear-gradient(135deg, #0a1550, #1a3a8a);
+  border: 3px solid rgba(0,245,212,0.25);
+  border-radius: 16px;
+  padding: clamp(10px,2.5vw,18px) clamp(14px,3.5vw,24px);
+  min-width: clamp(80px,22vw,130px);
+  min-height: var(--tap);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 0 20px rgba(0,245,212,0.08);
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.option-card:active { transform: scale(0.94); }
+.option-card:hover { border-color: rgba(0,245,212,0.6); }
+.option-numeral {
+  font-size: clamp(28px,7vw,44px); font-weight: 900; color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5), 0 0 10px rgba(0,245,212,0.3);
+}
+.option-emoji {
+  font-size: clamp(16px,4vw,26px); line-height: 1.2;
+}
+.option-word {
+  font-size: clamp(12px,2.8vw,17px); color: var(--neon-cyan); font-weight: bold;
+}
+
+/* ── Card correct/wrong states ── */
+.option-card.correct-flash {
+  border-color: #4caf50 !important;
+  background: linear-gradient(135deg, #1b5e20, #2e7d32) !important;
+  box-shadow: 0 0 25px rgba(76,175,80,0.7) !important;
+  animation: correctPulse 0.5s ease-out;
+}
+.option-card.wrong-shake {
+  animation: shakeCard 0.5s ease-out;
+  border-color: var(--rocket-red) !important;
+  box-shadow: 0 0 20px rgba(255,94,91,0.6) !important;
+}
+@keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+@keyframes shakeCard { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+
+/* ── Solar System Achievement ── */
+.solar-system {
+  position: fixed; top: 60px; right: 8px;
+  z-index: var(--z-ui);
+  width: clamp(70px,15vw,100px);
+  height: clamp(70px,15vw,100px);
+  pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.sun-core {
+  position: absolute;
+  font-size: clamp(20px,4.5vw,28px);
+  z-index: 3;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.7));
+}
+.planet-orbit {
+  position: absolute;
+  border: 1px dashed rgba(255,255,255,0.12);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.orbit-1 { width: 45%; height: 45%; }
+.orbit-2 { width: 65%; height: 65%; }
+.orbit-3 { width: 85%; height: 85%; }
+.orbit-4 { width: 100%; height: 100%; }
+.orbit-5 { width: 115%; height: 115%; }
+
+.planet-slot {
+  position: absolute;
+  font-size: clamp(10px,2.2vw,14px);
+  opacity: 0.22;
+  transition: all 0.5s;
+  filter: grayscale(100%);
+}
+.planet-slot.lit {
+  opacity: 1;
+  filter: grayscale(0%) drop-shadow(0 0 6px var(--glow-cyan));
+  animation: planetPop 0.6s ease-out;
+}
+@keyframes planetPop { 0%{transform:scale(0) rotate(180deg);opacity:0} 60%{transform:scale(1.5) rotate(-10deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+
+.solar-system.glow .sun-core {
+  animation: sunGlow 1s ease-in-out 3;
+}
+@keyframes sunGlow { 0%,100%{filter:drop-shadow(0 0 5px rgba(255,215,0,0.3))} 50%{filter:drop-shadow(0 0 25px rgba(255,215,0,1))} }
+
+.solar-system.grand-orbit .planet-slot.lit {
+  animation: grandOrbit 2s linear infinite;
+}
+@keyframes grandOrbit {
+  0%   { transform: rotate(0deg) translateX(20px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+}
+
+/* ── Progress bar ── */
+.prog-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px,1.2vw,8px); flex-wrap: wrap;
+  padding: 5px 10px 8px;
+  background: rgba(5,10,46,0.92); backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px,5.5vw,38px);
+  height: clamp(28px,5.5vw,38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(11px,2.2vw,15px); font-weight: 900;
+  color: rgba(255,255,255,0.3);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--neon-cyan), #0080ff);
+  border-color: var(--star-gold); color: #fff;
+  box-shadow: 0 0 10px var(--glow-cyan);
+  animation: bloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes bloom { 0%{transform:scale(0.4);opacity:0.5} 70%{transform:scale(1.25)} 100%{transform:scale(1.15)} }
+
+/* ── Round banner ── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: var(--z-overlay); text-align: center;
+  background: rgba(5,10,46,0.96); backdrop-filter: blur(12px);
+  border: 2px solid rgba(0,245,212,0.35); border-radius: 26px;
+  padding: 22px 40px; min-width: 280px;
+  opacity: 0; pointer-events: none; transition: opacity 0.38s;
+  box-shadow: 0 0 40px rgba(0,245,212,0.2);
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px,5vw,34px); font-weight: 900;
+  color: var(--neon-cyan); text-shadow: 1px 1px 0 rgba(0,0,0,0.5), 0 0 15px var(--glow-cyan);
+}
+.round-banner p {
+  font-size: clamp(12px,2.8vw,17px);
+  color: rgba(255,255,255,0.7); margin-top: 5px;
+}
+
+/* ── Celebration screen ── */
+.screen-celeb {
+  background: rgba(5,10,46,0.94); backdrop-filter: blur(12px);
+  z-index: var(--z-celeb);
+}
+.screen-celeb h2 {
+  font-size: clamp(26px,6.5vw,48px); color: var(--star-gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.6), 0 0 20px rgba(255,215,0,0.5);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p { font-size: clamp(14px,3.5vw,22px); color: rgba(255,255,255,0.95); margin: 6px 0; }
+.celeb-stars   { font-size: clamp(28px,7vw,50px); margin: 10px 0; letter-spacing: 5px; }
+.celeb-nova    { font-size: clamp(60px,15vw,100px); animation: dance 1s ease-in-out infinite; margin-bottom: 10px; filter: drop-shadow(0 0 15px var(--glow-cyan)); }
+.celeb-rocket  { font-size: clamp(50px,12vw,80px); animation: rocketBob 2s ease-in-out infinite; margin-bottom: 10px; }
+
+/* ── Hint styles ── */
+.hint-wiggle { animation: wiggle 0.5s ease-in-out 3 !important; }
+.hint-glow   { box-shadow: 0 0 25px rgba(255,215,0,0.9), 0 0 50px rgba(255,215,0,0.5) !important; }
+
+/* ── Particles ── */
+.confetti  { position:fixed; z-index:calc(var(--z-celeb)+5); pointer-events:none; font-size:22px; animation:cfall linear forwards; }
+.starburst { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+2); font-size:26px; animation:starpop 0.7s ease-out forwards; }
+.sparkle   { position:fixed; pointer-events:none; z-index:calc(var(--z-celeb)+3); font-size:16px; animation:starpop 1s ease-out forwards; }
+
+/* ── Keyframes ── */
+@keyframes bounce      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes dance       { 0%,100%{transform:translateY(0) rotate(0) scale(1)} 15%{transform:translateY(-18px) rotate(-8deg) scale(1.08)} 30%{transform:translateY(0) rotate(8deg)} 45%{transform:translateY(-12px) rotate(-5deg) scale(1.05)} 60%{transform:translateY(0) rotate(5deg)} 75%{transform:translateY(-8px) rotate(-3deg) scale(1.08)} }
+@keyframes charJump    { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.08)} 70%{transform:translateY(-8px) scale(1.03)} }
+@keyframes wiggle      { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg) scale(1.05)} 75%{transform:rotate(6deg) scale(1.05)} }
+@keyframes cfall       { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0.4} }
+@keyframes starpop     { 0%{transform:scale(0) rotate(0);opacity:1} 60%{transform:scale(1.4) rotate(200deg);opacity:1} 100%{transform:scale(0) rotate(360deg);opacity:0} }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <span class="hud-target-text" id="hudTarget">Match the space card!</span>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Solar System Achievement -->
+<div class="solar-system" id="solarSystem" style="display:none">
+  <div class="sun-core">☀️</div>
+  <div class="planet-orbit orbit-1"><div class="planet-slot" id="planetSlot0" style="transform: translateX(-22px)">🪐</div></div>
+  <div class="planet-orbit orbit-2"><div class="planet-slot" id="planetSlot1" style="transform: translateX(30px)">🌍</div></div>
+  <div class="planet-orbit orbit-3"><div class="planet-slot" id="planetSlot2" style="transform: translateX(-36px)">🔴</div></div>
+  <div class="planet-orbit orbit-4"><div class="planet-slot" id="planetSlot3" style="transform: translateX(42px)">🟢</div></div>
+  <div class="planet-orbit orbit-5"><div class="planet-slot" id="planetSlot4" style="transform: translateX(-48px)">🔵</div></div>
+</div>
+
+<!-- Game Area -->
+<div class="game-area" id="gameArea" style="display:none">
+  <div class="target-area" id="targetArea">
+    <div class="target-label">MATCH THIS CARD</div>
+    <div class="target-card" id="targetCard"></div>
+  </div>
+  <div class="options-area" id="optionsArea"></div>
+</div>
+
+<!-- Captain Nova character -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🧑‍🚀</div>
+</div>
+
+<!-- Progress bar -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="crew-row">
+    <span>🌙</span>
+    <span>🧑‍🚀</span>
+    <span>👽</span>
+  </div>
+  <div class="rocket-icon">🚀</div>
+  <h1>Match Captain Nova's Space Cards</h1>
+  <p>Captain Nova needs your help matching the space numbers! Explore the cosmos from 16 to 20! ⭐</p>
+  <button class="btn btn-start" id="btnStart">Blast Off! 🚀</button>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-nova">🧑‍🚀</div>
+  <div class="celeb-rocket">🚀</div>
+  <h2 id="celebTitle">🌟 Stellar! 🌟</h2>
+  <p id="celebMsg">You explored the whole solar system!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-again" id="btnAgain">Launch Again! 🚀</button>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  Aha! — Match Captain Nova's Space Cards (16–20)                 ║
+// ║  Card matching — match target to correct option                  ║
+// ║  Voice A (en-US-AnaNeural) · Space Explorer theme               ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const AUDIO_BASE = '../../audio';
+
+const NUMBER_WORDS = {16:'sixteen', 17:'seventeen', 18:'eighteen', 19:'nineteen', 20:'twenty'};
+const NUMBERS = [16, 17, 18, 19, 20];
+
+const EMOJI_MAP = {16:'🚀', 17:'⭐', 18:'🪐', 19:'👽', 20:'🌙'};
+const SPACE_NAMES = {16:'rocket', 17:'star', 18:'planet', 19:'alien', 20:'moon'};
+
+// ── Voice A clip pools ──
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/i-knew-you-could-do-it.mp3',
+    'voice-a/correct/incredible.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/wow-look-at-you-go.mp3',
+    'voice-a/correct/yes-youre-so-clever.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    'voice-a/correct/youre-on-fire.mp3',
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/keep-trying-youre-so-close.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/oops-not-that-one.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/i-believe-in-you.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+    'voice-a/thinking/you-can-do-it-keep-looking.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/round-done-youre-doing-so-well.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/what-a-fantastic-player.mp3',
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-did-the-whole-thing.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// ══════════════════════════════════════════════════════════════════
+// AUDIO CLASS (AudioContext-first for iOS)
+// ══════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.06; this.sfxVol = 0.3; this.musicDucked = 0.018;
+    this.playing = false; this.voiceQueue = []; this.speaking = false;
+    this._lastPlayed = {};
+  }
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain(); master.gain.value = 1; master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVol; this.musicGain.connect(master);
+    this.sfxGain   = this.ctx.createGain(); this.sfxGain.gain.value   = this.sfxVol;   this.sfxGain.connect(master);
+  }
+  unlock() { this._init(); if (this.ctx.state === 'suspended') this.ctx.resume(); }
+  startMusic() {
+    this._init(); if (this.playing) return; this.playing = true;
+    // Spacey ambient — dreamy high notes with occasional low bass
+    const notes = [261.63, 329.63, 392, 440, 523.25, 659.25, 783.99, 880];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.25);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3);
+      o.connect(g); g.connect(this.musicGain); o.start(); o.stop(this.ctx.currentTime + 3.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 1100 + Math.random() * 1600);
+    }; go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck()   { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol,    this.ctx.currentTime + 0.3); }
+  tone(type) {
+    this._init(); const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(v, s+0.02); g.gain.linearRampToValueAtTime(0, s+d);
+      o.connect(g); g.connect(this.sfxGain); o.start(s); o.stop(s+d+0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if      (type==='correct')  { p(523.25,t,0.15,0.35); p(659.25,t+0.12,0.18,0.4); p(783.99,t+0.24,0.22,0.45); }
+    else if (type==='wrong')    { p(330,t,0.1,0.15); p(290,t+0.08,0.12,0.12); }
+    else if (type==='celeb')    { p(523.25,t,0.15,0.35); p(659.25,t+0.15,0.15,0.4); p(783.99,t+0.3,0.18,0.45); p(1046.5,t+0.48,0.35,0.5); }
+    else if (type==='roundDone'){ p(392,t,0.12,0.3); p(523.25,t+0.12,0.12,0.35); p(659.25,t+0.24,0.15,0.4); p(783.99,t+0.38,0.2,0.45); }
+    else if (type==='reveal')   { p(440,t,0.1,0.25); p(554.37,t+0.08,0.12,0.3); p(659.25,t+0.16,0.15,0.35); }
+    else if (type==='hint')     { p(440,t,0.15,0.15); p(550,t+0.15,0.2,0.12); }
+    else if (type==='whoosh')   {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(800,t+0.15);
+      g.gain.setValueAtTime(0.15,t); g.gain.linearRampToValueAtTime(0,t+0.2);
+      o.connect(g); g.connect(this.sfxGain); o.start(t); o.stop(t+0.25);
+      o.onended=()=>{o.disconnect();g.disconnect()};
+    }
+    else if (type==='flip')     { p(600,t,0.06,0.15); p(800,t+0.03,0.08,0.12); }
+    else if (type==='pop')      { p(800,t,0.05,0.2); p(1200,t+0.03,0.06,0.15); }
+  }
+  speak(file) { return new Promise(resolve => { this.voiceQueue.push({file, resolve}); this._next(); }); }
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const {file, resolve} = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch(e) {}
+    this.speaking = false; this._unduck(); resolve();
+    setTimeout(() => this._next(), 80);
+  }
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve; a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+  speakNumber(n)   { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakPhrase(name){ return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+  clearQueue()     { this.voiceQueue.forEach(q => q.resolve()); this.voiceQueue = []; this.speaking = false; this._unduck(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; }
+function pick(a) { return a[Math.floor(Math.random()*a.length)]; }
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => { e.preventDefault(); if(t)return; t=true; fn(e); setTimeout(()=>t=false,300); }, {passive:false});
+  el.addEventListener('click', e => { if(t)return; fn(e); });
+}
+
+// Make emoji pattern string for a number
+function makeEmojiPattern(n) {
+  const e = EMOJI_MAP[n];
+  return e.repeat(n);
+}
+
+const BUBBLE_CORRECT = ['Stellar! 🌟','Cosmic! 🚀','Out of this world! 👽','Perfect! ⭐','Galactic! 🪐','Got it! 🌙'];
+const BUBBLE_WRONG   = ['Not that one!','Try again! 🚀','Almost! 👽','Keep looking!','Hmm... 🪐'];
+
+// ══════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════
+function confetti(count = 40, extra = []) {
+  const all = ['🚀','⭐','🪐','👽','🌙','🌟','✨','☄️','🛸','💫', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti'; el.textContent = pick(all);
+    el.style.left = (Math.random()*100) + 'vw';
+    el.style.top  = '-30px';
+    el.style.fontSize = (16 + Math.random()*14) + 'px';
+    el.style.animationDelay    = (Math.random()*1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random()*2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  const bits = ['✨','⭐','🌟','💫','☄️','🚀'];
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(bits);
+    s.style.left = (cx + (Math.random()-0.5)*140) + 'px';
+    s.style.top  = (cy + (Math.random()-0.5)*140) + 'px';
+    s.style.animationDelay = (Math.random()*0.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 900);
+  }
+}
+
+function spaceSparkles(targetEl) {
+  const solarEl = $('solarSystem');
+  if (!solarEl) return;
+  const sr = solarEl.getBoundingClientRect();
+  const tr = targetEl.getBoundingClientRect();
+  const sx = tr.left + tr.width/2, sy = tr.top + tr.height/2;
+  const ex = sr.left + sr.width/2, ey = sr.top + sr.height/2;
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = pick(['✨','⭐','💫']);
+    s.style.left = sx + 'px'; s.style.top = sy + 'px';
+    s.style.transition = `all ${0.5 + i*0.08}s ease-in`;
+    document.body.appendChild(s);
+    requestAnimationFrame(() => {
+      s.style.left = (ex + (Math.random()-0.5)*30) + 'px';
+      s.style.top  = (ey + (Math.random()-0.5)*30) + 'px';
+      s.style.opacity = '0';
+    });
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+function showCharBubble(text, dur = 2200) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.style.animation = '';
+  void el.offsetWidth;
+  el.style.animation = 'charJump 0.65s ease-out';
+  setTimeout(() => { el.style.animation = ''; }, 700);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCENERY — twinkling stars, drifting planets, shooting stars
+// ══════════════════════════════════════════════════════════════════
+function buildScenery() {
+  // Twinkling stars
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'bg-star' + (Math.random() > 0.7 ? ' big' : '');
+    s.style.left = (Math.random()*100) + 'vw';
+    s.style.top  = (Math.random()*100) + 'vh';
+    s.style.animationDelay    = (Math.random()*3) + 's';
+    s.style.animationDuration = (1.5 + Math.random()*3) + 's';
+    document.body.appendChild(s);
+  }
+  // Drifting planets
+  const planets = ['🪐','🌍','🌕','🌑','☄️','🛸'];
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'bg-planet';
+    p.textContent = pick(planets);
+    p.style.top = (Math.random()*90) + 'vh';
+    p.style.animationDelay    = (-Math.random()*30) + 's';
+    p.style.animationDuration = (25 + Math.random()*25) + 's';
+    document.body.appendChild(p);
+  }
+  // Occasional shooting star
+  setInterval(() => {
+    if (Math.random() > 0.6) {
+      const s = document.createElement('div');
+      s.className = 'shooting-star';
+      s.style.top = (Math.random()*40) + 'vh';
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 1600);
+    }
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ROUND CONFIG — 4 rounds, progressive difficulty
+// Each round: match 5 items (numbers 16,17,18,19,20)
+//
+// Round 1: 2 choices. Target = numeral + emoji + word. Options = numeral + emoji + word.
+// Round 2: 3 choices. Target = numeral + emoji (no word). Options = numeral + word (no emoji).
+// Round 3: 4 choices. Target = emoji pattern + small numeral. Options = numeral + word.
+// Round 4: 4 choices. Target = word + small numeral. Options = numeral only.
+// ══════════════════════════════════════════════════════════════════
+const ROUNDS = [
+  { choices: 2, label: 'Round 1 — Launch Pad 🚀',    sub: 'Match the space card!' },
+  { choices: 3, label: 'Round 2 — Star Cruise ⭐',    sub: 'A bit harder now!' },
+  { choices: 4, label: 'Round 3 — Count the Planets! 🪐', sub: 'Count carefully!' },
+  { choices: 4, label: 'Round 4 — Alien Words! 👽',   sub: 'The hardest mission!' },
+];
+
+// ══════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+let gameActive = false, round = 0, score = 0, totalErrors = 0;
+let currentItemIndex = 0;
+let roundNumbers = []; // shuffled array of 5 numbers for this round
+let currentTarget = 0;
+let lockBoard = false;
+let hintTimer = null, hintVoiceTimer = null;
+let totalLit = 0; // total planets lit across rounds (for the current round visual)
+
+// ══════════════════════════════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SOLAR SYSTEM (5 planet slots — light up per correct in current round)
+// ══════════════════════════════════════════════════════════════════
+function resetSolarSystem() {
+  for (let i = 0; i < 5; i++) {
+    const p = $('planetSlot' + i);
+    if (p) p.classList.remove('lit');
+  }
+  totalLit = 0;
+}
+
+function litPlanet(cardEl) {
+  const p = $('planetSlot' + totalLit);
+  if (p) {
+    p.classList.add('lit');
+    spaceSparkles(cardEl);
+  }
+  totalLit++;
+}
+
+function glowSolarSystem() {
+  const sys = $('solarSystem');
+  sys.classList.add('glow');
+  setTimeout(() => sys.classList.remove('glow'), 3200);
+}
+
+function grandOrbitSolarSystem() {
+  const sys = $('solarSystem');
+  sys.classList.add('grand-orbit');
+  setTimeout(() => sys.classList.remove('grand-orbit'), 5000);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ══════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = ''; bar.style.display = '';
+  NUMBERS.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot'; d.id = 'prog' + n; d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+
+function markProg(n) {
+  const d = $('prog' + n); if (d) d.classList.add('done');
+}
+
+function resetProg() {
+  NUMBERS.forEach(n => {
+    const d = $('prog' + n); if (d) d.classList.remove('done');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HINTS — wiggle after 4s, voice after 7s
+// ══════════════════════════════════════════════════════════════════
+function resetHints() {
+  clearTimeout(hintTimer); clearTimeout(hintVoiceTimer);
+  if (!gameActive || lockBoard) return;
+  hintTimer = setTimeout(() => {
+    const cards = [...document.querySelectorAll('.option-card')];
+    const correct = cards.find(c => parseInt(c.dataset.num) === currentTarget);
+    if (correct) {
+      correct.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => correct.classList.remove('hint-wiggle', 'hint-glow'), 1800);
+    }
+  }, 4000);
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive) audio.play('thinking');
+  }, 7000);
+}
+
+function stopHints() { clearTimeout(hintTimer); clearTimeout(hintVoiceTimer); }
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD TARGET CARD — varies by round
+// ══════════════════════════════════════════════════════════════════
+function buildTargetCard(n, roundIdx) {
+  const card = $('targetCard');
+  card.innerHTML = '';
+
+  if (roundIdx === 0) {
+    // Round 1: numeral + emoji + word
+    const num = document.createElement('div'); num.className = 'target-numeral'; num.textContent = n;
+    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = EMOJI_MAP[n];
+    const wrd = document.createElement('div'); wrd.className = 'target-word'; wrd.textContent = NUMBER_WORDS[n];
+    card.append(num, emo, wrd);
+  } else if (roundIdx === 1) {
+    // Round 2: numeral + emoji only (no word)
+    const num = document.createElement('div'); num.className = 'target-numeral'; num.textContent = n;
+    const emo = document.createElement('div'); emo.className = 'target-emoji'; emo.textContent = EMOJI_MAP[n];
+    card.append(num, emo);
+  } else if (roundIdx === 2) {
+    // Round 3: emoji pattern (count them!) + small numeral
+    const emo = document.createElement('div'); emo.className = 'target-emoji';
+    emo.style.fontSize = 'clamp(14px,3.2vw,22px)';
+    emo.style.maxWidth = 'clamp(140px,40vw,240px)';
+    emo.style.lineHeight = '1.3';
+    emo.style.wordBreak = 'break-all';
+    emo.textContent = makeEmojiPattern(n);
+    const sn  = document.createElement('div'); sn.className = 'target-small-num'; sn.textContent = n;
+    card.append(emo, sn);
+  } else if (roundIdx === 3) {
+    // Round 4: word + small numeral
+    const wrd = document.createElement('div'); wrd.className = 'target-word'; wrd.style.fontSize = 'clamp(20px,5vw,32px)'; wrd.textContent = NUMBER_WORDS[n];
+    const sn  = document.createElement('div'); sn.className = 'target-small-num'; sn.textContent = n;
+    card.append(wrd, sn);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD OPTION CARDS — varies by round
+// ══════════════════════════════════════════════════════════════════
+function buildOptionCards(targetNum, roundIdx, numChoices) {
+  const area = $('optionsArea');
+  area.innerHTML = '';
+
+  // Build distractors
+  let available = NUMBERS.filter(n => n !== targetNum);
+  shuffle(available);
+  let options = [targetNum, ...available.slice(0, numChoices - 1)];
+  shuffle(options);
+
+  options.forEach(n => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.dataset.num = n;
+
+    if (roundIdx === 0) {
+      // Round 1: numeral + emoji + word
+      const num = document.createElement('div'); num.className = 'option-numeral'; num.textContent = n;
+      const emo = document.createElement('div'); emo.className = 'option-emoji'; emo.textContent = EMOJI_MAP[n];
+      const wrd = document.createElement('div'); wrd.className = 'option-word'; wrd.textContent = NUMBER_WORDS[n];
+      card.append(num, emo, wrd);
+    } else if (roundIdx === 1) {
+      // Round 2: numeral + word (no emoji)
+      const num = document.createElement('div'); num.className = 'option-numeral'; num.textContent = n;
+      const wrd = document.createElement('div'); wrd.className = 'option-word'; wrd.textContent = NUMBER_WORDS[n];
+      card.append(num, wrd);
+    } else if (roundIdx === 2) {
+      // Round 3: numeral + word
+      const num = document.createElement('div'); num.className = 'option-numeral'; num.textContent = n;
+      const wrd = document.createElement('div'); wrd.className = 'option-word'; wrd.textContent = NUMBER_WORDS[n];
+      card.append(num, wrd);
+    } else if (roundIdx === 3) {
+      // Round 4: numeral only
+      const num = document.createElement('div'); num.className = 'option-numeral'; num.textContent = n;
+      card.append(num);
+    }
+
+    onTap(card, () => handleOptionTap(card, n));
+    area.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HANDLE TAP ON OPTION
+// ══════════════════════════════════════════════════════════════════
+async function handleOptionTap(cardEl, chosenNum) {
+  if (lockBoard || !gameActive) return;
+  lockBoard = true;
+  stopHints();
+
+  if (chosenNum === currentTarget) {
+    // CORRECT
+    audio.tone('correct');
+    cardEl.classList.add('correct-flash');
+    starBurst(cardEl);
+    jumpChar();
+    showCharBubble(pick(BUBBLE_CORRECT));
+    score++;
+    $('hudScore').textContent = score;
+
+    // Speak number ONCE — keep pacing snappy
+    audio.speakNumber(currentTarget);
+
+    // Light up a planet
+    litPlanet(cardEl);
+
+    // Voice cheer (non-blocking)
+    await delay(220);
+    audio.play('correct');
+
+    // Mark progress
+    markProg(currentTarget);
+
+    await delay(450);
+
+    // Next item or end round
+    currentItemIndex++;
+    if (currentItemIndex >= 5) {
+      await endRound();
+    } else {
+      presentItem();
+    }
+  } else {
+    // WRONG
+    audio.tone('wrong');
+    cardEl.classList.add('wrong-shake');
+    showCharBubble(pick(BUBBLE_WRONG));
+    totalErrors++;
+
+    // Re-speak target number — don't block retry
+    audio.play('wrong');
+    setTimeout(() => { if (!lockBoard) audio.speakNumber(currentTarget); }, 500);
+
+    cardEl.classList.remove('wrong-shake');
+    lockBoard = false;
+    resetHints();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PRESENT A SINGLE ITEM
+// ══════════════════════════════════════════════════════════════════
+async function presentItem() {
+  lockBoard = true;
+  currentTarget = roundNumbers[currentItemIndex];
+  const rnd = ROUNDS[round];
+
+  // Build target and options
+  buildTargetCard(currentTarget, round);
+  buildOptionCards(currentTarget, round, rnd.choices);
+
+  // Update HUD
+  $('hudTarget').textContent = `Find ${currentTarget} ${EMOJI_MAP[currentTarget]}`;
+
+  // Speak number once — quickly
+  audio.tone('reveal');
+  audio.speakNumber(currentTarget);
+  await delay(250);
+
+  lockBoard = false;
+  resetHints();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// END ROUND — snappy (~3s)
+// ══════════════════════════════════════════════════════════════════
+async function endRound() {
+  lockBoard = true;
+  gameActive = false;
+  stopHints();
+
+  // Solar system glows
+  glowSolarSystem();
+  audio.tone('roundDone');
+  confetti(30);
+
+  // Non-blocking voice — banner follows shortly after
+  audio.play('round-complete');
+
+  await delay(900);
+
+  round++;
+  if (round >= 4) {
+    await endGame();
+  } else {
+    // Show round banner (short)
+    await showRoundBanner();
+    await startRound();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SHOW ROUND BANNER
+// ══════════════════════════════════════════════════════════════════
+async function showRoundBanner() {
+  const rnd = ROUNDS[round];
+  $('roundTitle').textContent = rnd.label;
+  $('roundSub').textContent = rnd.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  await delay(1800);
+  $('roundBanner').classList.remove('show');
+  await delay(300);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START ROUND
+// ══════════════════════════════════════════════════════════════════
+async function startRound() {
+  currentItemIndex = 0;
+  roundNumbers = shuffle([...NUMBERS]);
+  resetProg();
+  resetSolarSystem();
+
+  $('hudRound').textContent = (round+1) + '/4';
+  gameActive = true;
+
+  await presentItem();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// END GAME — celebration
+// ══════════════════════════════════════════════════════════════════
+async function endGame() {
+  gameActive = false;
+  lockBoard = true;
+  stopHints();
+  audio.stopMusic();
+
+  // Light up all planets and orbit rapidly
+  for (let i = 0; i < 5; i++) {
+    const p = $('planetSlot' + i);
+    if (p) p.classList.add('lit');
+  }
+  grandOrbitSolarSystem();
+
+  await delay(500);
+  audio.tone('celeb');
+  confetti(60);
+
+  // Star rating
+  const stars = totalErrors <= 2 ? 3 : totalErrors <= 5 ? 2 : 1;
+  $('celebStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('celebTitle').textContent = stars === 3 ? '🌟 Stellar! 🌟' : stars === 2 ? '🚀 Great Mission! 🚀' : '🪐 Well Done! 🪐';
+  $('celebMsg').textContent = `You matched all the space cards!`;
+
+  // Hide game UI
+  $('hud').style.display = 'none';
+  $('gameArea').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('solarSystem').style.display = 'none';
+
+  showScreen('scrCeleb');
+
+  // Two voice phrases (non-blocking between)
+  audio.play('game-complete');
+  await delay(1800);
+
+  // Second wave confetti
+  confetti(35);
+  audio.play('game-complete');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// START GAME
+// ══════════════════════════════════════════════════════════════════
+async function startGame() {
+  showScreen(null);
+
+  round = 0; score = 0; totalErrors = 0; totalLit = 0;
+  $('hudScore').textContent = '0';
+
+  // Build UI
+  buildProg();
+
+  // Show game elements
+  $('hud').style.display = '';
+  $('gameArea').style.display = '';
+  $('charArea').style.display = '';
+  $('solarSystem').style.display = '';
+  $('progBar').style.display = '';
+
+  audio.startMusic();
+
+  // Greeting (non-blocking — banner shows during)
+  audio.play('greetings');
+  await delay(800);
+
+  // Show first round banner
+  await showRoundBanner();
+
+  // Start round 1
+  await startRound();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+buildScenery();
+
+onTap($('btnStart'), () => {
+  audio.unlock();
+  $('btnStart').disabled = true;
+  startGame();
+});
+
+onTap($('btnAgain'), () => {
+  $('btnAgain').disabled = true;
+  showScreen(null);
+  setTimeout(() => {
+    $('btnAgain').disabled = false;
+    $('btnStart').disabled = false;
+    startGame();
+  }, 400);
+});
+
+</script>
+</body>
+</html>

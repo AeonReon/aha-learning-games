@@ -321,6 +321,8 @@ body{
 .th-dragon{background:linear-gradient(145deg,#DC2626,#78350F)}
 .th-carnival{background:linear-gradient(145deg,#EC4899,#7C3AED)}
 .th-arcade{background:linear-gradient(145deg,#A855F7,#3B82F6)}
+.th-funzone{background:linear-gradient(145deg,#EC4899,#F59E0B);animation:funGradShift 6s ease-in-out infinite}
+@keyframes funGradShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(25deg)}}
 
 /* ── Divider ── */
 .section-divider{
@@ -521,6 +523,27 @@ body{
           <div class="theme-name">Alphabet Arcade</div>
           <div class="theme-sub">BONUS · All letters mixed</div>
           <span class="theme-pill">⭐ 5 Mini-games</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Fun Zone Category -->
+  <div class="category">
+    <div class="category-title">
+      <span class="big-emoji">🎉</span>
+      <span>Fun Zone</span>
+    </div>
+    <div class="category-subtle">Just play — for the pure joy of it</div>
+    <hr class="section-divider">
+
+    <div class="theme-grid">
+      <a href="v2/fun-zone/" class="theme-card th-funzone" data-theme="fun">
+        <span class="theme-emoji">🎉</span>
+        <div class="theme-info">
+          <div class="theme-name">Fun Zone</div>
+          <div class="theme-sub">Silly · Playful · No lessons</div>
+          <span class="theme-pill">🎪 5 Fun Games</span>
         </div>
       </a>
     </div>
@@ -740,7 +763,8 @@ function playTapSound(){
     '0-5': 5, '6-10': 5, '11-15': 5, '16-20': 5,
     '10-50': 5, '60-100': 5,
     'a-e': 5, 'f-j': 5, 'k-o': 5, 'p-t': 5, 'u-z': 5,
-    'number-carnival': 1, 'alphabet-arcade': 1
+    'number-carnival': 1, 'alphabet-arcade': 1,
+    'fun-zone': 5
   };
   function loadProgress(){
     try { return JSON.parse(localStorage.getItem('aha_progress') || '{}'); }

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ice Cream Tower</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:'Arial Rounded MT Bold','Arial Black',Arial,sans-serif;}
+  body{
+    width:100vw;height:100vh;height:100dvh;
+    background:linear-gradient(180deg,#7ec8f5 0%,#a8dcff 40%,#cfeeff 75%,#ffe9a8 100%);
+    position:relative;overflow:hidden;
+  }
+  /* Sun */
+  .sun{
+    position:absolute;top:30px;right:40px;width:90px;height:90px;
+    background:radial-gradient(circle,#fff9b0 0%,#ffd84d 60%,#ffb520 100%);
+    border-radius:50%;
+    box-shadow:0 0 40px #ffe066,0 0 80px #ffd84d80;
+    animation:sunBob 4s ease-in-out infinite;
+    z-index:2;
+  }
+  .sun::before,.sun::after{
+    content:'';position:absolute;inset:-18px;border-radius:50%;
+    background:conic-gradient(from 0deg,transparent 0 10deg,#ffd84d 10 20deg,transparent 20 40deg,#ffd84d 40 50deg,transparent 50 70deg,#ffd84d 70 80deg,transparent 80 100deg,#ffd84d 100 110deg,transparent 110 130deg,#ffd84d 130 140deg,transparent 140 160deg,#ffd84d 160 170deg,transparent 170 190deg,#ffd84d 190 200deg,transparent 200 220deg,#ffd84d 220 230deg,transparent 230 250deg,#ffd84d 250 260deg,transparent 260 280deg,#ffd84d 280 290deg,transparent 290 310deg,#ffd84d 310 320deg,transparent 320 340deg,#ffd84d 340 350deg,transparent 350 360deg);
+    opacity:.55;z-index:-1;animation:spin 20s linear infinite;
+  }
+  @keyframes sunBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Clouds */
+  .cloud{position:absolute;background:#fff;border-radius:100px;opacity:.85;animation:drift 30s linear infinite;z-index:1;}
+  .cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%;}
+  .c1{top:80px;left:-150px;width:140px;height:50px;}
+  .c1::before{width:70px;height:70px;top:-30px;left:20px;}
+  .c1::after{width:50px;height:50px;top:-22px;left:70px;}
+  .c2{top:160px;left:-200px;width:120px;height:42px;animation-duration:45s;animation-delay:-10s;}
+  .c2::before{width:58px;height:58px;top:-25px;left:18px;}
+  .c2::after{width:44px;height:44px;top:-18px;left:60px;}
+  @keyframes drift{0%{transform:translateX(0)}100%{transform:translateX(calc(100vw + 350px))}}
+
+  /* Back button */
+  .back-home-btn{
+    position:fixed;top:14px;left:14px;
+    background:#fff;color:#e91e63;
+    padding:12px 20px;border:3px solid #ffc1d9;border-radius:25px;
+    font-size:18px;font-weight:bold;text-decoration:none;
+    z-index:200;box-shadow:0 4px 0 #ffc1d9,0 6px 15px rgba(0,0,0,.15);
+  }
+  .back-home-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #ffc1d9;}
+
+  /* Screens */
+  .screen{
+    position:absolute;inset:0;display:none;flex-direction:column;
+    align-items:center;justify-content:center;z-index:10;
+  }
+  .screen.active{display:flex;}
+
+  /* Title screen */
+  #scrTitle{
+    background:linear-gradient(180deg,#ffd6ec 0%,#ffeecc 50%,#d9f3ff 100%);
+    padding:20px;text-align:center;
+  }
+  .big-title{
+    font-size:clamp(48px,11vw,96px);color:#e91e63;
+    text-shadow:4px 4px 0 #fff,6px 6px 0 #ffc107,9px 9px 15px rgba(0,0,0,.25);
+    margin-bottom:20px;line-height:1.1;
+    animation:titleBounce 2s ease-in-out infinite;
+  }
+  @keyframes titleBounce{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.05) rotate(2deg)}}
+  .title-emoji{font-size:clamp(80px,18vw,160px);display:block;animation:bigBob 2s ease-in-out infinite;}
+  @keyframes bigBob{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-15px) rotate(5deg)}}
+  .subtitle{font-size:clamp(20px,4.5vw,32px);color:#6a1b9a;margin-bottom:30px;font-weight:bold;}
+  .big-btn{
+    background:linear-gradient(180deg,#ffd54f,#ff9800);
+    color:#fff;font-size:clamp(26px,5.5vw,38px);
+    padding:22px 50px;border:none;border-radius:55px;
+    font-family:inherit;font-weight:bold;
+    box-shadow:0 8px 0 #e65100,0 12px 25px rgba(0,0,0,.25);
+    cursor:pointer;min-height:80px;min-width:220px;
+    text-shadow:2px 2px 0 rgba(0,0,0,.2);
+    animation:pulseBtn 1.3s ease-in-out infinite;
+  }
+  .big-btn:active{transform:translateY(5px);box-shadow:0 3px 0 #e65100;}
+  @keyframes pulseBtn{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+  /* Game screen */
+  #scrGame{display:none;position:relative;width:100%;height:100%;}
+  #scrGame.active{display:block;}
+
+  /* Conveyor belt */
+  .belt-area{
+    position:absolute;top:0;left:0;right:0;height:22%;
+    background:linear-gradient(180deg,#d4f3ff 0%,#a8dcff 100%);
+    border-bottom:6px solid #ff6b9d;
+    overflow:hidden;z-index:5;
+  }
+  .belt{
+    position:absolute;bottom:10px;left:0;right:0;height:70%;
+    background:repeating-linear-gradient(90deg,#424242 0 25px,#616161 25px 50px);
+    border-top:5px solid #9e9e9e;border-bottom:5px solid #9e9e9e;
+    box-shadow:inset 0 4px 10px rgba(0,0,0,.5);
+  }
+  .belt::before{
+    content:'';position:absolute;top:-5px;left:0;right:0;height:5px;
+    background:repeating-linear-gradient(90deg,#fff 0 10px,transparent 10px 20px);
+    animation:beltMove .8s linear infinite;
+  }
+  @keyframes beltMove{to{transform:translateX(20px)}}
+
+  .scoop-belt{
+    position:absolute;bottom:20%;
+    width:min(80px,16vw);height:min(80px,16vw);
+    border-radius:50% 50% 45% 55% / 55% 55% 45% 45%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:min(38px,8vw);font-weight:bold;color:#fff;
+    text-shadow:2px 2px 0 rgba(0,0,0,.4),0 0 6px rgba(0,0,0,.3);
+    cursor:pointer;
+    box-shadow:inset -8px -8px 0 rgba(0,0,0,.15),inset 6px 6px 0 rgba(255,255,255,.3),0 6px 12px rgba(0,0,0,.25);
+    transition:transform .15s;
+    border:3px solid rgba(255,255,255,.5);
+    z-index:6;
+  }
+  .scoop-belt:active{transform:scale(.92);}
+  .scoop-belt::before{
+    content:'';position:absolute;top:15%;left:20%;
+    width:25%;height:20%;background:rgba(255,255,255,.6);
+    border-radius:50%;
+  }
+  .scoop-belt.wrong{animation:wrongShake .5s ease-out;}
+  @keyframes wrongShake{
+    0%,100%{transform:translateX(0) rotate(0)}
+    15%{transform:translateX(-12px) rotate(-8deg)}
+    30%{transform:translateX(12px) rotate(8deg)}
+    45%{transform:translateX(-10px) rotate(-6deg)}
+    60%{transform:translateX(10px) rotate(6deg)}
+    75%{transform:translateX(-5px) rotate(-3deg)}
+  }
+
+  /* Tower area */
+  .tower-area{
+    position:absolute;bottom:0;left:0;right:0;height:78%;
+    display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:20px;
+  }
+  .tower-wrap{
+    position:relative;display:flex;flex-direction:column-reverse;
+    align-items:center;transition:transform .3s;
+    transform-origin:bottom center;
+  }
+
+  /* Waffle cone */
+  .cone{
+    width:min(140px,30vw);height:min(160px,32vw);
+    position:relative;
+    background:linear-gradient(180deg,#d4883d 0%,#a0632a 100%);
+    clip-path:polygon(0 0,100% 0,50% 100%);
+    box-shadow:inset 0 0 20px rgba(0,0,0,.3);
+  }
+  .cone::before{
+    content:'';position:absolute;inset:0;
+    background-image:
+      repeating-linear-gradient(45deg,transparent 0 10px,rgba(0,0,0,.2) 10px 11px),
+      repeating-linear-gradient(-45deg,transparent 0 10px,rgba(0,0,0,.2) 10px 11px);
+    clip-path:polygon(0 0,100% 0,50% 100%);
+  }
+  .cone::after{
+    content:'';position:absolute;top:0;left:-5px;right:-5px;height:14px;
+    background:linear-gradient(180deg,#e6a050 0%,#c47d30 100%);
+    border-radius:4px;
+    box-shadow:inset 0 -3px 4px rgba(0,0,0,.3);
+  }
+
+  /* Stacked scoops */
+  .scoop-stacked{
+    width:min(110px,24vw);height:min(75px,16vw);
+    border-radius:50% 50% 40% 40% / 70% 70% 30% 30%;
+    margin-top:-12px;position:relative;
+    display:flex;align-items:center;justify-content:center;
+    font-size:min(36px,7.5vw);font-weight:bold;color:#fff;
+    text-shadow:2px 2px 0 rgba(0,0,0,.4);
+    box-shadow:inset -8px -8px 0 rgba(0,0,0,.15),inset 6px 6px 0 rgba(255,255,255,.3),0 4px 8px rgba(0,0,0,.2);
+    border:3px solid rgba(255,255,255,.4);
+    animation:wobble 2s ease-in-out infinite;
+    animation-delay:calc(var(--i) * .1s);
+  }
+  @keyframes wobble{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
+
+  /* Melting state */
+  .scoop-stacked.melting{
+    filter:blur(.5px);
+    animation:meltDroop 1s ease-in forwards;
+  }
+  @keyframes meltDroop{
+    0%{transform:scaleY(1)}
+    100%{transform:scaleY(.7) scaleX(1.15);border-radius:50% 50% 20% 20% / 70% 70% 20% 20%;}
+  }
+  .drip{
+    position:absolute;bottom:-5px;width:10px;height:20px;
+    background:inherit;border-radius:0 0 50% 50%;
+    animation:dripDown 1.5s ease-in infinite;
+  }
+  @keyframes dripDown{
+    0%{transform:translateY(0) scaleY(1);opacity:1}
+    100%{transform:translateY(20px) scaleY(1.4);opacity:0}
+  }
+
+  .tower-wrap.urgent{animation:urgentShake .3s ease-in-out infinite;}
+  @keyframes urgentShake{0%,100%{transform:translateX(0)}50%{transform:translateX(-3px)}}
+
+  /* Tilt progressive */
+  .tower-wrap.tilt1{transform:rotate(1deg);}
+  .tower-wrap.tilt2{transform:rotate(-1.5deg);}
+  .tower-wrap.tilt3{transform:rotate(2deg);}
+  .tower-wrap.tilt4{transform:rotate(-2.5deg);}
+  .tower-wrap.tilt5{transform:rotate(3deg);}
+
+  /* Puddle */
+  .puddle{
+    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+    width:min(280px,70vw);height:min(80px,16vw);
+    background:radial-gradient(ellipse,#f8bbd0 0%,#ec407a 50%,#ad1457 100%);
+    border-radius:50%;
+    box-shadow:0 4px 10px rgba(0,0,0,.3),inset 4px 4px 10px rgba(255,255,255,.3);
+    animation:puddleAppear .4s ease-out;
+  }
+  @keyframes puddleAppear{0%{transform:translateX(-50%) scale(0)}100%{transform:translateX(-50%) scale(1)}}
+
+  .sad-cat{
+    position:absolute;bottom:50px;left:50%;transform:translateX(-50%);
+    font-size:clamp(90px,18vw,160px);
+    animation:catLick 1s ease-in-out infinite;
+  }
+  @keyframes catLick{
+    0%,100%{transform:translateX(-50%) translateY(0) rotate(0)}
+    25%{transform:translateX(-50%) translateY(-10px) rotate(-5deg)}
+    75%{transform:translateX(-50%) translateY(-5px) rotate(5deg)}
+  }
+
+  /* Target number indicator */
+  .target-hint{
+    position:absolute;top:24%;left:50%;transform:translateX(-50%);
+    background:linear-gradient(180deg,#fff 0%,#ffe082 100%);
+    color:#e91e63;font-size:clamp(22px,4vw,30px);font-weight:bold;
+    padding:12px 25px;border-radius:30px;
+    border:4px solid #ff6b9d;
+    box-shadow:0 5px 0 #c2185b,0 8px 15px rgba(0,0,0,.2);
+    z-index:8;white-space:nowrap;
+    animation:hintPulse 1s ease-in-out infinite;
+  }
+  @keyframes hintPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.08)}}
+
+  .target-num{
+    display:inline-block;color:#fff;
+    background:#ff6b9d;border-radius:50%;
+    width:45px;height:45px;line-height:45px;text-align:center;
+    margin-left:6px;font-size:clamp(26px,5vw,36px);
+    box-shadow:inset -3px -3px 0 rgba(0,0,0,.2);
+  }
+
+  /* Customer eating */
+  .customer{
+    position:absolute;top:-20%;left:50%;transform:translateX(-50%);
+    font-size:clamp(140px,35vw,300px);
+    transition:top 1.2s cubic-bezier(.34,1.56,.64,1);
+    z-index:20;filter:drop-shadow(0 10px 20px rgba(0,0,0,.4));
+  }
+  .customer.active{top:15%;animation:chompChomp .4s ease-in-out infinite;}
+  @keyframes chompChomp{
+    0%,100%{transform:translateX(-50%) scale(1);}
+    50%{transform:translateX(-50%) scale(1.15) rotate(-3deg);}
+  }
+  .customer.burp{animation:burpJiggle 1s ease-out;}
+  @keyframes burpJiggle{
+    0%{transform:translateX(-50%) scale(1)}
+    30%{transform:translateX(-50%) scale(1.3) translateY(-20px)}
+    60%{transform:translateX(-50%) scale(.95) translateY(10px)}
+    100%{transform:translateX(-50%) scale(1)}
+  }
+
+  .chomp-text{
+    position:absolute;font-size:clamp(40px,8vw,80px);font-weight:bold;
+    color:#ff1744;text-shadow:3px 3px 0 #fff,5px 5px 0 #000;
+    pointer-events:none;z-index:25;
+    animation:chompTextFly .8s ease-out forwards;
+  }
+  @keyframes chompTextFly{
+    0%{transform:scale(0) rotate(-20deg);opacity:1}
+    50%{transform:scale(1.3) rotate(5deg);opacity:1}
+    100%{transform:scale(1.6) rotate(15deg);opacity:0}
+  }
+
+  /* Celebration */
+  #scrCeleb{
+    background:radial-gradient(circle,#fff176 0%,#ffab40 60%,#ff5722 100%);
+    padding:20px;text-align:center;
+  }
+  .celeb-title{
+    font-size:clamp(50px,12vw,110px);color:#fff;
+    text-shadow:4px 4px 0 #e91e63,8px 8px 0 #6a1b9a,12px 12px 20px rgba(0,0,0,.4);
+    margin-bottom:20px;animation:titleBounce 1.5s ease-in-out infinite;
+  }
+  .celeb-emoji{font-size:clamp(100px,25vw,200px);animation:bigBob 1.2s ease-in-out infinite;display:block;margin-bottom:20px;}
+
+  /* Confetti */
+  .confetti{position:fixed;top:-20px;width:12px;height:20px;z-index:50;pointer-events:none;animation:confettiFall 3s linear forwards;}
+  @keyframes confettiFall{
+    0%{transform:translateY(0) rotate(0)}
+    100%{transform:translateY(110vh) rotate(720deg)}
+  }
+
+  /* Flying scoop animation */
+  .flying-scoop{
+    position:fixed;z-index:30;pointer-events:none;
+    transition:all .6s cubic-bezier(.34,1.56,.64,1);
+    border-radius:50% 50% 45% 55% / 55% 55% 45% 45%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:min(38px,8vw);font-weight:bold;color:#fff;
+    text-shadow:2px 2px 0 rgba(0,0,0,.4);
+    box-shadow:inset -8px -8px 0 rgba(0,0,0,.15),0 8px 20px rgba(0,0,0,.3);
+    border:3px solid rgba(255,255,255,.5);
+  }
+
+  /* Plop ring */
+  .plop-ring{
+    position:absolute;border:5px solid #fff;border-radius:50%;
+    pointer-events:none;z-index:15;
+    animation:plopRing .6s ease-out forwards;
+  }
+  @keyframes plopRing{
+    0%{width:20px;height:20px;opacity:1}
+    100%{width:180px;height:180px;opacity:0;border-width:2px}
+  }
+
+  /* Announce bubble */
+  .announce{
+    position:absolute;top:30%;left:50%;transform:translateX(-50%);
+    background:#fff;color:#e91e63;padding:18px 35px;
+    border-radius:30px;border:4px solid #ff6b9d;
+    font-size:clamp(22px,4.5vw,32px);font-weight:bold;
+    box-shadow:0 6px 0 #c2185b,0 10px 20px rgba(0,0,0,.3);
+    z-index:40;white-space:nowrap;max-width:90vw;
+    animation:announceIn .4s ease-out,announceOut .4s ease-in 2.2s forwards;
+  }
+  @keyframes announceIn{0%{transform:translateX(-50%) scale(0)}100%{transform:translateX(-50%) scale(1)}}
+  @keyframes announceOut{0%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(.5)}}
+
+  /* Grass at bottom */
+  .grass{
+    position:absolute;bottom:0;left:0;right:0;height:30px;
+    background:linear-gradient(180deg,#81c784 0%,#4caf50 100%);
+    z-index:1;
+  }
+  .grass::before{
+    content:'';position:absolute;top:-10px;left:0;right:0;height:12px;
+    background-image:
+      radial-gradient(circle at 10px 10px,#4caf50 0 5px,transparent 6px),
+      radial-gradient(circle at 25px 8px,#66bb6a 0 5px,transparent 6px),
+      radial-gradient(circle at 40px 11px,#4caf50 0 5px,transparent 6px);
+    background-size:50px 12px;background-repeat:repeat-x;
+  }
+</style>
+</head>
+<body>
+
+<div class="sun"></div>
+<div class="cloud c1"></div>
+<div class="cloud c2"></div>
+<div class="grass"></div>
+
+<a href="../../" class="back-home-btn">← Home</a>
+
+<!-- TITLE SCREEN -->
+<div class="screen active" id="scrTitle">
+  <span class="title-emoji">🍦</span>
+  <h1 class="big-title">ICE CREAM<br>TOWER</h1>
+  <p class="subtitle">Stack the scoops 1 → 10<br>Before they MELT!</p>
+  <button class="big-btn" id="startBtn">START! 🍨</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="scrGame">
+  <div class="belt-area">
+    <div class="belt"></div>
+    <!-- scoops injected here -->
+  </div>
+
+  <div class="target-hint" id="targetHint">Tap <span class="target-num" id="targetNum">1</span></div>
+
+  <div class="tower-area">
+    <div class="tower-wrap" id="towerWrap">
+      <div class="cone"></div>
+      <!-- stacked scoops injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION SCREEN -->
+<div class="screen" id="scrCeleb">
+  <span class="celeb-emoji">🎉🍦🎉</span>
+  <h1 class="celeb-title">AMAZING!</h1>
+  <p class="subtitle" style="color:#fff;font-size:clamp(24px,5vw,36px);">You stacked all 10!</p>
+  <button class="big-btn" id="againBtn">PLAY AGAIN! 🍨</button>
+</div>
+
+<script>
+const AUDIO_BASE = '../../audio';
+
+/* ═══ GAME AUDIO (AudioContext-first, iOS unlock) ═══ */
+class GameAudio {
+  constructor(){
+    this.ctx = null;
+    this.unlocked = false;
+    this.voiceCache = {};
+    this.musicNodes = [];
+    this.musicPlaying = false;
+    this.masterGain = null;
+  }
+  async unlock(){
+    if(this.unlocked) return;
+    try{
+      this.ctx = new (window.AudioContext||window.webkitAudioContext)();
+      if(this.ctx.state === 'suspended') await this.ctx.resume();
+      // Silent buffer for iOS
+      const buf = this.ctx.createBuffer(1,1,22050);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf; src.connect(this.ctx.destination); src.start(0);
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.6;
+      this.masterGain.connect(this.ctx.destination);
+      this.unlocked = true;
+    }catch(e){ console.warn('audio unlock failed', e); }
+  }
+  async loadVoice(url){
+    if(this.voiceCache[url]) return this.voiceCache[url];
+    try{
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('404');
+      const arr = await res.arrayBuffer();
+      const buf = await this.ctx.decodeAudioData(arr);
+      this.voiceCache[url] = buf;
+      return buf;
+    }catch(e){
+      this.voiceCache[url] = null;
+      return null;
+    }
+  }
+  async playVoice(name, folder='fun-zone/icecream'){
+    if(!this.unlocked) await this.unlock();
+    if(!this.ctx) return;
+    const url = `${AUDIO_BASE}/${folder}/${name}.mp3`;
+    const buf = await this.loadVoice(url);
+    if(buf){
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const g = this.ctx.createGain();
+      g.gain.value = 0.9;
+      src.connect(g); g.connect(this.ctx.destination);
+      src.start(0);
+    } else {
+      this.speak(this.fallbackText(name));
+    }
+  }
+  async playNumber(n){
+    if(!this.unlocked) await this.unlock();
+    if(!this.ctx) return;
+    const url = `${AUDIO_BASE}/numbers/${n}.mp3`;
+    const buf = await this.loadVoice(url);
+    if(buf){
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const g = this.ctx.createGain();
+      g.gain.value = 0.9;
+      src.connect(g); g.connect(this.ctx.destination);
+      src.start(0);
+    } else {
+      this.speak(String(n));
+    }
+  }
+  speak(text){
+    if(!('speechSynthesis' in window)) return;
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.05; u.pitch = 1.3; u.volume = 1;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  fallbackText(name){
+    const map = {
+      stack_em:"Stack em up!",
+      melting:"Oh no, it is melting!",
+      chomp:"Chomp chomp chomp!",
+      delicious:"Mmm delicious!",
+      too_slow:"Too slow! It melted!",
+      wow_tall:"Wow, what a tall tower!",
+      amazing:"Amazing stacking!",
+      next:"Next scoop!",
+      in_order:"Stack them in order, one two three!",
+      ooh:"Oooh, look at that!",
+      nom_nom:"Nom nom nom!"
+    };
+    return map[name]||name;
+  }
+  // Tone helper
+  tone(freq, dur=.2, type='sine', vol=.3, when=0){
+    if(!this.ctx) return;
+    const t = this.ctx.currentTime + when;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + .02);
+    g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    osc.connect(g); g.connect(this.masterGain||this.ctx.destination);
+    osc.start(t); osc.stop(t + dur + .05);
+  }
+  plop(){
+    this.tone(800,.08,'sine',.4);
+    setTimeout(()=>this.tone(500,.1,'sine',.3),60);
+    setTimeout(()=>this.tone(300,.15,'triangle',.3),120);
+  }
+  wrongBuzz(){
+    this.tone(200,.15,'sawtooth',.3);
+    setTimeout(()=>this.tone(150,.2,'sawtooth',.3),100);
+  }
+  chompSound(){
+    this.tone(120,.1,'square',.4);
+    setTimeout(()=>this.tone(80,.12,'square',.4),80);
+  }
+  startMusic(){
+    if(this.musicPlaying||!this.ctx) return;
+    this.musicPlaying = true;
+    // Pentatonic C major, bouncy carnival
+    const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33]; // C D E G A C D
+    const pattern = [0,2,4,2, 5,4,2,0, 4,2,0,2, 4,5,4,2];
+    const bpm = 125;
+    const beat = 60/bpm/2; // 8th notes
+    let step = 0;
+    const loop = ()=>{
+      if(!this.musicPlaying) return;
+      const note = pattern[step % pattern.length];
+      const freq = scale[note];
+      // Bell-like: two oscillators
+      this.tone(freq, beat*.8, 'sine', .12);
+      this.tone(freq*2, beat*.6, 'triangle', .06);
+      // Bass on downbeats
+      if(step % 4 === 0){
+        this.tone(scale[0]/2, beat*1.5, 'triangle', .15);
+      }
+      step++;
+      this.musicTimer = setTimeout(loop, beat*1000);
+    };
+    loop();
+  }
+  stopMusic(){
+    this.musicPlaying = false;
+    if(this.musicTimer) clearTimeout(this.musicTimer);
+  }
+  celebrationFanfare(){
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((f,i)=>{
+      setTimeout(()=>{
+        this.tone(f,.3,'triangle',.35);
+        this.tone(f*2,.3,'sine',.15);
+      }, i*120);
+    });
+  }
+}
+
+const audio = new GameAudio();
+
+/* ═══ GAME STATE ═══ */
+const SCOOP_COLORS = [
+  {name:'pink',    bg:'linear-gradient(180deg,#ff9ec7,#ff5e9c)'},
+  {name:'choc',    bg:'linear-gradient(180deg,#a0633a,#5d3817)'},
+  {name:'vanilla', bg:'linear-gradient(180deg,#fff8dc,#f0e0a0)'},
+  {name:'mint',    bg:'linear-gradient(180deg,#a8e6cf,#56c596)'},
+  {name:'straw',   bg:'linear-gradient(180deg,#ff6b6b,#c92a2a)'},
+  {name:'banana',  bg:'linear-gradient(180deg,#fff36b,#f9d71c)'},
+  {name:'blueb',   bg:'linear-gradient(180deg,#74b9ff,#0984e3)'},
+  {name:'grape',   bg:'linear-gradient(180deg,#c77bff,#7a3ea8)'},
+  {name:'orange',  bg:'linear-gradient(180deg,#ffb347,#ff8c00)'},
+  {name:'rainbow', bg:'linear-gradient(135deg,#ff5e9c,#f9d71c,#56c596,#74b9ff,#c77bff)'}
+];
+const CUSTOMERS = ['👶','🦁','🐻','🦒','🐵','🐶'];
+
+let state = {
+  target: 1,          // next number to tap
+  stacked: [],        // array of numbers currently stacked
+  beltScoops: [],     // {el, num, x, speed}
+  meltTimer: null,
+  meltProgress: 0,    // 0..1
+  gameActive: false,
+  lastActionTime: 0,
+};
+
+const MELT_TIME = 9000; // ms before full melt after last action
+
+/* ═══ DOM ═══ */
+const scrTitle = document.getElementById('scrTitle');
+const scrGame = document.getElementById('scrGame');
+const scrCeleb = document.getElementById('scrCeleb');
+const beltArea = document.querySelector('.belt-area');
+const towerWrap = document.getElementById('towerWrap');
+const targetHint = document.getElementById('targetHint');
+const targetNumEl = document.getElementById('targetNum');
+const startBtn = document.getElementById('startBtn');
+const againBtn = document.getElementById('againBtn');
+
+/* ═══ SCREENS ═══ */
+function showScreen(which){
+  [scrTitle, scrGame, scrCeleb].forEach(s=>s.classList.remove('active'));
+  which.classList.add('active');
+}
+
+/* ═══ ANNOUNCE BUBBLE ═══ */
+function announce(text, voice=null){
+  document.querySelectorAll('.announce').forEach(a=>a.remove());
+  const el = document.createElement('div');
+  el.className = 'announce';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2700);
+  if(voice) audio.playVoice(voice);
+}
+
+/* ═══ BELT: spawn scoops ═══ */
+function spawnScoop(num){
+  const color = SCOOP_COLORS[(num-1) % SCOOP_COLORS.length];
+  const el = document.createElement('div');
+  el.className = 'scoop-belt';
+  el.textContent = num;
+  el.style.background = color.bg;
+  el.dataset.num = num;
+  beltArea.appendChild(el);
+  // Start off-screen right
+  const beltW = beltArea.offsetWidth;
+  const scoopSize = Math.min(80, window.innerWidth*.16);
+  const x = beltW + 20;
+  el.style.left = x + 'px';
+  const speed = 0.6 + Math.random()*0.3; // px per ms
+  const scoop = { el, num, x, speed, size: scoopSize };
+  el.addEventListener('click', ()=>handleScoopTap(scoop));
+  state.beltScoops.push(scoop);
+}
+
+function tickBelt(dt){
+  const beltW = beltArea.offsetWidth;
+  for(let i = state.beltScoops.length-1; i >= 0; i--){
+    const s = state.beltScoops[i];
+    s.x -= s.speed * dt;
+    s.el.style.left = s.x + 'px';
+    if(s.x + s.size < -20){
+      // re-spawn on right
+      s.x = beltW + 20;
+      s.el.style.left = s.x + 'px';
+    }
+  }
+}
+
+/* ═══ HANDLE TAP ═══ */
+function handleScoopTap(scoop){
+  if(!state.gameActive) return;
+  if(scoop.num === state.target){
+    // Correct!
+    audio.plop();
+    flyScoopToTower(scoop);
+    state.beltScoops = state.beltScoops.filter(s => s !== scoop);
+    scoop.el.remove();
+    state.lastActionTime = Date.now();
+    resetMelt();
+  } else {
+    // Wrong - shake, snap back
+    audio.wrongBuzz();
+    scoop.el.classList.add('wrong');
+    setTimeout(()=>scoop.el.classList.remove('wrong'), 500);
+  }
+}
+
+/* ═══ FLY SCOOP TO TOWER ═══ */
+function flyScoopToTower(scoop){
+  const srcRect = scoop.el.getBoundingClientRect();
+  const towerRect = towerWrap.getBoundingClientRect();
+  const stackCount = state.stacked.length;
+  const scoopH = Math.min(75, window.innerWidth*.16);
+  const scoopW = Math.min(110, window.innerWidth*.24);
+
+  // Target position: above current top of tower
+  const targetX = towerRect.left + towerRect.width/2 - scoopW/2;
+  const targetY = towerRect.top - scoopH/2 - (stackCount * (scoopH - 12));
+
+  const flyer = document.createElement('div');
+  flyer.className = 'flying-scoop';
+  flyer.textContent = scoop.num;
+  const color = SCOOP_COLORS[(scoop.num-1) % SCOOP_COLORS.length];
+  flyer.style.background = color.bg;
+  flyer.style.left = srcRect.left + 'px';
+  flyer.style.top = srcRect.top + 'px';
+  flyer.style.width = srcRect.width + 'px';
+  flyer.style.height = srcRect.height + 'px';
+  document.body.appendChild(flyer);
+
+  // Force reflow, then animate
+  requestAnimationFrame(()=>{
+    flyer.style.left = targetX + 'px';
+    flyer.style.top = targetY + 'px';
+    flyer.style.width = scoopW + 'px';
+    flyer.style.height = scoopH + 'px';
+    flyer.style.transform = 'rotate(' + (Math.random()*20-10) + 'deg)';
+  });
+
+  setTimeout(()=>{
+    flyer.remove();
+    addStackedScoop(scoop.num);
+    plopEffect(targetX + scoopW/2, targetY + scoopH/2);
+    advanceTarget();
+  }, 620);
+}
+
+function plopEffect(x, y){
+  const ring = document.createElement('div');
+  ring.className = 'plop-ring';
+  ring.style.left = (x-10) + 'px';
+  ring.style.top = (y-10) + 'px';
+  document.body.appendChild(ring);
+  setTimeout(()=>ring.remove(), 600);
+}
+
+function addStackedScoop(num){
+  const color = SCOOP_COLORS[(num-1) % SCOOP_COLORS.length];
+  const el = document.createElement('div');
+  el.className = 'scoop-stacked';
+  el.textContent = num;
+  el.style.background = color.bg;
+  el.style.setProperty('--i', state.stacked.length);
+  towerWrap.appendChild(el);
+  state.stacked.push(num);
+  // Apply tilt based on count
+  updateTilt();
+}
+
+function updateTilt(){
+  towerWrap.classList.remove('tilt1','tilt2','tilt3','tilt4','tilt5');
+  const n = state.stacked.length;
+  if(n >= 2 && n < 4) towerWrap.classList.add('tilt1');
+  else if(n >= 4 && n < 6) towerWrap.classList.add('tilt2');
+  else if(n >= 6 && n < 8) towerWrap.classList.add('tilt3');
+  else if(n >= 8 && n < 10) towerWrap.classList.add('tilt4');
+  else if(n >= 10) towerWrap.classList.add('tilt5');
+}
+
+function advanceTarget(){
+  state.target++;
+  if(state.target > 10){
+    // WIN!
+    completeTower();
+    return;
+  }
+  targetNumEl.textContent = state.target;
+  audio.playNumber(state.target);
+  // Encouragement sometimes
+  if(state.target === 3) setTimeout(()=>audio.playVoice('ooh'), 600);
+  else if(state.target === 6) setTimeout(()=>audio.playVoice('amazing'), 600);
+  else if(state.target === 8) setTimeout(()=>audio.playVoice('wow_tall'), 600);
+}
+
+/* ═══ MELT LOGIC ═══ */
+function resetMelt(){
+  state.meltProgress = 0;
+  towerWrap.classList.remove('urgent');
+  document.querySelectorAll('.scoop-stacked.melting').forEach(el=>el.classList.remove('melting'));
+  document.querySelectorAll('.drip').forEach(el=>el.remove());
+}
+
+function tickMelt(now){
+  if(state.stacked.length === 0) return;
+  const elapsed = now - state.lastActionTime;
+  state.meltProgress = Math.min(1, elapsed / MELT_TIME);
+
+  // Start dripping at 0.5
+  if(state.meltProgress > 0.5){
+    const scoops = document.querySelectorAll('.scoop-stacked');
+    scoops.forEach(s => {
+      if(!s.querySelector('.drip') && Math.random() < 0.02){
+        const drip = document.createElement('div');
+        drip.className = 'drip';
+        drip.style.left = (20 + Math.random()*60) + '%';
+        s.appendChild(drip);
+        setTimeout(()=>drip.remove(), 1500);
+      }
+    });
+  }
+
+  // Urgency shake at 0.7
+  if(state.meltProgress > 0.7){
+    towerWrap.classList.add('urgent');
+  }
+
+  // Warning announce at ~0.6
+  if(state.meltProgress > 0.6 && !state.warnedMelt){
+    state.warnedMelt = true;
+    audio.playVoice('melting');
+  }
+
+  if(state.meltProgress >= 1){
+    meltdown();
+  }
+}
+
+function meltdown(){
+  if(!state.gameActive) return;
+  state.gameActive = false;
+  audio.playVoice('too_slow');
+  // All scoops melting visual
+  document.querySelectorAll('.scoop-stacked').forEach(el=>el.classList.add('melting'));
+
+  setTimeout(()=>{
+    // Collapse into puddle
+    towerWrap.innerHTML = '<div class="cone"></div>';
+    const puddle = document.createElement('div');
+    puddle.className = 'puddle';
+    towerWrap.parentElement.appendChild(puddle);
+    // Sad cat
+    const cat = document.createElement('div');
+    cat.className = 'sad-cat';
+    cat.textContent = '😿';
+    towerWrap.parentElement.appendChild(cat);
+    setTimeout(()=>announce('MELTED!'), 400);
+
+    setTimeout(()=>{
+      puddle.remove();
+      cat.remove();
+      resetGame();
+      state.gameActive = true;
+    }, 2800);
+  }, 800);
+}
+
+function resetGame(){
+  state.target = 1;
+  state.stacked = [];
+  state.meltProgress = 0;
+  state.warnedMelt = false;
+  state.lastActionTime = Date.now();
+  towerWrap.innerHTML = '<div class="cone"></div>';
+  towerWrap.classList.remove('urgent','tilt1','tilt2','tilt3','tilt4','tilt5');
+  targetNumEl.textContent = '1';
+  announce('Try again! Start at 1!');
+}
+
+/* ═══ COMPLETE TOWER - FINALE ═══ */
+function completeTower(){
+  state.gameActive = false;
+  resetMelt();
+  audio.playVoice('wow_tall');
+
+  setTimeout(()=>{
+    // Spawn huge customer
+    const customerEl = document.createElement('div');
+    customerEl.className = 'customer';
+    customerEl.textContent = CUSTOMERS[Math.floor(Math.random()*CUSTOMERS.length)];
+    scrGame.appendChild(customerEl);
+
+    requestAnimationFrame(()=>customerEl.classList.add('active'));
+
+    setTimeout(()=>audio.playVoice('chomp'), 500);
+    audio.chompSound();
+
+    // Chomp cycles
+    let chompCount = 0;
+    const chompInterval = setInterval(()=>{
+      audio.chompSound();
+      spawnChompText();
+      // Remove top scoop
+      const scoops = towerWrap.querySelectorAll('.scoop-stacked');
+      if(scoops.length > 0){
+        const top = scoops[scoops.length-1];
+        top.style.animation = 'none';
+        top.style.transition = 'all .4s';
+        top.style.transform = 'scale(0) rotate(180deg)';
+        top.style.opacity = '0';
+        setTimeout(()=>top.remove(), 400);
+      }
+      chompCount++;
+      if(chompCount >= 10){
+        clearInterval(chompInterval);
+        setTimeout(()=>{
+          audio.playVoice('nom_nom');
+          setTimeout(()=>{
+            customerEl.classList.remove('active');
+            customerEl.classList.add('burp');
+            audio.tone(150, .8, 'sawtooth', .4);
+            audio.playVoice('delicious');
+            setTimeout(()=>{
+              customerEl.remove();
+              spawnConfetti();
+              showScreen(scrCeleb);
+              audio.celebrationFanfare();
+              setTimeout(()=>audio.playVoice('amazing'), 800);
+            }, 1200);
+          }, 500);
+        }, 400);
+      }
+    }, 350);
+  }, 800);
+}
+
+function spawnChompText(){
+  const words = ['CHOMP!','NOM!','MUNCH!','YUM!','GULP!'];
+  const el = document.createElement('div');
+  el.className = 'chomp-text';
+  el.textContent = words[Math.floor(Math.random()*words.length)];
+  el.style.left = (30 + Math.random()*40) + '%';
+  el.style.top = (30 + Math.random()*30) + '%';
+  scrGame.appendChild(el);
+  setTimeout(()=>el.remove(), 800);
+}
+
+function spawnConfetti(){
+  const colors = ['#ff1744','#ffc107','#4caf50','#2196f3','#e91e63','#9c27b0','#ff9800'];
+  for(let i=0;i<60;i++){
+    setTimeout(()=>{
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random()*100 + '%';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.animationDuration = (2+Math.random()*2) + 's';
+      c.style.transform = 'rotate(' + Math.random()*360 + 'deg)';
+      document.body.appendChild(c);
+      setTimeout(()=>c.remove(), 4500);
+    }, i*40);
+  }
+}
+
+/* ═══ MAIN LOOP ═══ */
+let lastFrame = 0;
+function gameLoop(ts){
+  if(!lastFrame) lastFrame = ts;
+  const dt = ts - lastFrame;
+  lastFrame = ts;
+
+  if(state.gameActive){
+    tickBelt(dt);
+    tickMelt(Date.now());
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+/* ═══ START ═══ */
+async function startGame(){
+  await audio.unlock();
+  audio.startMusic();
+  showScreen(scrGame);
+  // Clear any leftovers
+  beltArea.querySelectorAll('.scoop-belt').forEach(el=>el.remove());
+  state.beltScoops = [];
+  resetGame();
+  state.gameActive = true;
+
+  // Spawn 10 scoops, shuffled order, spaced along belt
+  const nums = [1,2,3,4,5,6,7,8,9,10];
+  // Shuffle
+  for(let i=nums.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [nums[i],nums[j]] = [nums[j],nums[i]];
+  }
+  const beltW = beltArea.offsetWidth;
+  const spacing = beltW / 4.5;
+  nums.forEach((n, idx)=>{
+    setTimeout(()=>{
+      spawnScoop(n);
+      // Override x for even distribution
+      const s = state.beltScoops[state.beltScoops.length-1];
+      if(s){
+        s.x = beltW + (idx * spacing);
+        s.el.style.left = s.x + 'px';
+      }
+    }, idx*50);
+  });
+
+  setTimeout(()=>{
+    audio.playVoice('stack_em');
+    setTimeout(()=>audio.playVoice('in_order'), 1800);
+  }, 400);
+}
+
+startBtn.addEventListener('click', startGame);
+againBtn.addEventListener('click', ()=>{
+  startGame();
+});
+
+// First interaction unlocks audio
+document.body.addEventListener('touchstart', ()=>audio.unlock(), {once:true, passive:true});
+document.body.addEventListener('click', ()=>audio.unlock(), {once:true});
+
+requestAnimationFrame(gameLoop);
+
+/* ═══ AHA! PROGRESS TRACKING ═══ */
+(function(){ function getKey(){ var parts=location.pathname.split('/').filter(Boolean); var last=parts[parts.length-1]||'index.html'; var game=last.replace('.html',''); var theme=parts[parts.length-2]||'root'; if(game==='') game='index'; return theme+'/'+game; } function load(){ try { return JSON.parse(localStorage.getItem('aha_progress')||'{}'); } catch(e){ return {}; } } function save(p){ try { localStorage.setItem('aha_progress', JSON.stringify(p)); } catch(e){} } function markAttempt(){ var p=load(), k=getKey(); if(!p[k]) p[k]={ attempted:true, attemptedAt:Date.now() }; save(p); } function markComplete(){ var p=load(), k=getKey(); if(!p[k]) p[k]={}; p[k].completed=true; p[k].completedAt=Date.now(); p[k].plays=(p[k].plays||0)+1; save(p); } var celeb=document.getElementById('scrCeleb'); if(celeb){ var obs=new MutationObserver(function(){ if(celeb.classList.contains('active')) markComplete(); }); obs.observe(celeb, { attributes:true, attributeFilter:['class'] }); } setTimeout(markAttempt, 3000); })();
+</script>
+</body>
+</html>

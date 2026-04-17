@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  GAME TEMPLATE — read this whole file before modifying.
+  Every pattern that made the real games work is here. Every comment
+  marked "WHY:" explains a decision that cost me hours to figure out.
+
+  This is a WORKING 4-round number-matching game skeleton. Copy this file,
+  rename it, adjust the numbers/theme/copy — and you'll have a game that
+  ships cleanly. Do NOT delete the patterns unless you fully understand why
+  they exist.
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- WHY: viewport-fit=cover is REQUIRED for env(safe-area-inset-*) to work on iPhone.
+     user-scalable=no prevents accidental pinch-zoom during gameplay. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Template Game ✨</title>
+<style>
+:root {
+  --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
+  /* WHY: 80px min tap target — Apple's HIG + fat finger margin for 3-5yo. */
+  --tap: 80px;
+  /* Z-index layers: stay consistent across games so elements don't fight. */
+  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20;
+  --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
+  /* WHY: cubic-bezier(0.34, 1.56, 0.64, 1) is the spring curve that makes
+     everything feel satisfying. Use it on every transform/scale. */
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Theme colors — change these for a new theme */
+  --bg-a: #1a0533;
+  --bg-b: #4a1580;
+  --bg-c: #8b1a6b;
+  --accent: #e91e8c;
+  --gold: #ffe066;
+  --white85: rgba(255,255,255,0.85);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: var(--font);
+  /* WHY: overflow hidden + dual height declaration handles iOS toolbar showing/hiding. */
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  /* WHY: manipulation allows pinch-zoom disable without killing tap events.
+     DO NOT use 'none' unless this is a canvas tracing game. */
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  color: #fff;
+  background: linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
+}
+
+/* ─── BACK BUTTONS (always reachable) ──────────────────────────────────── */
+/* WHY: Plain <a> links at z-index 9999. Work even if ALL JavaScript crashes.
+   Critical escape hatch — the user has reported being stuck multiple times. */
+.back-home-btn {
+  position: fixed;
+  /* WHY: env() for iPhone notch. The max() fallback keeps it 12px on other devices. */
+  top: max(12px, env(safe-area-inset-top, 12px) + 4px);
+  left: max(12px, env(safe-area-inset-left, 12px));
+  z-index: 9999;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 13px;
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  transition: transform 0.15s var(--spring);
+}
+.back-home-btn:active { transform: scale(0.95); }
+
+.home-bubble {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  right: max(16px, env(safe-area-inset-right, 16px));
+  z-index: 9999;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--accent));
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  display: none;  /* Hidden until .show — only during gameplay */
+  align-items: center; justify-content: center;
+  font-size: 28px;
+  text-decoration: none;
+  animation: bubblePulse 2s ease-in-out infinite;
+}
+.home-bubble.show { display: flex; }
+@keyframes bubblePulse { 0%,100% {transform:scale(1)} 50% {transform:scale(1.1)} }
+
+/* ─── SCREEN SYSTEM ─────────────────────────────────────────────────────── */
+/* WHY: display:none base + .active for show. DO NOT add #scrX{display:flex}
+   rules anywhere — ID specificity beats class, screens won't hide.
+   This exact bug broke Cat Café earlier. */
+.screen {
+  position: fixed; inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  z-index: var(--z-screen);
+}
+.screen.active { display: flex; }
+
+/* ─── BACKGROUND PARTICLES (make world feel alive) ──────────────────────── */
+.bg-particle {
+  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  font-size: clamp(12px, 2.5vw, 20px);
+  opacity: 0.4;
+  animation: particleFloat linear infinite;
+}
+@keyframes particleFloat {
+  0%   { transform: translateY(105vh) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.4; }
+  92%  { opacity: 0.4; }
+  100% { transform: translateY(-60px) rotate(360deg); opacity: 0; }
+}
+
+/* ─── TITLE SCREEN ─────────────────────────────────────────────────────── */
+.screen-title h1 {
+  font-size: clamp(28px, 7vw, 48px);
+  color: var(--gold);
+  /* WHY: Multi-layer text-shadow gives depth. Glow + drop-shadow = magic. */
+  text-shadow: 0 0 30px rgba(255,224,102,0.6), 2px 2px 0 rgba(0,0,0,0.35);
+  margin: 12px 0 8px;
+}
+.screen-title p {
+  font-size: clamp(14px, 3.5vw, 20px);
+  color: var(--white85);
+  max-width: 360px; line-height: 1.45;
+}
+.char-intro {
+  font-size: clamp(60px, 14vw, 90px);
+  animation: charIntro 3s ease-in-out infinite;
+}
+@keyframes charIntro {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+
+.btn {
+  min-width: var(--tap); min-height: 58px;
+  padding: 14px 44px;
+  font-size: clamp(18px, 4.5vw, 26px);
+  font-family: var(--font); font-weight: bold;
+  color: #fff; border: none; border-radius: 32px;
+  cursor: pointer;
+  box-shadow: 0 5px 22px rgba(0,0,0,0.3);
+  /* WHY: transition on transform only — not all properties.
+     Spring on press makes it feel tactile. */
+  transition: transform 0.1s var(--spring);
+}
+.btn:active { transform: scale(0.93); }
+.btn-start {
+  background: linear-gradient(135deg, var(--accent), #8b1a6b);
+  margin-top: 18px;
+  /* WHY: Glow animation draws the eye. The start button is the invitation. */
+  animation: btnGlow 2.4s ease-in-out infinite;
+}
+@keyframes btnGlow {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+/* ─── HUD (top bar during gameplay) ────────────────────────────────────── */
+.hud {
+  position: fixed;
+  /* WHY: env(safe-area-inset-top) keeps the HUD clear of iPhone notch/dynamic island. */
+  top: max(0px, env(safe-area-inset-top, 0px));
+  left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 14px 8px 90px;  /* left padding leaves room for back button */
+  background: rgba(26,5,51,0.88);
+  backdrop-filter: blur(6px);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.hud-left, .hud-right { display: flex; flex-direction: column; gap: 1px; }
+.hud-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+}
+.hud-label {
+  font-size: clamp(10px, 2.2vw, 13px);
+  color: rgba(255,255,255,0.5);
+  font-weight: bold; letter-spacing: 0.05em;
+}
+.hud-val { font-size: clamp(16px, 3.5vw, 24px); font-weight: 900; }
+.hud-round .hud-val { color: var(--accent); }
+.hud-score .hud-val { color: var(--gold); }
+
+/* ─── TARGET CARD (the numeral the child is looking for) ──────────────── */
+/* WHY: Numeral is the HERO. Large font, center screen, high contrast.
+   Never let it be smaller than the options cards. */
+.target-card {
+  position: fixed;
+  top: clamp(80px, 14vh, 140px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-game);
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
+  border: 3px solid var(--gold);
+  border-radius: 20px;
+  padding: clamp(12px, 3vw, 22px) clamp(24px, 5vw, 40px);
+  text-align: center;
+  box-shadow: 0 0 30px rgba(255,224,102,0.3), 0 8px 28px rgba(0,0,0,0.3);
+  /* WHY: gentle pulse draws attention without being annoying. */
+  animation: targetPulse 2.5s ease-in-out infinite;
+}
+@keyframes targetPulse {
+  0%,100% { box-shadow: 0 0 30px rgba(255,224,102,0.3), 0 8px 28px rgba(0,0,0,0.3); }
+  50%     { box-shadow: 0 0 45px rgba(255,224,102,0.5), 0 8px 28px rgba(0,0,0,0.3); }
+}
+.target-numeral {
+  /* WHY: HERO size. Fills the card. Never smaller than this. */
+  font-size: clamp(44px, 10vw, 72px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+  line-height: 1;
+}
+.target-dots {
+  font-size: clamp(16px, 3.5vw, 22px);
+  margin-top: 4px;
+  letter-spacing: 2px;
+}
+.target-word {
+  font-size: clamp(14px, 3vw, 20px);
+  color: var(--gold);
+  font-weight: bold;
+  margin-top: 2px;
+  text-transform: lowercase;
+}
+
+/* ─── OPTION CARDS (the choices) ──────────────────────────────────────── */
+.options-area {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: max(80px, env(safe-area-inset-bottom, 0px) + 80px);  /* leave room for progress bar */
+  top: 50%;
+  z-index: var(--z-game);
+  display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: center; align-content: center;
+  gap: clamp(10px, 2.5vw, 20px);
+  padding: 10px 16px;
+  pointer-events: none;
+}
+.options-area.active { pointer-events: auto; }
+
+.option-card {
+  min-width: var(--tap);
+  min-height: 100px;
+  padding: clamp(12px, 3vw, 20px) clamp(14px, 3.5vw, 26px);
+  border-radius: 20px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+  border: 3px solid rgba(255,255,255,0.35);
+  box-shadow: 0 6px 26px rgba(0,0,0,0.3);
+  cursor: pointer;
+  transition: transform 0.15s var(--spring), box-shadow 0.15s;
+}
+.option-card:active { transform: scale(0.93); }
+.option-card:hover { box-shadow: 0 10px 34px rgba(0,0,0,0.4); }
+
+.option-numeral {
+  font-size: clamp(32px, 8vw, 52px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  line-height: 1;
+}
+.option-word {
+  font-size: clamp(11px, 2.5vw, 15px);
+  color: rgba(255,255,255,0.85);
+  font-weight: bold;
+  text-transform: lowercase;
+}
+
+/* WHY: shake animation for wrong answers. 500ms feels intentional — not a glitch. */
+.wrong-tap {
+  animation: wrongShake 0.5s ease-in-out;
+}
+@keyframes wrongShake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(9px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* WHY: hint states for when child is idle — the correct answer pulses to guide them. */
+.hint-wiggle {
+  animation: hintWiggle 0.6s ease-in-out 3 !important;
+}
+.hint-glow {
+  box-shadow: 0 0 25px rgba(255,255,100,0.8), 0 0 50px rgba(255,255,100,0.4) !important;
+}
+@keyframes hintWiggle {
+  0%,100% { transform: rotate(0) scale(1); }
+  25% { transform: rotate(-6deg) scale(1.05); }
+  75% { transform: rotate(6deg) scale(1.05); }
+}
+
+/* ─── CHARACTER + SPEECH BUBBLE (bottom-left, reacts to actions) ──────── */
+.char-area {
+  position: fixed;
+  bottom: max(66px, env(safe-area-inset-bottom, 0px) + 66px);
+  left: 10px;
+  z-index: var(--z-char);
+  pointer-events: none;
+}
+.char-emoji { font-size: clamp(44px, 10vw, 66px); }
+.char-bubble {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.96);
+  color: #2d1b4e;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: clamp(12px, 2.6vw, 16px);
+  font-weight: bold;
+  white-space: nowrap;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  opacity: 0;
+  transition: opacity 0.28s;
+  margin-bottom: 7px;
+}
+.char-bubble.show { opacity: 1; }
+.char-bubble::after {
+  content: '';
+  position: absolute; bottom: -7px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 7px solid transparent; border-right: 7px solid transparent;
+  border-top: 8px solid rgba(255,255,255,0.96);
+}
+
+/* WHY: charJump animation fires on correct answers — character ACTIVELY reacts. */
+.jump { animation: charJump 0.65s ease-out; }
+@keyframes charJump {
+  0%,100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-22px) scale(1.08); }
+  70% { transform: translateY(-8px) scale(1.03); }
+}
+
+/* ─── PROGRESS BAR (bottom, shows items in current round) ─────────────── */
+.prog-bar {
+  position: fixed;
+  bottom: max(0px, env(safe-area-inset-bottom, 0px));
+  left: 0; right: 0;
+  z-index: var(--z-ui);
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(4px, 1.2vw, 10px);
+  padding: 6px 10px 8px;
+  background: rgba(26,5,51,0.88);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+.prog-dot {
+  width: clamp(28px, 5.5vw, 38px);
+  height: clamp(28px, 5.5vw, 38px);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(12px, 2.5vw, 18px);
+  font-weight: 900;
+  color: rgba(255,255,255,0.3);
+  transition: all 0.4s var(--spring);
+}
+.prog-dot.done {
+  background: linear-gradient(135deg, var(--gold), #c47400);
+  border-color: var(--gold);
+  color: #fff;
+  /* WHY: Spring bloom animation when filled — makes progress feel earned. */
+  animation: dotBloom 0.5s var(--spring) forwards;
+}
+@keyframes dotBloom {
+  0% { transform: scale(0.4); }
+  70% { transform: scale(1.25); }
+  100% { transform: scale(1.1); }
+}
+
+/* ─── ROUND BANNER (between-round transition) ─────────────────────────── */
+.round-banner {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-overlay);
+  text-align: center;
+  background: rgba(25,8,65,0.92);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 26px;
+  padding: 24px 40px;
+  min-width: 280px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.38s;
+}
+.round-banner.show { opacity: 1; }
+.round-banner h2 {
+  font-size: clamp(20px, 5vw, 32px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.round-banner p {
+  font-size: clamp(12px, 2.8vw, 17px);
+  color: rgba(255,255,255,0.7);
+  margin-top: 5px;
+}
+
+/* ─── CELEBRATION SCREEN ─────────────────────────────────────────────── */
+.screen-celeb { background: rgba(15,4,50,0.92); backdrop-filter: blur(12px); z-index: var(--z-celeb); }
+.screen-celeb h2 {
+  font-size: clamp(26px, 6.5vw, 48px);
+  color: var(--gold);
+  text-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+  animation: bounce 1.5s ease-in-out infinite;
+}
+.screen-celeb p {
+  font-size: clamp(14px, 3.5vw, 22px);
+  color: rgba(255,255,255,0.9);
+  margin: 8px 0;
+}
+.celeb-stars {
+  font-size: clamp(28px, 7vw, 50px);
+  margin: 10px 0;
+  letter-spacing: 5px;
+}
+.celeb-icon {
+  font-size: clamp(70px, 15vw, 120px);
+  animation: dance 1s ease-in-out infinite;
+}
+
+@keyframes bounce { 0%,100% {transform:translateY(0)} 50% {transform:translateY(-10px)} }
+@keyframes dance {
+  0%,100% { transform: translateY(0) rotate(0) scale(1); }
+  15% { transform: translateY(-18px) rotate(-8deg) scale(1.08); }
+  30% { transform: translateY(0) rotate(8deg); }
+  45% { transform: translateY(-12px) rotate(-5deg) scale(1.05); }
+  60% { transform: translateY(0) rotate(5deg); }
+  75% { transform: translateY(-8px) rotate(-3deg) scale(1.08); }
+}
+
+/* ─── CONFETTI + STAR BURST (always-present patterns) ─────────────────── */
+.confetti {
+  position: fixed;
+  z-index: calc(var(--z-celeb) + 5);
+  pointer-events: none;
+  font-size: 22px;
+  animation: cfall linear forwards;
+}
+@keyframes cfall {
+  0% { transform: translateY(-20px) rotate(0) scale(1); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg) scale(0.5); opacity: 0.4; }
+}
+.starburst {
+  position: fixed;
+  pointer-events: none;
+  z-index: calc(var(--z-celeb) + 2);
+  font-size: 26px;
+  animation: starpop 0.7s ease-out forwards;
+}
+@keyframes starpop {
+  0% { transform: scale(0) rotate(0); opacity: 1; }
+  60% { transform: scale(1.4) rotate(200deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+/* WHY: Media query for phones — tighten spacing on narrow screens. */
+@media (max-width: 400px) {
+  .target-card { padding: 10px 20px; top: 70px; }
+  .options-area { top: 46%; gap: 8px; }
+  .option-card { padding: 10px 16px; min-height: 80px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ BACK BUTTONS (outside any screen — always reachable) ═══ -->
+<!-- WHY: These are plain <a> tags OUTSIDE the .screen divs. If all JS
+     crashes, these STILL navigate. This is the escape hatch. -->
+<a href="../../" class="back-home-btn" aria-label="Back to home">← Home</a>
+<a href="../../" id="homeBubble" class="home-bubble" aria-label="Home">🏠</a>
+
+<!-- Decorative background particles — spawned from JS -->
+<!-- (bg particles are appended via JS buildScenery() — see below) -->
+
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen screen-title active" id="scrTitle">
+  <div class="char-intro">🌟</div>
+  <h1>Template Game ✨</h1>
+  <p>Short description of what the child will do (1-2 sentences).</p>
+  <button class="btn btn-start" id="btnStart">Let's Play! ✨</button>
+</div>
+
+<!-- ═══ GAME SCREEN ═══ -->
+<!-- HUD at top -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left hud-round">
+    <span class="hud-label">ROUND</span>
+    <span class="hud-val" id="hudRound">1/4</span>
+  </div>
+  <div class="hud-center">
+    <div class="hud-label">FIND</div>
+    <div class="hud-val" id="hudFind">—</div>
+  </div>
+  <div class="hud-right hud-score">
+    <span class="hud-label">STARS</span>
+    <span class="hud-val" id="hudScore">0</span>
+  </div>
+</div>
+
+<!-- Target card shows the numeral to find -->
+<!-- WHY: This is the HERO element. Large numeral, centered, always visible. -->
+<div class="target-card" id="targetCard" style="display:none">
+  <div class="target-numeral" id="targetNumeral">—</div>
+  <div class="target-dots" id="targetDots"></div>
+  <div class="target-word" id="targetWord"></div>
+</div>
+
+<!-- Option cards — child taps one -->
+<div class="options-area" id="optionsArea"></div>
+
+<!-- Character bottom-left -->
+<div class="char-area" id="charArea" style="display:none">
+  <div class="char-bubble" id="charBubble"></div>
+  <div class="char-emoji" id="charEmoji">🌟</div>
+</div>
+
+<!-- Progress bar at bottom -->
+<div class="prog-bar" id="progBar" style="display:none"></div>
+
+<!-- Round banner (show/hide via .show class) -->
+<div class="round-banner" id="roundBanner">
+  <h2 id="roundTitle"></h2>
+  <p id="roundSub"></p>
+</div>
+
+<!-- ═══ CELEBRATION SCREEN (id MUST be scrCeleb for progress tracking) ═══ -->
+<div class="screen screen-celeb" id="scrCeleb">
+  <div class="celeb-icon">🎉</div>
+  <h2 id="celebTitle">🌟 Amazing! 🌟</h2>
+  <p id="celebMsg">You did it!</p>
+  <div class="celeb-stars" id="celebStars"></div>
+  <button class="btn btn-start" id="btnAgain">Play Again! ✨</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIG — adjust these per game
+// ═══════════════════════════════════════════════════════════════════════════
+
+// WHY: AUDIO_BASE is ALWAYS '../../audio' for v2/[theme]/[game].html files.
+// Two levels up. DO NOT CHANGE unless you move the file structure.
+const AUDIO_BASE = '../../audio';
+
+// WHY: Voice A for numbers, Voice B for letters. Project convention.
+// Inline the pool so the game is self-contained (no JSON fetch).
+const VOICE_A = {
+  greetings: [
+    'voice-a/greetings/here-we-go.mp3',
+    'voice-a/greetings/lets-go.mp3',
+    'voice-a/greetings/come-on-lets-play.mp3',
+    'voice-a/greetings/are-you-ready.mp3',
+    'voice-a/greetings/this-is-going-to-be-fun.mp3',
+  ],
+  correct: [
+    'voice-a/correct/amazing.mp3',
+    'voice-a/correct/brilliant.mp3',
+    'voice-a/correct/fantastic.mp3',
+    'voice-a/correct/perfect.mp3',
+    'voice-a/correct/superstar.mp3',
+    'voice-a/correct/thats-right.mp3',
+    'voice-a/correct/well-done.mp3',
+    'voice-a/correct/you-got-it.mp3',
+    // ... add more variations
+  ],
+  wrong: [
+    'voice-a/wrong/almost-have-another-go.mp3',
+    'voice-a/wrong/dont-worry-try-again.mp3',
+    'voice-a/wrong/not-quite-you-can-do-it.mp3',
+    'voice-a/wrong/nearly-give-it-another-go.mp3',
+  ],
+  thinking: [
+    'voice-a/thinking/have-a-good-look.mp3',
+    'voice-a/thinking/take-your-time.mp3',
+    'voice-a/thinking/which-one-could-it-be.mp3',
+  ],
+  'round-complete': [
+    'voice-a/round-complete/round-complete-amazing.mp3',
+    'voice-a/round-complete/you-did-it-on-to-the-next.mp3',
+    'voice-a/round-complete/brilliant-round-keep-going.mp3',
+  ],
+  'game-complete': [
+    'voice-a/game-complete/you-are-a-superstar.mp3',
+    'voice-a/game-complete/you-finished-so-proud.mp3',
+    'voice-a/game-complete/youre-incredible-we-did-it.mp3',
+  ],
+};
+
+// Number word map — extend for your game's range
+const NUMBER_WORDS = {
+  0:'zero', 1:'one', 2:'two', 3:'three', 4:'four', 5:'five',
+  6:'six', 7:'seven', 8:'eight', 9:'nine', 10:'ten',
+};
+
+// Game numbers — change for your game's range
+const NUMBERS = [1, 2, 3, 4, 5];
+
+// WHY: Dot-pattern generator. Small numbers use stars. Keep it simple.
+function makeDots(n) {
+  if (n === 0) return '🌙';
+  if (n <= 5) return '⭐'.repeat(n);
+  if (n <= 10) return '⭐'.repeat(5) + '\n' + '⭐'.repeat(n - 5);
+  return '';  // For larger numbers, dots become cluttered — use word instead
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GAME AUDIO CLASS — copy this exactly. Do not simplify.
+// ═══════════════════════════════════════════════════════════════════════════
+class GameAudio {
+  constructor() {
+    this.ctx = null; this.musicGain = null; this.sfxGain = null;
+    this.musicVol = 0.08;  // DO NOT DROP BELOW 0.05
+    this.sfxVol = 0.3;
+    this.musicDucked = 0.025;
+    this.playing = false;
+    this.voiceQueue = [];
+    this.speaking = false;
+    this._lastPlayed = {};
+  }
+
+  _init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = this.ctx.createGain();
+    master.gain.value = 1;
+    master.connect(this.ctx.destination);
+    this.musicGain = this.ctx.createGain();
+    this.musicGain.gain.value = this.musicVol;
+    this.musicGain.connect(master);
+    this.sfxGain = this.ctx.createGain();
+    this.sfxGain.gain.value = this.sfxVol;
+    this.sfxGain.connect(master);
+  }
+
+  // WHY: unlock() is synchronous. DO NOT await it — that breaks iOS.
+  // Called from btnStart tap handler BEFORE any other audio operation.
+  unlock() {
+    this._init();
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+  }
+
+  // Synthesized background music — pentatonic ambient loop
+  startMusic() {
+    this._init();
+    if (this.playing) return;
+    this.playing = true;
+    const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+    const go = () => {
+      if (!this.playing) return;
+      const f = notes[Math.floor(Math.random() * notes.length)];
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = Math.random() > 0.5 ? 'sine' : 'triangle';
+      o.frequency.value = f * (Math.random() > 0.7 ? 0.5 : 1);
+      g.gain.setValueAtTime(0, this.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.15);
+      g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
+      o.connect(g); g.connect(this.musicGain);
+      o.start(); o.stop(this.ctx.currentTime + 2.2);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+      this._mt = setTimeout(go, 800 + Math.random() * 1200);
+    };
+    go();
+  }
+  stopMusic() { this.playing = false; clearTimeout(this._mt); }
+  _duck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicDucked, this.ctx.currentTime + 0.1); }
+  _unduck() { if (this.musicGain) this.musicGain.gain.linearRampToValueAtTime(this.musicVol, this.ctx.currentTime + 0.3); }
+
+  // Synthesized sound effects — instant, no latency
+  tone(type) {
+    this._init();
+    const t = this.ctx.currentTime;
+    const p = (f, s, d, v = 0.4, w = 'sine') => {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = w; o.frequency.value = f;
+      g.gain.setValueAtTime(0, s);
+      g.gain.linearRampToValueAtTime(v, s + 0.02);
+      g.gain.linearRampToValueAtTime(0, s + d);
+      o.connect(g); g.connect(this.sfxGain);
+      o.start(s); o.stop(s + d + 0.01);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    };
+    if (type === 'correct')    { p(523.25, t, 0.15, 0.35); p(659.25, t + 0.12, 0.18, 0.4); p(783.99, t + 0.24, 0.22, 0.45); }
+    else if (type === 'wrong') { p(330, t, 0.1, 0.15); p(290, t + 0.08, 0.12, 0.12); }
+    else if (type === 'celeb') { p(523.25, t, 0.15, 0.35); p(659.25, t + 0.15, 0.15, 0.4); p(783.99, t + 0.3, 0.18, 0.45); p(1046.5, t + 0.48, 0.35, 0.5); }
+    else if (type === 'roundDone') { p(392, t, 0.12, 0.3); p(523.25, t + 0.12, 0.12, 0.35); p(659.25, t + 0.24, 0.15, 0.4); p(783.99, t + 0.38, 0.2, 0.45); }
+    else if (type === 'hint')  { p(440, t, 0.15, 0.15); p(550, t + 0.15, 0.2, 0.12); }
+    else if (type === 'whoosh') {
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(200, t);
+      o.frequency.exponentialRampToValueAtTime(800, t + 0.15);
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.linearRampToValueAtTime(0, t + 0.2);
+      o.connect(g); g.connect(this.sfxGain);
+      o.start(t); o.stop(t + 0.25);
+      o.onended = () => { o.disconnect(); g.disconnect(); };
+    }
+  }
+
+  speak(file) {
+    return new Promise(resolve => {
+      this.voiceQueue.push({ file, resolve });
+      this._next();
+    });
+  }
+
+  async _next() {
+    if (this.speaking || !this.voiceQueue.length) return;
+    this.speaking = true;
+    const { file, resolve } = this.voiceQueue.shift();
+    this._duck();
+    try { await this._playFile(file); } catch (e) {}
+    this.speaking = false;
+    this._unduck();
+    resolve();
+    setTimeout(() => this._next(), 80);
+  }
+
+  // WHY: This is THE critical function. iOS Safari requires AudioContext path
+  // (fetch + decodeAudioData + BufferSource). `new Audio()` silently fails
+  // after any await breaks the gesture chain.
+  _playFile(path) {
+    const htmlFallback = () => new Promise(resolve => {
+      const a = new window.Audio(path);
+      a.onended = resolve;
+      a.onerror = () => resolve();
+      a.play().catch(() => resolve());
+    });
+    if (this.ctx && this.ctx.state !== 'closed') {
+      return fetch(path)
+        .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => this.ctx.decodeAudioData(buf))
+        .then(decoded => new Promise(resolve => {
+          const src = this.ctx.createBufferSource();
+          src.buffer = decoded;
+          src.connect(this.ctx.destination);
+          src.onended = resolve;
+          src.start();
+        }))
+        .catch(() => htmlFallback());
+    }
+    return htmlFallback();
+  }
+
+  // WHY: Random clip from pool, never same twice in a row.
+  play(category) {
+    const pool = VOICE_A[category];
+    if (!pool || !pool.length) return Promise.resolve();
+    const last = this._lastPlayed[category];
+    const candidates = pool.length > 1 ? pool.filter(f => f !== last) : pool;
+    const file = candidates[Math.floor(Math.random() * candidates.length)];
+    this._lastPlayed[category] = file;
+    return this.speak(`${AUDIO_BASE}/${file}`);
+  }
+
+  speakNumber(n)    { return this.speak(`${AUDIO_BASE}/numbers/${n}.mp3`); }
+  speakLetter(l)    { return this.speak(`${AUDIO_BASE}/letters/${l}.mp3`); }
+  speakPhrase(name) { return this.speak(`${AUDIO_BASE}/phrases/${name}.mp3`); }
+
+  // WHY: clearQueue() flushes stale announcements when a new target appears.
+  // Critical for games where targets change rapidly (bubble-pop, carnival).
+  clearQueue() {
+    this.voiceQueue.forEach(q => q.resolve());
+    this.voiceQueue = [];
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+// WHY: onTap helper prevents double-fire on mobile (touchstart + click both firing).
+function onTap(el, fn) {
+  let t = false;
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (t) return; t = true;
+    fn(e);
+    setTimeout(() => t = false, 300);
+  }, { passive: false });
+  el.addEventListener('click', e => {
+    if (t) return;
+    fn(e);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  VISUAL EFFECTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Confetti — for round complete (30) and game complete (60 + 35 second wave)
+function confetti(count = 40, extra = []) {
+  const all = ['⭐', '✨', '💫', '🌟', '🎉', '💖', ...extra];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.textContent = pick(all);
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.top = '-30px';
+    el.style.fontSize = (16 + Math.random() * 14) + 'px';
+    el.style.animationDelay = (Math.random() * 1.8) + 's';
+    el.style.animationDuration = (2.5 + Math.random() * 2.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6200);
+  }
+}
+
+// Star burst — on every correct tap, from the tapped element location
+function starBurst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('div');
+    s.className = 'starburst';
+    s.textContent = pick(['⭐', '🌟', '✨', '💫', '🎉']);
+    s.style.left = (cx + (Math.random() - 0.5) * 120) + 'px';
+    s.style.top = (cy + (Math.random() - 0.5) * 120) + 'px';
+    s.style.animationDelay = (Math.random() * 0.15) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+
+function showCharBubble(text, dur = 2000) {
+  const b = $('charBubble');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), dur);
+}
+
+function jumpChar() {
+  const el = $('charEmoji');
+  el.classList.remove('jump');
+  void el.offsetWidth;  // force reflow so animation restarts
+  el.classList.add('jump');
+  setTimeout(() => el.classList.remove('jump'), 700);
+}
+
+function buildScenery() {
+  const emojis = ['⭐', '✨', '🌟', '💫', '🌙'];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'bg-particle';
+    el.textContent = pick(emojis);
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.animationDelay = (-Math.random() * 20) + 's';
+    el.style.animationDuration = (10 + Math.random() * 14) + 's';
+    document.body.appendChild(el);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════════════════════
+const audio = new GameAudio();
+
+// WHY: 4 rounds EXACTLY. User expectation: clear endpoint. HUD shows "X/4".
+// Each round configures display mode + number of choices + hint mode.
+// THIS IS WHERE DIFFICULTY ESCALATES — via scaffolding removal, not raw speed.
+const ROUNDS = [
+  { label: 'Round 1 — Getting Started 🌟', sub: 'Full scaffolding', display: 'full',    choices: 2, hintMode: 'strong' },
+  { label: 'Round 2 — Looking Good ✨',    sub: 'Word removed',    display: 'numeral', choices: 3, hintMode: 'subtle' },
+  { label: 'Round 3 — Count the Dots 💜',  sub: 'Dots only',        display: 'dots',    choices: 4, hintMode: 'none'   },
+  { label: 'Round 4 — Expert Mode 🏆',     sub: 'Words only',       display: 'word',    choices: 4, hintMode: 'none', timer: true },
+];
+
+let gameActive = false;
+let round = 0;
+let score = 0;
+let roundNumbers = [];
+let roundIdx = 0;
+let currentTarget = null;
+let choosing = false;
+let hintTimer = null;
+let hintVoiceTimer = null;
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (id) $(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HINT SYSTEM — wiggles correct answer at 4s, voice hint at 7s
+// ═══════════════════════════════════════════════════════════════════════════
+function clearHints() {
+  clearTimeout(hintTimer);
+  clearTimeout(hintVoiceTimer);
+}
+
+function resetHints() {
+  clearHints();
+  if (!gameActive || !choosing) return;
+  const mode = ROUNDS[round].hintMode;
+  if (mode === 'none') return;
+
+  hintTimer = setTimeout(() => {
+    if (!gameActive || !choosing) return;
+    const correctCard = document.querySelector(`.option-card[data-num="${currentTarget}"]`);
+    if (correctCard) {
+      correctCard.classList.add('hint-wiggle', 'hint-glow');
+      audio.tone('hint');
+      setTimeout(() => correctCard.classList.remove('hint-wiggle', 'hint-glow'), 2000);
+    }
+  }, 4000);
+
+  hintVoiceTimer = setTimeout(() => {
+    if (gameActive && choosing) {
+      // WHY: Fire-and-forget. If this awaits, it blocks.
+      audio.play('thinking');
+    }
+  }, 7000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BUILD ROUND
+// ═══════════════════════════════════════════════════════════════════════════
+function buildProg() {
+  const bar = $('progBar');
+  bar.innerHTML = '';
+  bar.style.display = '';
+  roundNumbers.forEach((n, i) => {
+    const d = document.createElement('div');
+    d.className = 'prog-dot';
+    d.id = 'pdot' + i;
+    d.textContent = n;
+    bar.appendChild(d);
+  });
+}
+
+function markProg(idx) {
+  const d = $('pdot' + idx);
+  if (d) d.classList.add('done');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DISPLAY TARGET (CENTRAL RULE: numeral is HERO, others are scaffolding)
+// ═══════════════════════════════════════════════════════════════════════════
+function displayTarget(num, displayMode) {
+  const nEl = $('targetNumeral');
+  const dEl = $('targetDots');
+  const wEl = $('targetWord');
+
+  // WHY: CRITICAL — the numeral is ALWAYS in the DOM, even in later rounds.
+  // We may hide it (display:none) in Round 3 "dots only" mode, but typically
+  // keep a small numeral visible for accessibility.
+  if (displayMode === 'full') {
+    nEl.textContent = num;
+    nEl.style.display = '';
+    nEl.style.fontSize = '';
+    dEl.textContent = makeDots(num);
+    wEl.textContent = NUMBER_WORDS[num] || '';
+  } else if (displayMode === 'numeral') {
+    nEl.textContent = num;
+    nEl.style.display = '';
+    dEl.textContent = '';
+    wEl.textContent = '';
+  } else if (displayMode === 'dots') {
+    // WHY: Even in "dots only" mode, keep the numeral visible but smaller.
+    // The visual-first rule requires it. If you remove it entirely, kids
+    // who don't recognize dots yet can't progress.
+    nEl.textContent = num;
+    nEl.style.fontSize = 'clamp(14px, 3vw, 20px)';
+    nEl.style.display = '';
+    dEl.textContent = makeDots(num);
+    wEl.textContent = '';
+  } else if (displayMode === 'word') {
+    // Word display — still show small numeral
+    nEl.textContent = num;
+    nEl.style.fontSize = 'clamp(14px, 3vw, 20px)';
+    nEl.style.display = '';
+    dEl.textContent = '';
+    wEl.textContent = NUMBER_WORDS[num] || '';
+  }
+
+  // Update HUD
+  $('hudFind').textContent = num;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  QUESTION FLOW
+// ═══════════════════════════════════════════════════════════════════════════
+async function startQuestion() {
+  gameActive = true;
+  choosing = false;
+  const cfg = ROUNDS[round];
+  currentTarget = roundNumbers[roundIdx];
+
+  // 1. Show target
+  displayTarget(currentTarget, cfg.display);
+  $('targetCard').style.display = '';
+
+  // 2. Speak the number ONCE — fire and forget
+  // WHY: NEVER await this. See RULE 3 in HANDOFF.md.
+  audio.speakNumber(currentTarget);
+
+  // 3. Build option cards (delay briefly so target registers)
+  await delay(400);
+  showChoices(currentTarget, cfg);
+
+  // 4. Start hint timer
+  choosing = true;
+  resetHints();
+}
+
+function showChoices(target, cfg) {
+  const area = $('optionsArea');
+  area.innerHTML = '';
+  area.classList.add('active');
+
+  // Build list: target + distractors
+  const options = [target];
+  const pool = shuffle(NUMBERS.filter(n => n !== target));
+  while (options.length < cfg.choices) options.push(pool[options.length - 1]);
+  shuffle(options);
+
+  options.forEach(num => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.dataset.num = num;
+    card.innerHTML = `
+      <div class="option-numeral">${num}</div>
+      <div class="option-word">${NUMBER_WORDS[num] || ''}</div>
+    `;
+    onTap(card, () => handleChoice(card, num));
+    area.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HANDLE CHOICE
+// ═══════════════════════════════════════════════════════════════════════════
+async function handleChoice(cardEl, chosen) {
+  if (!gameActive || !choosing) return;
+  clearHints();
+
+  if (chosen === currentTarget) {
+    // ═══ CORRECT ═══
+    choosing = false;
+
+    // WHY: Fire EVERYTHING at once. These are instant — no awaits.
+    audio.tone('correct');          // 3-note chime (0ms latency)
+    starBurst(cardEl);              // 8 sparkles from tap location
+    jumpChar();                     // character hop
+    showCharBubble('Yes! ⭐', 1800);
+    cardEl.style.background = 'linear-gradient(135deg, rgba(74,222,128,0.9), rgba(34,197,94,0.85))';
+
+    score++;
+    $('hudScore').textContent = score;
+    markProg(roundIdx);
+
+    // WHY: Voice cheer + number speak — both fire-and-forget.
+    // NEVER await these. The delay(450) below gives them time to play
+    // without blocking the game state.
+    audio.play('correct');
+    await delay(280);
+    audio.speakNumber(currentTarget);
+    await delay(170);
+
+    roundIdx++;
+    if (roundIdx >= roundNumbers.length) {
+      // Round complete
+      await finishRound();
+    } else {
+      // Next question in this round
+      $('optionsArea').innerHTML = '';
+      $('optionsArea').classList.remove('active');
+      startQuestion();
+    }
+
+  } else {
+    // ═══ WRONG ═══
+    cardEl.classList.add('wrong-tap');
+    audio.tone('wrong');                    // instant
+    showCharBubble('Try again! 💫', 1800);
+
+    // WHY: Fire-and-forget. The user feels NO delay.
+    audio.play('wrong');
+    // Re-speak target shortly after
+    setTimeout(() => audio.speakNumber(currentTarget), 620);
+
+    setTimeout(() => {
+      cardEl.classList.remove('wrong-tap');
+      resetHints();   // restart hint timer
+    }, 500);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ROUND TRANSITIONS (KEY: non-blocking voice so transitions are ~3s)
+// ═══════════════════════════════════════════════════════════════════════════
+async function finishRound() {
+  gameActive = false;
+  clearHints();
+  $('optionsArea').innerHTML = '';
+  $('optionsArea').classList.remove('active');
+  $('targetCard').style.display = 'none';
+
+  audio.tone('roundDone');
+  confetti(30);
+
+  // Show "Round Complete" banner
+  $('roundTitle').textContent = '✨ Round Complete! ✨';
+  $('roundSub').textContent   = 'Nice work!';
+  $('roundBanner').classList.add('show');
+  // WHY: Fire voice, DO NOT await. Banner visible while voice plays.
+  audio.play('round-complete');
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  round++;
+  if (round >= ROUNDS.length) {
+    // All rounds done — celebration
+    celebrateFinish();
+    return;
+  }
+
+  // Next round intro banner
+  const cfg = ROUNDS[round];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  // WHY: Again, NON-BLOCKING. Greeting voice plays over the banner.
+  audio.play('greetings');
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(180);
+
+  // Start next round
+  startRound();
+}
+
+function startRound() {
+  const cfg = ROUNDS[round];
+  $('hudRound').textContent = `${round + 1}/4`;
+
+  // Pick items for this round (random shuffle of NUMBERS, take 5)
+  roundNumbers = shuffle([...NUMBERS]).slice(0, Math.min(5, NUMBERS.length));
+  roundIdx = 0;
+
+  buildProg();
+  startQuestion();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CELEBRATION SEQUENCE (end of all 4 rounds)
+// ═══════════════════════════════════════════════════════════════════════════
+async function celebrateFinish() {
+  gameActive = false;
+  audio.stopMusic();
+  $('hud').style.display = 'none';
+  $('progBar').style.display = 'none';
+  $('charArea').style.display = 'none';
+  $('roundBanner').classList.remove('show');
+  $('homeBubble').classList.remove('show');
+
+  audio.tone('celeb');
+
+  // WHY: Star rating based on score — felt earned.
+  // Min 3 stars (never demoralize), max 5.
+  const stars = Math.min(5, Math.max(3, 1 + Math.floor(score / 4)));
+  $('celebStars').textContent = '⭐'.repeat(stars);
+  $('celebMsg').textContent = `You did it! ${score} stars!`;
+
+  // WHY: showScreen MUST add .active to #scrCeleb for progress tracking.
+  showScreen('scrCeleb');
+
+  confetti(60);
+
+  // Two voice phrases — felt grand, not rushed
+  await delay(300);
+  audio.play('game-complete');
+  await delay(2000);
+  audio.play('game-complete');
+
+  // Second confetti wave
+  setTimeout(() => confetti(35), 2000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  START / RESET
+// ═══════════════════════════════════════════════════════════════════════════
+async function startGame() {
+  audio.stopMusic();
+  audio.clearQueue();
+  round = 0;
+  score = 0;
+  roundIdx = 0;
+  clearHints();
+
+  $('hudScore').textContent = '0';
+  $('hud').style.display = '';
+  $('charArea').style.display = '';
+  $('homeBubble').classList.add('show');  // show floating home button during gameplay
+  $('roundBanner').classList.remove('show');
+
+  showScreen(null);
+  audio.startMusic();
+
+  // Round 1 opening banner
+  const cfg = ROUNDS[0];
+  $('roundTitle').textContent = cfg.label;
+  $('roundSub').textContent   = cfg.sub;
+  $('roundBanner').classList.add('show');
+  audio.tone('whoosh');
+  audio.play('greetings');    // FIRE-AND-FORGET
+  await delay(1400);
+  $('roundBanner').classList.remove('show');
+  await delay(200);
+
+  startRound();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════════
+buildScenery();
+
+// WHY: audio.unlock() in tap handler BEFORE anything else. NOT inside startGame().
+// This is the ONLY place iOS lets us unlock AudioContext.
+onTap($('btnStart'), () => {
+  audio.unlock();       // synchronous, instant
+  audio.tone('whoosh'); // fire opening whoosh
+  startGame();          // async after this is fine
+});
+
+onTap($('btnAgain'), () => {
+  audio.unlock();
+  startGame();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PROGRESS TRACKING (DO NOT REMOVE — main hub reads this)
+// ═══════════════════════════════════════════════════════════════════════════
+// WHY: The main hub's progress badges depend on this exact pattern.
+// The MutationObserver watches #scrCeleb for the .active class. When the
+// celebration screen appears, the game is marked complete in localStorage.
+// If you rename scrCeleb to something else, fix this too — but don't.
+(function() {
+  function getKey() {
+    var parts = location.pathname.split('/').filter(Boolean);
+    var last = parts[parts.length - 1] || 'index.html';
+    var game = last.replace('.html', '');
+    var theme = parts[parts.length - 2] || 'root';
+    if (game === '') game = 'index';
+    return theme + '/' + game;
+  }
+  function load() {
+    try { return JSON.parse(localStorage.getItem('aha_progress') || '{}'); }
+    catch (e) { return {}; }
+  }
+  function save(p) {
+    try { localStorage.setItem('aha_progress', JSON.stringify(p)); } catch (e) {}
+  }
+  function markAttempt() {
+    var p = load(), k = getKey();
+    if (!p[k]) p[k] = { attempted: true, attemptedAt: Date.now() };
+    save(p);
+  }
+  function markComplete() {
+    var p = load(), k = getKey();
+    if (!p[k]) p[k] = {};
+    p[k].completed = true;
+    p[k].completedAt = Date.now();
+    p[k].plays = (p[k].plays || 0) + 1;
+    save(p);
+  }
+  var celeb = document.getElementById('scrCeleb');
+  if (celeb) {
+    var obs = new MutationObserver(function() {
+      if (celeb.classList.contains('active')) markComplete();
+    });
+    obs.observe(celeb, { attributes: true, attributeFilter: ['class'] });
+  }
+  setTimeout(markAttempt, 3000);
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   OPTIONAL BUG REPORTER — uncomment if you want in-game bug reporting
+
+  // Add a small button in the corner that captures state + sends to an endpoint
+  // Only useful during testing. Remove for production builds.
+
+  (function(){
+    const btn = document.createElement('button');
+    btn.textContent = '🐛';
+    btn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;background:rgba(0,0,0,0.6);color:#fff;border:2px solid #ff4040;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer';
+    btn.onclick = () => {
+      const report = {
+        url: location.href,
+        round: round,
+        score: score,
+        currentTarget: currentTarget,
+        timestamp: Date.now(),
+      };
+      console.log('BUG REPORT:', report);
+      // POST to your collector endpoint here
+    };
+    document.body.appendChild(btn);
+  })();
+
+  ═══════════════════════════════════════════════════════════════════════════ */
+</script>
+</body>
+</html>

@@ -105,7 +105,7 @@
   .belt::before{
     content:'';position:absolute;top:-5px;left:0;right:0;height:5px;
     background:repeating-linear-gradient(90deg,#fff 0 10px,transparent 10px 20px);
-    animation:beltMove 2.4s linear infinite;
+    animation:beltMove 1.4s linear infinite;
   }
   @keyframes beltMove{to{transform:translateX(20px)}}
 
@@ -598,7 +598,7 @@ let state = {
 // How many scoops visible on belt at once — keep it gentle (3-4 max)
 const MAX_BELT_SCOOPS = 4;
 
-const MELT_TIME = 20000; // ms before full melt after last action (slow for young children & e-ink)
+const MELT_TIME = 14000; // ms before full melt — middle ground: stakes but plenty of think-time
 
 /* ═══ DOM ═══ */
 const scrTitle = document.getElementById('scrTitle');
@@ -642,11 +642,10 @@ function spawnScoop(num){
   const scoopSize = Math.min(115, window.innerWidth*.20);
   const x = beltW + 20;
   el.style.left = x + 'px';
-  // Gentle speed: scoops take ~12-15s to traverse the screen
-  // At 400px wide, 0.10 px/ms = 4000ms to cross 400px? No: 400/0.10 = 4000ms. Need slower.
-  // Target: ~13s to cross viewport. For 400px viewport: 400/13000 = 0.031. For 800px: 800/13000 = 0.062.
+  // Middle-ground speed: scoops take ~6s to traverse the screen
+  // Engaging but not rushed — adult finds it fun, 3yo can still tap successfully.
   // Use viewport-relative base speed.
-  const baseSpeed = beltW / 13000; // px per ms -> ~13s traversal
+  const baseSpeed = beltW / 6500; // px per ms -> ~6.5s traversal
   const speed = baseSpeed * (0.9 + Math.random()*0.2); // slight variation
   const scoop = { el, num, x, speed, size: scoopSize };
   // Dual handler: touchstart for immediate iOS response, click for desktop.

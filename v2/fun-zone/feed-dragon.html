@@ -88,9 +88,12 @@ body {
 }
 .screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
 
-/* ── Back button ── */
+/* ── Back buttons — ALWAYS REACHABLE (dual redundant) ── */
 .back-home-btn {
-  position: fixed; top: 14px; left: 14px; z-index: 500;
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 14px) + 8px);
+  left: max(14px, env(safe-area-inset-left, 14px));
+  z-index: 9999;  /* above EVERYTHING */
   display: inline-flex; align-items: center; gap: 6px;
   background: #fff;
   color: var(--hot-pink);
@@ -103,6 +106,32 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .back-home-btn:active { transform: translateY(2px) scale(0.97); }
+
+/* Secondary failsafe home bubble — bottom-right, visible during gameplay */
+.home-bubble {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 16px) + 4px);
+  right: max(16px, env(safe-area-inset-right, 16px));
+  z-index: 9999;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--hot-pink));
+  border: 4px solid #fff;
+  box-shadow: 0 4px 0 #c94d80, 0 6px 14px rgba(0,0,0,0.25);
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 30px;
+  text-decoration: none;
+  cursor: pointer;
+  animation: homeBubblePulse 2s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-bubble.show { display: flex; }
+@keyframes homeBubblePulse {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.1); }
+}
+.home-bubble:active { transform: scale(0.92); }
 
 /* ── Title screen ── */
 .screen-title {
@@ -166,12 +195,15 @@ body {
   50%     { transform: scale(1.06); }
 }
 
-/* ── HUD (thought bubble) ── */
+/* ── HUD (thought bubble) — clears iPhone notch via safe-area-inset ── */
 .hud {
-  position: fixed; top: 0; left: 0; right: 0;
+  position: fixed;
+  /* Push the bubble DOWN below the notch/dynamic island on any device */
+  top: max(60px, env(safe-area-inset-top, 0px) + 60px);
+  left: 0; right: 0;
   z-index: var(--z-ui);
   display: flex; justify-content: center; align-items: flex-start;
-  padding: 10px 14px 0;
+  padding: 0 14px;
   pointer-events: none;
 }
 .thought-bubble {
@@ -213,9 +245,11 @@ body {
   to   { transform: translateY(-4px) scale(1.08); }
 }
 
-/* ── Feed counter (corner) ── */
+/* ── Feed counter (corner) — also clears notch ── */
 .feed-counter {
-  position: fixed; top: 14px; right: 14px;
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 14px) + 8px);
+  right: max(14px, env(safe-area-inset-right, 14px));
   z-index: var(--z-ui);
   background: #fff;
   color: var(--dragon-body-dark);
@@ -360,6 +394,31 @@ body {
               inset 0 -6px 0 rgba(0,0,0,0.1),
               inset 0 6px 0 rgba(255,255,255,0.4);
   animation: targetPulse 1s ease-in-out infinite;
+}
+
+/* Big "TAP THIS!" training cue above the target snack for first 2 feeds */
+.snack.training::after {
+  content: '👇 TAP!';
+  position: absolute;
+  top: -48px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--hot-pink);
+  color: #fff;
+  font-size: clamp(13px, 3vw, 16px);
+  font-weight: 900;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 0 #c02d72, 0 6px 12px rgba(0,0,0,0.25);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: trainingBob 0.7s var(--bounce) infinite alternate;
+  letter-spacing: 1px;
+  z-index: 5;
+}
+@keyframes trainingBob {
+  from { transform: translateX(-50%) translateY(0) scale(1); }
+  to   { transform: translateX(-50%) translateY(-6px) scale(1.08); }
 }
 @keyframes targetPulse {
   0%,100% { box-shadow: 0 0 0 6px rgba(255,217,61,0.5),
@@ -778,8 +837,9 @@ body {
 <div class="bg-cloud" style="top: 15%; font-size: 32px; animation-duration: 72s; animation-delay: -20s;">☁️</div>
 <div class="bg-cloud" style="top: 5%; font-size: 50px; animation-duration: 90s; animation-delay: -40s;">☁️</div>
 
-<!-- Back button -->
-<a href="../../" class="back-home-btn" aria-label="Back to home">← Home</a>
+<!-- Back buttons — DUAL redundant, both plain links so they work even if JS crashes -->
+<a href="../../" class="back-home-btn" id="backHomeBtn" aria-label="Back to home">← Home</a>
+<a href="../../" class="home-bubble" id="homeBubble" aria-label="Go home">🏠</a>
 
 <!-- Title Screen -->
 <div class="screen screen-title active" id="scrTitle">
@@ -1142,7 +1202,27 @@ let state = {
   usedLetters: [],
   snacks: [],
   ending: false,
+  advancing: false,       // guard so double-tap target can't race
+  watchdog: null,         // hard safety timeout handle
 };
+
+// Safe-call wrapper — every gameplay call goes through this so ONE crash
+// never freezes the app. Fire-and-forget, swallow every error.
+function safe(fn) {
+  try { return fn(); } catch (e) { console.warn('[safe]', e); }
+}
+
+// Arm a watchdog: if we don't advance within 4s, force next round.
+function armWatchdog() {
+  clearTimeout(state.watchdog);
+  state.watchdog = setTimeout(() => {
+    if (state.ending || !state.running) return;
+    console.warn('[watchdog] forcing next round after 4s stall');
+    state.advancing = false;
+    safe(() => nextRound());
+  }, 4000);
+}
+function clearWatchdog() { clearTimeout(state.watchdog); state.watchdog = null; }
 
 // ═══════════════════════════════════════════════════════════════════
 // DRAGON CONTROL
@@ -1407,133 +1487,179 @@ function spitSnack(snack) {
 let busy = false; // very short UI lock (only during snack-to-mouth flight)
 
 function onSnackTap(snack, letter) {
-  if (state.ending) return;
-  if (snack.classList.contains('flying') || snack.classList.contains('spitting')) return;
+  try {
+    if (state.ending) return;
+    if (state.advancing) return;                       // guard against double-feed race
+    if (snack.classList.contains('flying') || snack.classList.contains('spitting')) return;
 
-  // Quick squish feedback on ANY tap
-  snack.classList.remove('squish');
-  void snack.offsetWidth;
-  snack.classList.add('squish');
-  audio.tone('pop');
-  setTimeout(() => snack.classList.remove('squish'), 350);
+    // Quick squish feedback on ANY tap
+    snack.classList.remove('squish');
+    void snack.offsetWidth;
+    snack.classList.add('squish');
+    safe(() => audio.tone('pop'));
+    setTimeout(() => { try { snack.classList.remove('squish'); } catch(e) {} }, 350);
 
-  if (letter === state.targetLetter) {
-    feedDragon(snack);
-  } else {
-    // Wrong — spits it out playfully, game CONTINUES
-    spitSnack(snack);
-    dragonDisgusted();
-    audio.dragonSay('wrong'); // fire-and-forget, NOT awaited
+    if (letter === state.targetLetter) {
+      state.advancing = true;
+      safe(() => feedDragon(snack));
+    } else {
+      // Wrong — spits it out playfully, game CONTINUES
+      safe(() => spitSnack(snack));
+      safe(() => dragonDisgusted());
+      safe(() => audio.dragonSay('wrong'));            // fire-and-forget
+    }
+  } catch (e) {
+    console.warn('[onSnackTap]', e);
+    state.advancing = false;
   }
 }
 
 function feedDragon(snack) {
-  // Clear target state so double-tap can't count twice
-  const slot = parseInt(snack.dataset.slot, 10);
-  snack.classList.remove('target');
-  state.snacks = state.snacks.filter(s => s !== snack);
+  try {
+    // Clear target state so double-tap can't count twice
+    const slot = parseInt(snack.dataset.slot, 10);
+    snack.classList.remove('target', 'training');
+    state.snacks = state.snacks.filter(s => s !== snack);
 
-  // Fly to mouth (fire-and-forget visual)
-  flySnackToMouth(snack);
+    // Fly to mouth (fire-and-forget visual)
+    safe(() => flySnackToMouth(snack));
 
-  // Chomp almost immediately — overlaps with flight for snappy feel
-  setTimeout(() => {
-    dragonChomp();
-    const dRect = dragon().getBoundingClientRect();
-    spawnCrumbs(dRect.left + dRect.width / 2, dRect.top + dRect.height * 0.75, 14);
-    audio.tone('sparkle');
-    spawnSparkles(dRect.left + dRect.width / 2, dRect.top + dRect.height * 0.65, 10);
-    // Fire-and-forget happy voice clip
-    audio.dragonSay(pick(HAPPY_POOL));
-    // Random nostril smoke puff
-    if (Math.random() > 0.5) spawnNostrilSmoke();
-  }, 180);
+    // Chomp almost immediately — overlaps with flight for snappy feel
+    setTimeout(() => safe(() => {
+      dragonChomp();
+      const dRect = dragon().getBoundingClientRect();
+      spawnCrumbs(dRect.left + dRect.width / 2, dRect.top + dRect.height * 0.75, 14);
+      audio.tone('sparkle');
+      spawnSparkles(dRect.left + dRect.width / 2, dRect.top + dRect.height * 0.65, 10);
+      // Fire-and-forget happy voice clip (NEVER awaited)
+      audio.dragonSay(pick(HAPPY_POOL));
+      if (Math.random() > 0.5) spawnNostrilSmoke();
+    }), 180);
 
-  // Count the feed + grow dragon immediately
-  state.feedsDone++;
-  $('feedCount').textContent = state.feedsDone;
-  const newScale = 1.0 + (state.feedsDone / TOTAL_FEEDS) * 0.45;
-  setDragonSize(newScale);
+    // Count the feed + grow dragon immediately
+    state.feedsDone++;
+    $('feedCount').textContent = state.feedsDone;
+    const newScale = 1.0 + (state.feedsDone / TOTAL_FEEDS) * 0.45;
+    setDragonSize(newScale);
 
-  // Happy hop after short beat
-  setTimeout(() => dragonHop(), 450);
+    // Happy hop after short beat
+    setTimeout(() => safe(() => dragonHop()), 450);
 
-  // Check end condition
-  if (state.feedsDone >= TOTAL_FEEDS) {
-    setTimeout(() => endGame(), 550);
-    return;
+    // Check end condition
+    if (state.feedsDone >= TOTAL_FEEDS) {
+      clearWatchdog();
+      setTimeout(() => safe(() => endGame()), 550);
+      return;
+    }
+
+    // Immediately set up the NEXT target + respawn target snack in same slot (no dead air)
+    // Arm watchdog BEFORE scheduling so if nextRound crashes we still recover
+    armWatchdog();
+    setTimeout(() => safe(() => nextRound(slot)), 250);
+  } catch (e) {
+    console.warn('[feedDragon]', e);
+    state.advancing = false;
+    armWatchdog();
   }
-
-  // Immediately set up the NEXT target + respawn target snack in same slot (no dead air)
-  setTimeout(() => nextRound(slot), 250);
 }
 
 function nextRound(reuseSlot) {
-  if (state.ending) return;
-  const { target, letters } = chooseLetters();
-  state.targetLetter = target;
-  $('targetLetter').textContent = target;
+  try {
+    if (state.ending) return;
+    // Release advancing guard now that we're actually advancing
+    state.advancing = false;
 
-  // Bubble refresh animation (snappy re-pop)
-  const bubble = $('thoughtBubble');
-  bubble.classList.remove('refresh');
-  void bubble.offsetWidth;
-  bubble.classList.add('refresh');
+    const { target, letters } = chooseLetters();
+    state.targetLetter = target;
+    $('targetLetter').textContent = target;
 
-  if (state.snacks.length === 0) {
-    // First round — lay out all 6
-    layoutSnacks(letters);
-  } else {
-    // Subsequent rounds — just put the new target in the freed slot
-    // and refresh which one is marked as target.
-    state.snacks.forEach(s => s.classList.remove('target'));
-    const slotToUse = (reuseSlot !== undefined) ? reuseSlot : state.snacks[0].dataset.slot;
-    // Make sure slot is truly empty
-    const existingInSlot = state.snacks.find(s => parseInt(s.dataset.slot, 10) === slotToUse);
-    if (existingInSlot) existingInSlot.remove();
-    state.snacks = state.snacks.filter(s => parseInt(s.dataset.slot, 10) !== slotToUse);
+    // Bubble refresh animation (snappy re-pop)
+    const bubble = $('thoughtBubble');
+    bubble.classList.remove('refresh');
+    void bubble.offsetWidth;
+    bubble.classList.add('refresh');
 
-    const { x, y } = randomSnackPosition(slotToUse);
-    const el = createSnack(target, x, y, slotToUse, true);
-    $('snackArea').appendChild(el);
-    state.snacks.push(el);
+    // Training wheels: show "TAP!" cue on the target for the first 2 feeds.
+    const training = state.feedsDone < 2;
+
+    if (state.snacks.length === 0) {
+      // First round — lay out all 6
+      layoutSnacks(letters);
+      if (training) {
+        const targetEl = state.snacks.find(s => s.dataset.letter === target);
+        if (targetEl) targetEl.classList.add('training');
+      }
+    } else {
+      // Subsequent rounds — just put the new target in the freed slot
+      // and refresh which one is marked as target.
+      state.snacks.forEach(s => s.classList.remove('target', 'training'));
+      const slotToUse = (reuseSlot !== undefined) ? reuseSlot : state.snacks[0].dataset.slot;
+      // Make sure slot is truly empty
+      const existingInSlot = state.snacks.find(s => parseInt(s.dataset.slot, 10) === slotToUse);
+      if (existingInSlot) existingInSlot.remove();
+      state.snacks = state.snacks.filter(s => parseInt(s.dataset.slot, 10) !== slotToUse);
+
+      const { x, y } = randomSnackPosition(slotToUse);
+      const el = createSnack(target, x, y, slotToUse, true);
+      if (training) el.classList.add('training');
+      $('snackArea').appendChild(el);
+      state.snacks.push(el);
+    }
+
+    // Announce — fire-and-forget, NEVER awaited
+    safe(() => audio.dragonSay('want'));
+    safe(() => audio.speakLetter(target));
+
+    // Keep watchdog armed for the next feed attempt
+    armWatchdog();
+  } catch (e) {
+    console.warn('[nextRound]', e);
+    state.advancing = false;
+    armWatchdog();
   }
-
-  // Announce — fire-and-forget, NOT awaited
-  audio.dragonSay('want');
-  audio.speakLetter(target);
 }
 
-async function endGame() {
-  state.ending = true;
-  audio.clearQueue();
-  $('hud').style.display = 'none';
-  $('feedCounter').style.display = 'none';
+// No awaits anywhere — timer-based so a hung voice call can NEVER freeze the end screen
+function endGame() {
+  try {
+    state.ending = true;
+    clearWatchdog();
+    safe(() => audio.clearQueue());
+    $('hud').style.display = 'none';
+    $('feedCounter').style.display = 'none';
 
-  setDragonSize(1.55);
-  dragon().classList.add('full');
+    setDragonSize(1.55);
+    dragon().classList.add('full');
 
-  // Big wobble + fire burp
-  const d = dragon();
-  d.classList.remove('wobble');
-  void d.offsetWidth;
-  d.classList.add('big-wobble', 'eyes-big');
-  setTimeout(() => d.classList.remove('big-wobble', 'eyes-big'), 700);
+    // Big wobble + fire burp
+    const d = dragon();
+    d.classList.remove('wobble');
+    void d.offsetWidth;
+    d.classList.add('big-wobble', 'eyes-big');
+    setTimeout(() => { try { d.classList.remove('big-wobble', 'eyes-big'); } catch(e) {} }, 700);
 
-  spawnNostrilSmoke();
-  audio.dragonSay('full'); // fire-and-forget
+    safe(() => spawnNostrilSmoke());
+    safe(() => audio.dragonSay('full')); // fire-and-forget
 
-  await delay(400);
-  fireBreath();
-  audio.tone('burp');
-  audio.dragonSay('burp');
+    setTimeout(() => safe(() => {
+      fireBreath();
+      audio.tone('burp');
+      audio.dragonSay('burp');
+    }), 400);
 
-  await delay(900);
-
-  $('scrCeleb').classList.add('active');
-  audio.tone('celeb');
-  launchConfetti();
-  state.running = false;
+    // Celebration screen ALWAYS appears on a hard timer — regardless of audio state
+    setTimeout(() => safe(() => {
+      $('scrCeleb').classList.add('active');
+      audio.tone('celeb');
+      launchConfetti();
+      state.running = false;
+    }), 1300);
+  } catch (e) {
+    console.warn('[endGame]', e);
+    // Failsafe — force celebration even if everything else broke
+    setTimeout(() => { try { $('scrCeleb').classList.add('active'); } catch(_) {} }, 800);
+    state.running = false;
+  }
 }
 
 function launchConfetti() {
@@ -1556,30 +1682,39 @@ function launchConfetti() {
 // START / RESET
 // ═══════════════════════════════════════════════════════════════════
 function startGame() {
-  state.running = true;
-  state.ending = false;
-  state.feedsDone = 0;
-  state.usedLetters = [];
-  state.snacks = [];
-  setDragonSize(1.0);
-  dragon().classList.remove('full');
+  try {
+    state.running = true;
+    state.ending = false;
+    state.advancing = false;
+    state.feedsDone = 0;
+    state.usedLetters = [];
+    state.snacks = [];
+    clearWatchdog();
+    setDragonSize(1.0);
+    dragon().classList.remove('full');
 
-  $('scrTitle').classList.remove('active');
-  $('scrCeleb').classList.remove('active');
-  $('dragonStage').style.display = 'flex';
-  $('hud').style.display = 'flex';
-  $('feedCounter').style.display = 'flex';
-  $('feedCount').textContent = '0';
-  $('snackArea').innerHTML = '';
+    $('scrTitle').classList.remove('active');
+    $('scrCeleb').classList.remove('active');
+    $('dragonStage').style.display = 'flex';
+    $('hud').style.display = 'flex';
+    $('feedCounter').style.display = 'flex';
+    $('feedCount').textContent = '0';
+    $('snackArea').innerHTML = '';
 
-  audio.startMusic();
+    // Show the floating failsafe home bubble during gameplay
+    $('homeBubble').classList.add('show');
 
-  // Fire-and-forget intro
-  audio.dragonSay('hello');
-  setTimeout(() => audio.dragonSay('hungry'), 800);
+    safe(() => audio.startMusic());
 
-  // Kick off the first round quickly — no waiting
-  setTimeout(() => nextRound(), 300);
+    // Fire-and-forget intro — NEVER awaited
+    safe(() => audio.dragonSay('hello'));
+    setTimeout(() => safe(() => audio.dragonSay('hungry')), 800);
+
+    // Kick off the first round quickly — no waiting
+    setTimeout(() => safe(() => nextRound()), 300);
+  } catch (e) {
+    console.warn('[startGame]', e);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1598,8 +1733,23 @@ onTap($('btnAgain'), () => {
 
 // Keep music alive on visibility change
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) audio.stopMusic();
-  else if (state.running) audio.startMusic();
+  try {
+    if (document.hidden) audio.stopMusic();
+    else if (state.running) audio.startMusic();
+  } catch (e) {}
+});
+
+// Global safety net — if ANY uncaught error happens, release locks + arm watchdog
+// so the game can recover itself without the child needing to close the app.
+window.addEventListener('error', (e) => {
+  console.warn('[window.error]', e && e.message);
+  state.advancing = false;
+  if (state.running && !state.ending) armWatchdog();
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.warn('[unhandledrejection]', e && e.reason);
+  state.advancing = false;
+  if (state.running && !state.ending) armWatchdog();
 });
 
 // Relayout snacks on resize

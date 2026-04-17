@@ -490,25 +490,49 @@ body {
 <div class="speech-bubble" id="speechBubble"></div>
 
 <script>
+/* ═══════════════════════════════════════════════════════════════════════
+   SAFETY-FIRST REWRITE
+   Previous bug: Promise.race([Promise.resolve(pendingPromise), timeout])
+   does NOT time out — Promise.resolve() of an already-pending thenable
+   adopts its state, so it hangs with it. The game froze after horns
+   because the awaited chain never resolved.
+
+   New approach:
+   - ZERO awaits in the game flow. All audio is fire-and-forget.
+   - Every DOM/localStorage/audio call is wrapped in safe() try/catch.
+   - Every step advance is scheduled with setTimeout, never depending
+     on a promise resolving.
+   - A hard 2500ms safety-net forces the celebration screen open if
+     the horns step ever fails to transition.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 const AUDIO_BASE = '../../audio';
 
-/* ═══ AUDIO ENGINE ═══ */
+// Universal safety wrapper — NEVER let an exception escape
+function safe(fn, label){
+  try { return fn(); }
+  catch(e){ console.warn('[safe]', label||'', e); return null; }
+}
+
+/* ═══ AUDIO ENGINE (fire-and-forget only) ═══ */
 class GameAudio {
   constructor(){
     this.ctx = null;
     this.unlocked = false;
     this.cache = {};
-    this.music = null;
     this.musicGain = null;
     this.musicNodes = [];
     this.musicPlaying = false;
+    this.musicLoopInterval = null;
   }
-  async unlock(){
+  unlock(){
     if(this.unlocked) return;
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      if(this.ctx.state === 'suspended') await this.ctx.resume();
-      // Silent buffer to unlock iOS
+      if(this.ctx.state === 'suspended'){
+        // Don't await — fire and forget
+        this.ctx.resume().catch(()=>{});
+      }
       const buffer = this.ctx.createBuffer(1, 1, 22050);
       const source = this.ctx.createBufferSource();
       source.buffer = buffer;
@@ -517,178 +541,193 @@ class GameAudio {
       this.unlocked = true;
     } catch(e){ console.warn('Audio unlock failed', e); }
   }
-  async loadClip(url){
-    if(this.cache[url]) return this.cache[url];
-    try {
-      const res = await fetch(url);
-      if(!res.ok) return null;
-      const buf = await res.arrayBuffer();
-      const audio = await this.ctx.decodeAudioData(buf);
-      this.cache[url] = audio;
-      return audio;
-    } catch(e){ return null; }
-  }
-  async play(url, vol=1){
+  // Fire-and-forget load + play. Never returns a promise the caller awaits.
+  playClipFireAndForget(url, vol=1){
     if(!this.ctx) return;
-    const buf = await this.loadClip(url);
-    if(!buf) return;
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf;
-    const gain = this.ctx.createGain();
-    gain.gain.value = vol;
-    src.connect(gain).connect(this.ctx.destination);
-    src.start(0);
-    return new Promise(resolve => { src.onended = resolve; });
+    try {
+      if(this.cache[url]){
+        this._playBuffer(this.cache[url], vol);
+        return;
+      }
+      fetch(url).then(res => {
+        if(!res.ok) return null;
+        return res.arrayBuffer();
+      }).then(buf => {
+        if(!buf || !this.ctx) return;
+        return this.ctx.decodeAudioData(buf);
+      }).then(audio => {
+        if(!audio) return;
+        this.cache[url] = audio;
+        this._playBuffer(audio, vol);
+      }).catch(e => { /* silently swallow */ });
+    } catch(e){ /* silently swallow */ }
   }
-  async playVoice(name){
-    return this.play(`${AUDIO_BASE}/fun-zone/monster/${name}.mp3`, 1);
+  _playBuffer(buf, vol){
+    try {
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = this.ctx.createGain();
+      gain.gain.value = vol;
+      src.connect(gain).connect(this.ctx.destination);
+      src.start(0);
+    } catch(e){ /* silently swallow */ }
   }
-  async playNumber(n){
-    return this.play(`${AUDIO_BASE}/numbers/${n}.mp3`, 0.9);
+  playVoice(name){
+    this.playClipFireAndForget(`${AUDIO_BASE}/fun-zone/monster/${name}.mp3`, 1);
   }
-  // Synthesized tones as fallbacks / fx
+  playNumber(n){
+    this.playClipFireAndForget(`${AUDIO_BASE}/numbers/${n}.mp3`, 0.9);
+  }
   tone(freq, dur=0.15, type='sine', vol=0.15){
     if(!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-    osc.connect(gain).connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + dur);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + dur);
+    } catch(e){}
   }
   boing(){
     if(!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    const now = this.ctx.currentTime;
-    osc.frequency.setValueAtTime(200, now);
-    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-    osc.frequency.exponentialRampToValueAtTime(180, now + 0.3);
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-    osc.connect(gain).connect(this.ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.4);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const now = this.ctx.currentTime;
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.3);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } catch(e){}
   }
   pop(){
     if(!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'triangle';
-    const now = this.ctx.currentTime;
-    osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
-    osc.frequency.exponentialRampToValueAtTime(400, now + 0.2);
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-    osc.connect(gain).connect(this.ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.25);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      const now = this.ctx.currentTime;
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.2);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    } catch(e){}
   }
   giggle(){
     if(!this.ctx) return;
-    const freqs = [500, 700, 600, 820, 650];
-    freqs.forEach((f, i) => {
-      setTimeout(() => this.tone(f, 0.08, 'sine', 0.12), i * 80);
-    });
+    try {
+      const freqs = [500, 700, 600, 820, 650];
+      freqs.forEach((f, i) => {
+        setTimeout(() => safe(() => this.tone(f, 0.08, 'sine', 0.12), 'giggle'), i * 80);
+      });
+    } catch(e){}
   }
-  // Funky funhouse music — E minor groove
   startMusic(){
     if(!this.ctx || this.musicPlaying) return;
-    this.musicPlaying = true;
-    this.musicGain = this.ctx.createGain();
-    this.musicGain.gain.value = 0.12;
-    this.musicGain.connect(this.ctx.destination);
+    try {
+      this.musicPlaying = true;
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.gain.value = 0.12;
+      this.musicGain.connect(this.ctx.destination);
 
-    const tempo = 130; // bpm
-    const beat = 60 / tempo;
-    const start = this.ctx.currentTime + 0.05;
+      const tempo = 130;
+      const beat = 60 / tempo;
+      const start = this.ctx.currentTime + 0.05;
 
-    // E minor quirky bassline pattern (8 notes)
-    const bassNotes = [82.4, 82.4, 123.5, 82.4, 98.0, 82.4, 110.0, 123.5]; // E, E, B, E, G, E, A, B
-    const melodyNotes = [329.6, 392.0, 440.0, 392.0, 493.9, 440.0, 392.0, 329.6]; // E G A G B A G E (octave up)
+      const bassNotes = [82.4, 82.4, 123.5, 82.4, 98.0, 82.4, 110.0, 123.5];
+      const melodyNotes = [329.6, 392.0, 440.0, 392.0, 493.9, 440.0, 392.0, 329.6];
 
-    const loopBars = 4;
-    const loopDur = beat * 8 * loopBars;
+      const loopBars = 4;
+      const loopDur = beat * 8 * loopBars;
 
-    const scheduleLoop = (loopStart) => {
-      for(let bar=0; bar<loopBars; bar++){
-        for(let i=0; i<8; i++){
-          const t = loopStart + bar*8*beat + i*beat;
-          // Bass - square/sawtooth funky
-          const bOsc = this.ctx.createOscillator();
-          const bGain = this.ctx.createGain();
-          bOsc.type = 'sawtooth';
-          bOsc.frequency.value = bassNotes[i];
-          bGain.gain.setValueAtTime(0, t);
-          bGain.gain.linearRampToValueAtTime(0.3, t + 0.02);
-          bGain.gain.exponentialRampToValueAtTime(0.001, t + beat*0.85);
-          bOsc.connect(bGain).connect(this.musicGain);
-          bOsc.start(t);
-          bOsc.stop(t + beat);
-          this.musicNodes.push(bOsc);
+      const scheduleLoop = (loopStart) => {
+        try {
+          for(let bar=0; bar<loopBars; bar++){
+            for(let i=0; i<8; i++){
+              const t = loopStart + bar*8*beat + i*beat;
+              const bOsc = this.ctx.createOscillator();
+              const bGain = this.ctx.createGain();
+              bOsc.type = 'sawtooth';
+              bOsc.frequency.value = bassNotes[i];
+              bGain.gain.setValueAtTime(0, t);
+              bGain.gain.linearRampToValueAtTime(0.3, t + 0.02);
+              bGain.gain.exponentialRampToValueAtTime(0.001, t + beat*0.85);
+              bOsc.connect(bGain).connect(this.musicGain);
+              bOsc.start(t);
+              bOsc.stop(t + beat);
+              this.musicNodes.push(bOsc);
 
-          // Melody quirky — triangle with slight detune
-          if(bar === 0 || bar === 2){
-            const mOsc = this.ctx.createOscillator();
-            const mGain = this.ctx.createGain();
-            mOsc.type = 'triangle';
-            mOsc.frequency.value = melodyNotes[i];
-            mGain.gain.setValueAtTime(0, t);
-            mGain.gain.linearRampToValueAtTime(0.18, t + 0.02);
-            mGain.gain.exponentialRampToValueAtTime(0.001, t + beat*0.6);
-            mOsc.connect(mGain).connect(this.musicGain);
-            mOsc.start(t);
-            mOsc.stop(t + beat*0.8);
-            this.musicNodes.push(mOsc);
+              if(bar === 0 || bar === 2){
+                const mOsc = this.ctx.createOscillator();
+                const mGain = this.ctx.createGain();
+                mOsc.type = 'triangle';
+                mOsc.frequency.value = melodyNotes[i];
+                mGain.gain.setValueAtTime(0, t);
+                mGain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+                mGain.gain.exponentialRampToValueAtTime(0.001, t + beat*0.6);
+                mOsc.connect(mGain).connect(this.musicGain);
+                mOsc.start(t);
+                mOsc.stop(t + beat*0.8);
+                this.musicNodes.push(mOsc);
+              }
+
+              if(i === 0 || i === 4){
+                const k = this.ctx.createOscillator();
+                const kg = this.ctx.createGain();
+                k.type = 'sine';
+                k.frequency.setValueAtTime(120, t);
+                k.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+                kg.gain.setValueAtTime(0.5, t);
+                kg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                k.connect(kg).connect(this.musicGain);
+                k.start(t);
+                k.stop(t + 0.2);
+                this.musicNodes.push(k);
+              }
+              if(i % 2 === 1){
+                const hOsc = this.ctx.createOscillator();
+                const hGain = this.ctx.createGain();
+                hOsc.type = 'square';
+                hOsc.frequency.value = 880 + (i * 40);
+                hGain.gain.setValueAtTime(0, t);
+                hGain.gain.linearRampToValueAtTime(0.05, t + 0.01);
+                hGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+                hOsc.connect(hGain).connect(this.musicGain);
+                hOsc.start(t);
+                hOsc.stop(t + 0.1);
+                this.musicNodes.push(hOsc);
+              }
+            }
           }
+        } catch(e){ console.warn('scheduleLoop', e); }
+      };
 
-          // Kick on 1 and 5
-          if(i === 0 || i === 4){
-            const k = this.ctx.createOscillator();
-            const kg = this.ctx.createGain();
-            k.type = 'sine';
-            k.frequency.setValueAtTime(120, t);
-            k.frequency.exponentialRampToValueAtTime(40, t + 0.12);
-            kg.gain.setValueAtTime(0.5, t);
-            kg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-            k.connect(kg).connect(this.musicGain);
-            k.start(t);
-            k.stop(t + 0.2);
-            this.musicNodes.push(k);
-          }
-          // Quirky high blip every other beat
-          if(i % 2 === 1){
-            const hOsc = this.ctx.createOscillator();
-            const hGain = this.ctx.createGain();
-            hOsc.type = 'square';
-            hOsc.frequency.value = 880 + (i * 40);
-            hGain.gain.setValueAtTime(0, t);
-            hGain.gain.linearRampToValueAtTime(0.05, t + 0.01);
-            hGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-            hOsc.connect(hGain).connect(this.musicGain);
-            hOsc.start(t);
-            hOsc.stop(t + 0.1);
-            this.musicNodes.push(hOsc);
-          }
-        }
-      }
-    };
-
-    scheduleLoop(start);
-    this.musicLoopInterval = setInterval(() => {
-      if(!this.musicPlaying) return;
-      const next = this.ctx.currentTime + 0.1;
-      scheduleLoop(next);
-    }, loopDur * 1000 - 200);
+      scheduleLoop(start);
+      this.musicLoopInterval = setInterval(() => {
+        if(!this.musicPlaying) return;
+        safe(() => {
+          const next = this.ctx.currentTime + 0.1;
+          scheduleLoop(next);
+        }, 'musicLoop');
+      }, loopDur * 1000 - 200);
+    } catch(e){ console.warn('startMusic', e); }
   }
   stopMusic(){
     this.musicPlaying = false;
-    clearInterval(this.musicLoopInterval);
+    try { clearInterval(this.musicLoopInterval); } catch(e){}
     this.musicNodes.forEach(n => { try { n.stop(); } catch(e){} });
     this.musicNodes = [];
     if(this.musicGain){
@@ -696,8 +735,8 @@ class GameAudio {
     }
   }
   boostMusic(){
-    if(this.musicGain){
-      this.musicGain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 0.3);
+    if(this.musicGain && this.ctx){
+      try { this.musicGain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 0.3); } catch(e){}
     }
   }
 }
@@ -732,128 +771,125 @@ const BTN_COLORS = [
 /* ═══ GAME STATE ═══ */
 let monster = null;
 let currentStep = 0;
+let celebrationShown = false;
+let safetyNetTimer = null;
 
 const STEPS = [
-  { key:'eyes', voice:'how_many_eyes', text:'How many eyes?', min:1, max:6 },
-  { key:'arms', voice:'how_many_arms', text:'How many arms?', min:1, max:10 },
-  { key:'legs', voice:'how_many_legs', text:'How many legs?', min:1, max:10 },
+  { key:'eyes',  voice:'how_many_eyes',  text:'How many eyes?',         min:1, max:6 },
+  { key:'arms',  voice:'how_many_arms',  text:'How many arms?',         min:1, max:10 },
+  { key:'legs',  voice:'how_many_legs',  text:'How many legs?',         min:1, max:10 },
   { key:'teeth', voice:'how_many_teeth', text:'How many pointy teeth?', min:1, max:12 },
-  { key:'horns', voice:'how_many_horns', text:'How many silly horns?', min:0, max:5 }
+  { key:'horns', voice:'how_many_horns', text:'How many silly horns?',  min:0, max:5 }
 ];
 
 function newMonster(){
   const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-  return {
-    color,
-    eyes:0,
-    arms:0,
-    legs:0,
-    teeth:0,
-    horns:0
-  };
+  return { color, eyes:0, arms:0, legs:0, teeth:0, horns:0 };
 }
 
 function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  safe(() => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if(el) el.classList.add('active');
+    else console.warn('showScreen: missing element', id);
+  }, 'showScreen');
 }
 
 function showSpeech(text, ms=2500){
-  const bubble = document.getElementById('speechBubble');
-  bubble.textContent = text;
-  bubble.classList.add('show');
-  clearTimeout(bubble._t);
-  bubble._t = setTimeout(() => bubble.classList.remove('show'), ms);
+  safe(() => {
+    const bubble = document.getElementById('speechBubble');
+    if(!bubble) return;
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    clearTimeout(bubble._t);
+    bubble._t = setTimeout(() => bubble.classList.remove('show'), ms);
+  }, 'showSpeech');
 }
 
 /* ═══ MONSTER RENDERING ═══ */
 function renderMonster(wrap, config, isMini=false){
-  // Body
-  const body = wrap.querySelector('.monster-body');
-  body.style.background = config.color.grad;
+  safe(() => {
+    if(!wrap) return;
+    const body = wrap.querySelector('.monster-body');
+    if(body) body.style.background = config.color.grad;
 
-  // Clear existing features
-  wrap.querySelectorAll('.eye, .arm, .leg, .horn').forEach(e => e.remove());
-  const mouth = wrap.querySelector('.mouth');
-  if(mouth) mouth.innerHTML = '';
+    wrap.querySelectorAll('.eye, .arm, .leg, .horn').forEach(e => e.remove());
+    const mouth = wrap.querySelector('.mouth');
+    if(mouth) mouth.innerHTML = '';
 
-  // Eyes — scatter around upper portion
-  const eyePositions = computeEyePositions(config.eyes, isMini);
-  eyePositions.forEach(pos => {
-    const eye = document.createElement('div');
-    eye.className = 'eye';
-    eye.style.width = pos.size + 'px';
-    eye.style.height = pos.size + 'px';
-    eye.style.left = pos.x + '%';
-    eye.style.top = pos.y + '%';
-    const pupil = document.createElement('div');
-    pupil.className = 'pupil';
-    eye.appendChild(pupil);
-    wrap.appendChild(eye);
-  });
+    const eyePositions = computeEyePositions(config.eyes, isMini);
+    eyePositions.forEach(pos => {
+      const eye = document.createElement('div');
+      eye.className = 'eye';
+      eye.style.width = pos.size + 'px';
+      eye.style.height = pos.size + 'px';
+      eye.style.left = pos.x + '%';
+      eye.style.top = pos.y + '%';
+      const pupil = document.createElement('div');
+      pupil.className = 'pupil';
+      eye.appendChild(pupil);
+      wrap.appendChild(eye);
+    });
 
-  // Arms
-  const armsPerSide = Math.ceil(config.arms / 2);
-  for(let i=0; i<config.arms; i++){
-    const arm = document.createElement('div');
-    arm.className = 'arm';
-    const isLeft = i % 2 === 0;
-    const idx = Math.floor(i / 2);
-    const yOffset = 25 + (idx * (40 / Math.max(armsPerSide, 1)));
-    arm.style.top = yOffset + '%';
-    arm.style.height = (isMini ? 30 : 50) + 'px';
-    if(isLeft){
-      arm.style.left = '-8px';
-      arm.style.setProperty('--base', (-60 - (idx * 10)) + 'deg');
-    } else {
-      arm.style.right = '-8px';
-      arm.style.setProperty('--base', (60 + (idx * 10)) + 'deg');
+    const armsPerSide = Math.ceil(config.arms / 2);
+    for(let i=0; i<config.arms; i++){
+      const arm = document.createElement('div');
+      arm.className = 'arm';
+      const isLeft = i % 2 === 0;
+      const idx = Math.floor(i / 2);
+      const yOffset = 25 + (idx * (40 / Math.max(armsPerSide, 1)));
+      arm.style.top = yOffset + '%';
+      arm.style.height = (isMini ? 30 : 50) + 'px';
+      if(isLeft){
+        arm.style.left = '-8px';
+        arm.style.setProperty('--base', (-60 - (idx * 10)) + 'deg');
+      } else {
+        arm.style.right = '-8px';
+        arm.style.setProperty('--base', (60 + (idx * 10)) + 'deg');
+      }
+      arm.style.animationDelay = (i * 0.1) + 's';
+      wrap.appendChild(arm);
     }
-    arm.style.animationDelay = (i * 0.1) + 's';
-    wrap.appendChild(arm);
-  }
 
-  // Legs
-  for(let i=0; i<config.legs; i++){
-    const leg = document.createElement('div');
-    leg.className = 'leg';
-    const spacing = 100 / (config.legs + 1);
-    leg.style.left = `calc(${spacing * (i+1)}% - 8px)`;
-    leg.style.bottom = '-15px';
-    leg.style.height = (isMini ? 26 : 40) + 'px';
-    leg.style.animationDelay = (i * 0.08) + 's';
-    wrap.appendChild(leg);
-  }
-
-  // Teeth
-  if(mouth){
-    for(let i=0; i<config.teeth; i++){
-      const tooth = document.createElement('div');
-      tooth.className = 'tooth';
-      if(isMini){ tooth.style.width='5px'; tooth.style.height='6px'; }
-      mouth.appendChild(tooth);
+    for(let i=0; i<config.legs; i++){
+      const leg = document.createElement('div');
+      leg.className = 'leg';
+      const spacing = 100 / (config.legs + 1);
+      leg.style.left = `calc(${spacing * (i+1)}% - 8px)`;
+      leg.style.bottom = '-15px';
+      leg.style.height = (isMini ? 26 : 40) + 'px';
+      leg.style.animationDelay = (i * 0.08) + 's';
+      wrap.appendChild(leg);
     }
-  }
 
-  // Horns
-  for(let i=0; i<config.horns; i++){
-    const horn = document.createElement('div');
-    horn.className = 'horn';
-    const totalSpan = 60;
-    const step = config.horns > 1 ? totalSpan / (config.horns - 1) : 0;
-    const leftPct = 20 + (i * step);
-    horn.style.left = `calc(${leftPct}% - 9px)`;
-    horn.style.top = '-20px';
-    if(isMini){ horn.style.width='10px'; horn.style.height='18px'; horn.style.top='-12px'; }
-    horn.style.setProperty('--tilt', ((i - (config.horns-1)/2) * 15) + 'deg');
-    wrap.appendChild(horn);
-  }
+    if(mouth){
+      for(let i=0; i<config.teeth; i++){
+        const tooth = document.createElement('div');
+        tooth.className = 'tooth';
+        if(isMini){ tooth.style.width='5px'; tooth.style.height='6px'; }
+        mouth.appendChild(tooth);
+      }
+    }
+
+    for(let i=0; i<config.horns; i++){
+      const horn = document.createElement('div');
+      horn.className = 'horn';
+      const totalSpan = 60;
+      const step = config.horns > 1 ? totalSpan / (config.horns - 1) : 0;
+      const leftPct = 20 + (i * step);
+      horn.style.left = `calc(${leftPct}% - 9px)`;
+      horn.style.top = '-20px';
+      if(isMini){ horn.style.width='10px'; horn.style.height='18px'; horn.style.top='-12px'; }
+      horn.style.setProperty('--tilt', ((i - (config.horns-1)/2) * 15) + 'deg');
+      wrap.appendChild(horn);
+    }
+  }, 'renderMonster');
 }
 
 function computeEyePositions(count, isMini=false){
   const positions = [];
   const baseSize = isMini ? 18 : 34;
-  // Arrange in chaotic but balanced layout within upper body
   const presets = {
     1: [{x:50, y:30}],
     2: [{x:30, y:30}, {x:70, y:30}],
@@ -864,7 +900,6 @@ function computeEyePositions(count, isMini=false){
   };
   const preset = presets[Math.min(count, 6)] || presets[6];
   preset.forEach(p => {
-    // Smaller eyes if more of them
     const size = count > 3 ? baseSize * 0.75 : baseSize;
     positions.push({ x: p.x - (size/220*50), y: p.y, size });
   });
@@ -872,121 +907,199 @@ function computeEyePositions(count, isMini=false){
 }
 
 function addPopAnimation(wrap, type){
-  wrap.querySelectorAll('.' + type).forEach(el => {
-    if(!el.dataset.popped){
-      el.classList.add('pop');
-      el.dataset.popped = '1';
-    }
-  });
+  safe(() => {
+    if(!wrap) return;
+    wrap.querySelectorAll('.' + type).forEach(el => {
+      if(!el.dataset.popped){
+        el.classList.add('pop');
+        el.dataset.popped = '1';
+      }
+    });
+  }, 'addPopAnimation');
 }
 
 /* ═══ GAME FLOW ═══ */
-async function startGame(){
-  await audio.unlock();
-  audio.startMusic();
+function startGame(){
+  safe(() => audio.unlock(), 'unlock');
+  safe(() => audio.startMusic(), 'startMusic');
   monster = newMonster();
   currentStep = 0;
+  celebrationShown = false;
+  if(safetyNetTimer) { clearTimeout(safetyNetTimer); safetyNetTimer = null; }
+
   showScreen('scrGame');
-  renderMonster(document.getElementById('monsterWrap'), monster);
+  safe(() => {
+    const wrap = document.getElementById('monsterWrap');
+    if(wrap){
+      wrap.classList.remove('dancing');
+      renderMonster(wrap, monster);
+    }
+  }, 'startGame-render');
   setQuestionText('Hi there! Make me into a monster!');
-  await audio.playVoice('hello');
+  safe(() => audio.playVoice('hello'), 'playVoice-hello');
   setTimeout(() => askQuestion(), 1200);
 }
 
 function setQuestionText(t){
-  document.getElementById('questionText').textContent = t;
+  safe(() => {
+    const el = document.getElementById('questionText');
+    if(el) el.textContent = t;
+  }, 'setQuestionText');
 }
 
 function askQuestion(){
+  console.log('[askQuestion] currentStep=', currentStep, 'STEPS.length=', STEPS.length);
   if(currentStep >= STEPS.length){
-    // All steps complete — go to celebration. Defer in case we're mid-animation.
     setTimeout(() => finishMonster(), 0);
     return;
   }
   const step = STEPS[currentStep];
+  if(!step){
+    console.warn('No step at index', currentStep, '- forcing finish');
+    setTimeout(() => finishMonster(), 0);
+    return;
+  }
   setQuestionText(step.text);
-  try { audio.playVoice(step.voice); } catch(e){}
+  safe(() => audio.playVoice(step.voice), 'playVoice-step');
   buildNumberButtons(step.min, step.max, (n) => onNumberChosen(step, n));
 }
 
 function buildNumberButtons(min, max, handler){
-  const grid = document.getElementById('btnGrid');
-  grid.innerHTML = '';
-  for(let i=min; i<=max; i++){
-    const b = document.createElement('button');
-    b.className = 'num-btn';
-    b.textContent = i;
-    const col = BTN_COLORS[(i-1) % BTN_COLORS.length];
-    b.style.setProperty('--c1', col.c1);
-    b.style.setProperty('--c2', col.c2);
-    b.addEventListener('click', () => {
-      // Disable further clicks
-      grid.querySelectorAll('.num-btn').forEach(x => x.disabled = true);
-      handler(i);
-    });
-    grid.appendChild(b);
-  }
+  safe(() => {
+    const grid = document.getElementById('btnGrid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=min; i<=max; i++){
+      const b = document.createElement('button');
+      b.className = 'num-btn';
+      b.textContent = i;
+      const col = BTN_COLORS[(i-1) % BTN_COLORS.length];
+      b.style.setProperty('--c1', col.c1);
+      b.style.setProperty('--c2', col.c2);
+      const clickHandler = () => {
+        safe(() => grid.querySelectorAll('.num-btn').forEach(x => x.disabled = true), 'disable-btns');
+        safe(() => handler(i), 'handler');
+      };
+      b.addEventListener('click', clickHandler);
+      grid.appendChild(b);
+    }
+  }, 'buildNumberButtons');
 }
 
-async function onNumberChosen(step, n){
-  try {
-    audio.pop();
-    // Fire-and-forget number audio with a timeout guard so the flow never hangs
-    // if an audio file is missing / Promise never resolves (iOS WebAudio quirk).
-    const numberPlay = audio.playNumber(n);
-    await Promise.race([
-      Promise.resolve(numberPlay),
-      new Promise(r => setTimeout(r, 700))
-    ]);
-    // Apply to monster
-    monster[step.key] = n;
-    const wrap = document.getElementById('monsterWrap');
-    renderMonster(wrap, monster);
-    // Pop animation on new features
-    if(step.key === 'arms') { audio.boing(); addPopAnimation(wrap, 'arm'); }
-    if(step.key === 'legs') { audio.boing(); addPopAnimation(wrap, 'leg'); wobble(); }
-    if(step.key === 'horns') { audio.pop(); addPopAnimation(wrap, 'horn'); showSpeech('Look at me! I am so silly!'); audio.playVoice('look_at_me'); wobble(); }
-    if(step.key === 'eyes') { audio.giggle(); showSpeech('Wobble wobble!'); audio.playVoice('wobble'); wobble(); }
-    if(step.key === 'teeth') { audio.giggle(); showSpeech('Grrrrr!'); }
-  } catch(e){
-    console.warn('onNumberChosen error (continuing):', e);
+/* NO async/await here — completely synchronous, uses setTimeout to advance.
+   The flow CANNOT be blocked by any hanging audio promise because we never
+   await audio. This was the root cause of the original freeze. */
+function onNumberChosen(step, n){
+  console.log('[onNumberChosen] step=', step.key, 'n=', n, 'currentStep=', currentStep);
+
+  // SAFETY NET: if this is the last step (horns), start a guaranteed
+  // fallback that forces the celebration screen in 2.5s no matter what.
+  if(currentStep === STEPS.length - 1){
+    if(safetyNetTimer) clearTimeout(safetyNetTimer);
+    safetyNetTimer = setTimeout(() => {
+      if(!celebrationShown){
+        console.warn('[SAFETY NET] Forcing celebration after 2.5s timeout');
+        safe(() => finishMonster(), 'safety-net-finish');
+      }
+    }, 2500);
   }
 
-  // Advance regardless of any audio/render error
+  // Sound effects and monster updates — each independently wrapped
+  safe(() => audio.pop(), 'pop');
+  safe(() => audio.playNumber(n), 'playNumber'); // fire-and-forget, NEVER awaited
+
+  safe(() => { monster[step.key] = n; }, 'setMonsterKey');
+
+  const wrap = document.getElementById('monsterWrap');
+  safe(() => renderMonster(wrap, monster), 'renderMonster-step');
+
+  // Per-step flourishes (all safe-wrapped, none awaited)
+  if(step.key === 'arms'){
+    safe(() => audio.boing(), 'boing');
+    safe(() => addPopAnimation(wrap, 'arm'), 'armPop');
+  }
+  if(step.key === 'legs'){
+    safe(() => audio.boing(), 'boing');
+    safe(() => addPopAnimation(wrap, 'leg'), 'legPop');
+    safe(() => wobble(), 'wobble');
+  }
+  if(step.key === 'horns'){
+    safe(() => audio.pop(), 'pop');
+    safe(() => addPopAnimation(wrap, 'horn'), 'hornPop');
+    safe(() => showSpeech('Look at me! I am so silly!'), 'speech-horn');
+    safe(() => audio.playVoice('look_at_me'), 'voice-lookatme');
+    safe(() => wobble(), 'wobble');
+  }
+  if(step.key === 'eyes'){
+    safe(() => audio.giggle(), 'giggle');
+    safe(() => showSpeech('Wobble wobble!'), 'speech-eye');
+    safe(() => audio.playVoice('wobble'), 'voice-wobble');
+    safe(() => wobble(), 'wobble');
+  }
+  if(step.key === 'teeth'){
+    safe(() => audio.giggle(), 'giggle');
+    safe(() => showSpeech('Grrrrr!'), 'speech-teeth');
+  }
+
+  // Advance — this ALWAYS fires because it's a plain setTimeout
   setTimeout(() => {
-    try { audio.giggle(); } catch(e){}
+    safe(() => audio.giggle(), 'giggle-advance');
     currentStep++;
-    const grid = document.getElementById('btnGrid');
-    if(grid) grid.innerHTML = '';
+    console.log('[advance] currentStep now=', currentStep);
+    safe(() => {
+      const grid = document.getElementById('btnGrid');
+      if(grid) grid.innerHTML = '';
+    }, 'clear-grid');
     setTimeout(() => askQuestion(), 600);
   }, 1400);
 }
 
 function wobble(){
-  const wrap = document.getElementById('monsterWrap');
-  wrap.classList.remove('wobbling');
-  void wrap.offsetWidth;
-  wrap.classList.add('wobbling');
-  setTimeout(() => wrap.classList.remove('wobbling'), 1500);
+  safe(() => {
+    const wrap = document.getElementById('monsterWrap');
+    if(!wrap) return;
+    wrap.classList.remove('wobbling');
+    void wrap.offsetWidth;
+    wrap.classList.add('wobbling');
+    setTimeout(() => safe(() => wrap.classList.remove('wobbling'), 'remove-wobble'), 1500);
+  }, 'wobble');
 }
 
-async function finishMonster(){
-  // ALWAYS show celebration screen first — even if anything below throws, the kid
-  // gets a visible "next" state and the "Make Another!" button is reachable.
-  try { showScreen('scrCeleb'); } catch(e){ console.warn(e); }
+/* Celebration — guaranteed to run. No awaits, no hidden blockers. */
+function finishMonster(){
+  if(celebrationShown){
+    console.log('[finishMonster] already shown, skipping');
+    return;
+  }
+  celebrationShown = true;
+  if(safetyNetTimer) { clearTimeout(safetyNetTimer); safetyNetTimer = null; }
 
-  try {
-    // Make the game monster do a final dance before the celebration reveal
+  console.log('[finishMonster] showing celebration screen');
+
+  // ABSOLUTE PRIORITY: show the celebration screen FIRST.
+  // Nothing else matters if this works.
+  safe(() => {
+    const celeb = document.getElementById('scrCeleb');
+    if(celeb){
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      celeb.classList.add('active');
+    }
+  }, 'show-celeb-direct');
+
+  // Dance animation on game screen monster (not critical)
+  safe(() => {
     const gameWrap = document.getElementById('monsterWrap');
     if(gameWrap) gameWrap.classList.add('dancing');
+  }, 'dance-game-monster');
 
-    // Save to collection
-    saveMonster(monster);
-    try { audio.boostMusic(); } catch(e){}
+  safe(() => audio.boostMusic(), 'boostMusic');
+  safe(() => saveMonster(monster), 'saveMonster');
 
-    // Render main monster dancing on celeb screen
-    const newRow = document.getElementById('newMonsterRow');
-    if(newRow){
+  // Render the big monster — deferred so screen shows first
+  setTimeout(() => {
+    safe(() => {
+      const newRow = document.getElementById('newMonsterRow');
+      if(!newRow || !monster) return;
       newRow.innerHTML = '';
       const bigWrap = document.createElement('div');
       bigWrap.className = 'mini-monster-wrap';
@@ -995,85 +1108,89 @@ async function finishMonster(){
       bigWrap.innerHTML = '<div class="monster-body"></div><div class="mouth"></div>';
       newRow.appendChild(bigWrap);
       renderMonster(bigWrap, monster, false);
-
-      // Sillier dance speed based on legs
       const speed = Math.max(0.3, 0.7 - ((monster.legs || 0) * 0.05));
       bigWrap.style.animationDuration = speed + 's';
-    }
+    }, 'render-big-monster');
+  }, 50);
 
-    // Collection
-    renderCollection();
+  setTimeout(() => { safe(() => renderCollection(), 'renderCollection'); }, 150);
+  setTimeout(() => { safe(() => launchConfetti(), 'launchConfetti'); }, 100);
 
-    // Confetti
-    launchConfetti();
-
-    // Voice sequence
-    try { audio.playVoice('dance'); } catch(e){}
-    setTimeout(() => { try { audio.playVoice('look_at_me'); } catch(e){} }, 2000);
-    setTimeout(() => { try { audio.playVoice('perfect'); } catch(e){} }, 4500);
-    setTimeout(() => { try { audio.playVoice('love_you'); } catch(e){} }, 7000);
-    setTimeout(() => { try { audio.playVoice('thank_you'); } catch(e){} }, 9500);
-  } catch(e){
-    console.warn('finishMonster error:', e);
-  }
+  // Voice sequence — all fire-and-forget, all independent
+  safe(() => audio.playVoice('dance'), 'voice-dance');
+  setTimeout(() => safe(() => audio.playVoice('look_at_me'), 'voice-look'), 2000);
+  setTimeout(() => safe(() => audio.playVoice('perfect'), 'voice-perfect'), 4500);
+  setTimeout(() => safe(() => audio.playVoice('love_you'), 'voice-love'), 7000);
+  setTimeout(() => safe(() => audio.playVoice('thank_you'), 'voice-thanks'), 9500);
 }
 
 function saveMonster(m){
-  try {
+  safe(() => {
+    if(!m) return;
     const list = JSON.parse(localStorage.getItem('aha_monster_collection') || '[]');
     list.push({ ...m, createdAt: Date.now() });
-    // Limit to last 20 to keep UI reasonable
     const trimmed = list.slice(-20);
     localStorage.setItem('aha_monster_collection', JSON.stringify(trimmed));
-  } catch(e){}
+  }, 'saveMonster');
 }
 
 function renderCollection(){
-  const row = document.getElementById('collectionRow');
-  const label = document.getElementById('collectionLabel');
-  row.innerHTML = '';
-  let list = [];
-  try { list = JSON.parse(localStorage.getItem('aha_monster_collection') || '[]'); } catch(e){}
-  // Exclude the most recent (already shown big) - show previous ones
-  const previous = list.slice(0, -1);
-  if(previous.length === 0){
-    label.style.display = 'none';
-    return;
-  }
-  label.style.display = 'block';
-  previous.slice().reverse().forEach((m, idx) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'mini-monster-wrap';
-    wrap.innerHTML = '<div class="monster-body"></div><div class="mouth"></div>';
-    wrap.style.animationDelay = (idx * 0.1) + 's';
-    wrap.style.animationDuration = (0.4 + (idx % 4) * 0.1) + 's';
-    row.appendChild(wrap);
-    renderMonster(wrap, m, true);
-  });
+  safe(() => {
+    const row = document.getElementById('collectionRow');
+    const label = document.getElementById('collectionLabel');
+    if(!row || !label) return;
+    row.innerHTML = '';
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem('aha_monster_collection') || '[]'); } catch(e){}
+    const previous = list.slice(0, -1);
+    if(previous.length === 0){
+      label.style.display = 'none';
+      return;
+    }
+    label.style.display = 'block';
+    previous.slice().reverse().forEach((m, idx) => {
+      safe(() => {
+        if(!m || !m.color) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'mini-monster-wrap';
+        wrap.innerHTML = '<div class="monster-body"></div><div class="mouth"></div>';
+        wrap.style.animationDelay = (idx * 0.1) + 's';
+        wrap.style.animationDuration = (0.4 + (idx % 4) * 0.1) + 's';
+        row.appendChild(wrap);
+        renderMonster(wrap, m, true);
+      }, 'render-collection-item');
+    });
+  }, 'renderCollection');
 }
 
 function launchConfetti(){
-  const colors = ['#ff4081','#76ff03','#00e5ff','#ffeb3b','#b388ff','#ffab40'];
-  for(let i=0; i<40; i++){
-    const c = document.createElement('div');
-    c.className = 'confetti';
-    c.style.left = (Math.random() * 100) + 'vw';
-    c.style.background = colors[Math.floor(Math.random() * colors.length)];
-    c.style.animationDuration = (2 + Math.random() * 2) + 's';
-    c.style.animationDelay = (Math.random() * 0.8) + 's';
-    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 5000);
-  }
+  safe(() => {
+    const colors = ['#ff4081','#76ff03','#00e5ff','#ffeb3b','#b388ff','#ffab40'];
+    for(let i=0; i<40; i++){
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = (Math.random() * 100) + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      c.style.animationDelay = (Math.random() * 0.8) + 's';
+      c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      document.body.appendChild(c);
+      setTimeout(() => { try { c.remove(); } catch(e){} }, 5000);
+    }
+  }, 'launchConfetti');
 }
 
 /* ═══ EVENTS ═══ */
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('againBtn').addEventListener('click', () => {
-  startGame();
-});
+safe(() => {
+  const startBtn = document.getElementById('startBtn');
+  if(startBtn) startBtn.addEventListener('click', () => safe(() => startGame(), 'startGame-click'));
+}, 'bind-startBtn');
 
-// Prevent scroll/zoom
+safe(() => {
+  const againBtn = document.getElementById('againBtn');
+  if(againBtn) againBtn.addEventListener('click', () => safe(() => startGame(), 'againGame-click'));
+}, 'bind-againBtn');
+
 document.addEventListener('touchmove', (e) => {
   if(e.scale && e.scale !== 1) e.preventDefault();
 }, { passive:false });

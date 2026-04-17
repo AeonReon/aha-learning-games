@@ -899,12 +899,13 @@ function setQuestionText(t){
 
 function askQuestion(){
   if(currentStep >= STEPS.length){
-    finishMonster();
+    // All steps complete — go to celebration. Defer in case we're mid-animation.
+    setTimeout(() => finishMonster(), 0);
     return;
   }
   const step = STEPS[currentStep];
   setQuestionText(step.text);
-  audio.playVoice(step.voice);
+  try { audio.playVoice(step.voice); } catch(e){}
   buildNumberButtons(step.min, step.max, (n) => onNumberChosen(step, n));
 }
 
@@ -928,23 +929,35 @@ function buildNumberButtons(min, max, handler){
 }
 
 async function onNumberChosen(step, n){
-  audio.pop();
-  await audio.playNumber(n);
-  // Apply to monster
-  monster[step.key] = n;
-  const wrap = document.getElementById('monsterWrap');
-  renderMonster(wrap, monster);
-  // Pop animation on new features
-  if(step.key === 'arms') { audio.boing(); addPopAnimation(wrap, 'arm'); }
-  if(step.key === 'legs') { audio.boing(); addPopAnimation(wrap, 'leg'); wobble(); }
-  if(step.key === 'horns') { audio.pop(); addPopAnimation(wrap, 'horn'); }
-  if(step.key === 'eyes') { audio.giggle(); showSpeech('Wobble wobble!'); audio.playVoice('wobble'); wobble(); }
-  if(step.key === 'teeth') { audio.giggle(); showSpeech('Grrrrr!'); }
+  try {
+    audio.pop();
+    // Fire-and-forget number audio with a timeout guard so the flow never hangs
+    // if an audio file is missing / Promise never resolves (iOS WebAudio quirk).
+    const numberPlay = audio.playNumber(n);
+    await Promise.race([
+      Promise.resolve(numberPlay),
+      new Promise(r => setTimeout(r, 700))
+    ]);
+    // Apply to monster
+    monster[step.key] = n;
+    const wrap = document.getElementById('monsterWrap');
+    renderMonster(wrap, monster);
+    // Pop animation on new features
+    if(step.key === 'arms') { audio.boing(); addPopAnimation(wrap, 'arm'); }
+    if(step.key === 'legs') { audio.boing(); addPopAnimation(wrap, 'leg'); wobble(); }
+    if(step.key === 'horns') { audio.pop(); addPopAnimation(wrap, 'horn'); showSpeech('Look at me! I am so silly!'); audio.playVoice('look_at_me'); wobble(); }
+    if(step.key === 'eyes') { audio.giggle(); showSpeech('Wobble wobble!'); audio.playVoice('wobble'); wobble(); }
+    if(step.key === 'teeth') { audio.giggle(); showSpeech('Grrrrr!'); }
+  } catch(e){
+    console.warn('onNumberChosen error (continuing):', e);
+  }
 
+  // Advance regardless of any audio/render error
   setTimeout(() => {
-    audio.giggle();
+    try { audio.giggle(); } catch(e){}
     currentStep++;
-    document.getElementById('btnGrid').innerHTML = '';
+    const grid = document.getElementById('btnGrid');
+    if(grid) grid.innerHTML = '';
     setTimeout(() => askQuestion(), 600);
   }, 1400);
 }
@@ -958,38 +971,51 @@ function wobble(){
 }
 
 async function finishMonster(){
-  // Save to collection
-  saveMonster(monster);
-  showScreen('scrCeleb');
-  audio.boostMusic();
+  // ALWAYS show celebration screen first — even if anything below throws, the kid
+  // gets a visible "next" state and the "Make Another!" button is reachable.
+  try { showScreen('scrCeleb'); } catch(e){ console.warn(e); }
 
-  // Render main monster dancing on celeb screen
-  const newRow = document.getElementById('newMonsterRow');
-  newRow.innerHTML = '';
-  const bigWrap = document.createElement('div');
-  bigWrap.className = 'mini-monster-wrap';
-  bigWrap.style.width = '200px';
-  bigWrap.style.height = '200px';
-  bigWrap.innerHTML = '<div class="monster-body"></div><div class="mouth"></div>';
-  newRow.appendChild(bigWrap);
-  renderMonster(bigWrap, monster, false);
+  try {
+    // Make the game monster do a final dance before the celebration reveal
+    const gameWrap = document.getElementById('monsterWrap');
+    if(gameWrap) gameWrap.classList.add('dancing');
 
-  // Sillier dance speed based on legs
-  const speed = Math.max(0.3, 0.7 - (monster.legs * 0.05));
-  bigWrap.style.animationDuration = speed + 's';
+    // Save to collection
+    saveMonster(monster);
+    try { audio.boostMusic(); } catch(e){}
 
-  // Collection
-  renderCollection();
+    // Render main monster dancing on celeb screen
+    const newRow = document.getElementById('newMonsterRow');
+    if(newRow){
+      newRow.innerHTML = '';
+      const bigWrap = document.createElement('div');
+      bigWrap.className = 'mini-monster-wrap';
+      bigWrap.style.width = '200px';
+      bigWrap.style.height = '200px';
+      bigWrap.innerHTML = '<div class="monster-body"></div><div class="mouth"></div>';
+      newRow.appendChild(bigWrap);
+      renderMonster(bigWrap, monster, false);
 
-  // Confetti
-  launchConfetti();
+      // Sillier dance speed based on legs
+      const speed = Math.max(0.3, 0.7 - ((monster.legs || 0) * 0.05));
+      bigWrap.style.animationDuration = speed + 's';
+    }
 
-  // Voice sequence
-  audio.playVoice('dance');
-  setTimeout(() => audio.playVoice('look_at_me'), 2000);
-  setTimeout(() => audio.playVoice('perfect'), 4500);
-  setTimeout(() => audio.playVoice('love_you'), 7000);
-  setTimeout(() => audio.playVoice('thank_you'), 9500);
+    // Collection
+    renderCollection();
+
+    // Confetti
+    launchConfetti();
+
+    // Voice sequence
+    try { audio.playVoice('dance'); } catch(e){}
+    setTimeout(() => { try { audio.playVoice('look_at_me'); } catch(e){} }, 2000);
+    setTimeout(() => { try { audio.playVoice('perfect'); } catch(e){} }, 4500);
+    setTimeout(() => { try { audio.playVoice('love_you'); } catch(e){} }, 7000);
+    setTimeout(() => { try { audio.playVoice('thank_you'); } catch(e){} }, 9500);
+  } catch(e){
+    console.warn('finishMonster error:', e);
+  }
 }
 
 function saveMonster(m){

@@ -44,7 +44,7 @@
 
   /* ═══ TITLE SCREEN ═══ */
   #scrTitle{
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    flex-direction:column;align-items:center;justify-content:center;
     background:linear-gradient(180deg,#fff3dc 0%,#ffdfad 100%);
     z-index:20;
   }
@@ -76,7 +76,6 @@
   .title-sub{font-size:clamp(18px,3.5vw,26px);color:#7a4a1f;margin-top:20px;text-align:center;}
 
   /* ═══ GAME SCREEN ═══ */
-  #scrGame{display:none;}
   #scrGame.active{display:block;}
 
   /* Menu board */
@@ -298,7 +297,7 @@
   /* ═══ CELEBRATION ═══ */
   #scrCeleb{
     background:linear-gradient(180deg,#ffd98a 0%,#ff9f5c 50%,#ff6b9d 100%);
-    display:none;flex-direction:column;align-items:center;justify-content:center;
+    flex-direction:column;align-items:center;justify-content:center;
     z-index:30;padding:20px;
   }
   #scrCeleb.active{display:flex;}
@@ -651,7 +650,10 @@ function showScreen(id) {
 }
 
 /* ═══ FLOW ═══ */
+let gameStarted = false;
 $('startBtn').addEventListener('click', async () => {
+  if (gameStarted) return;
+  gameStarted = true;
   await audio.unlock();
   audio.startCafeMusic();
   showScreen('scrGame');
@@ -663,6 +665,9 @@ $('playAgainBtn').addEventListener('click', () => {
   $('tipStars').innerHTML = '';
   for (let i=1; i<=5; i++) $('dot'+i).classList.remove('done');
   document.querySelectorAll('.confetti').forEach(c => c.remove());
+  const catEl = $('cat');
+  catEl.className = 'cat';
+  $('speech').classList.remove('show');
   showScreen('scrGame');
   audio.startCafeMusic();
   setTimeout(nextCat, 500);

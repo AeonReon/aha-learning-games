@@ -8,7 +8,6 @@
 :root {
   --font: 'Arial Rounded MT Bold', 'Nunito', 'Quicksand', system-ui, -apple-system, Arial, sans-serif;
   --tap: 80px;
-  --z-bg: 0; --z-game: 10; --z-char: 12; --z-ui: 20; --z-overlay: 50; --z-celeb: 100; --z-screen: 200;
   --pink: #ec4899; --blue: #3b82f6; --green: #22c55e; --purple: #a855f7; --gold: #fbbf24;
   --dark: #0a0420; --deep: #1a0836;
   --glow-pink: rgba(236,72,153,0.7);
@@ -17,7 +16,7 @@
   --glow-purple: rgba(168,85,247,0.7);
   --glow-gold: rgba(251,191,36,0.7);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   font-family: var(--font);
   overflow: hidden;
@@ -25,7 +24,6 @@ html, body {
   width: 100vw;
   touch-action: manipulation;
   -webkit-user-select: none; user-select: none;
-  -webkit-tap-highlight-color: transparent;
   background: var(--dark);
   color: #fff;
 }
@@ -39,9 +37,9 @@ body {
   position: relative;
 }
 
-/* Retro pixel grid */
+/* ═══ BACKGROUND DECOR ═══ */
 .bg-grid {
-  position: fixed; inset: 0; z-index: var(--z-bg);
+  position: fixed; inset: 0; z-index: 0;
   pointer-events: none; opacity: 0.22;
   background-image:
     linear-gradient(rgba(168,85,247,0.35) 1px, transparent 1px),
@@ -53,9 +51,8 @@ body {
 }
 @keyframes gridScroll { 0%{background-position:0 0} 100%{background-position:0 44px} }
 
-/* Marquee lights around screen */
 .marquee {
-  position: fixed; inset: 0; z-index: var(--z-bg);
+  position: fixed; inset: 0; z-index: 0;
   pointer-events: none;
   box-shadow:
     inset 0 0 60px rgba(236,72,153,0.3),
@@ -78,26 +75,21 @@ body {
   100% { filter: drop-shadow(0 0 6px var(--glow-gold)) hue-rotate(0deg); }
 }
 
-/* Scanline effect */
 .bg-scanlines {
-  position: fixed; inset: 0; z-index: var(--z-bg);
+  position: fixed; inset: 0; z-index: 0;
   pointer-events: none; opacity: 0.08;
   background: repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 2px, transparent 4px);
 }
-
-/* Floating sparkles */
 .bg-sparkle {
-  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  position: fixed; pointer-events: none; z-index: 0;
   font-size: clamp(10px, 2vw, 16px);
   opacity: 0.6;
   animation: sparkleTwinkle 2.6s ease-in-out infinite;
   filter: drop-shadow(0 0 4px currentColor);
 }
 @keyframes sparkleTwinkle { 0%,100%{opacity:0.2;transform:scale(0.7)} 50%{opacity:0.9;transform:scale(1.2)} }
-
-/* Neon accents */
 .bg-neon {
-  position: fixed; pointer-events: none; z-index: var(--z-bg);
+  position: fixed; pointer-events: none; z-index: 0;
   font-size: clamp(18px, 4vw, 30px);
   opacity: 0.45;
   filter: drop-shadow(0 0 10px currentColor);
@@ -108,26 +100,85 @@ body {
   50% { transform: translateY(-18px) rotate(8deg); }
 }
 
-/* Screen system */
+/* ═══ BACK BUTTONS — ALWAYS REACHABLE ═══ */
+/* Primary back button — top-left, huge z-index, outside every screen */
+.back-home-btn {
+  position: fixed;
+  top: 12px; left: 12px;
+  z-index: 9999;  /* above EVERYTHING */
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #fff;
+  color: #d94084;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-weight: 900;
+  font-size: 15px;
+  border: 3px solid #ff6fa5;
+  box-shadow: 0 4px 0 #c94d80, 0 6px 12px rgba(0,0,0,0.4);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: 0.5px;
+}
+.back-home-btn:active { transform: translateY(2px) scale(0.97); }
+
+/* Secondary failsafe home button — bottom-right during game, always tappable */
+.home-bubble {
+  position: fixed;
+  bottom: 16px; right: 16px;
+  z-index: 9999;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--pink));
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 20px var(--glow-gold);
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 28px;
+  text-decoration: none;
+  cursor: pointer;
+  animation: homeBubblePulse 2s ease-in-out infinite;
+}
+.home-bubble.show { display: flex; }
+@keyframes homeBubblePulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.home-bubble:active { transform: scale(0.92); }
+
+/* ═══ SCREEN SYSTEM — SIMPLE display:none/flex ═══ */
 .screen {
   position: fixed; inset: 0;
-  display: flex; flex-direction: column;
+  display: none;
+  flex-direction: column;
   align-items: center; justify-content: center;
-  text-align: center; padding: 20px;
-  transition: opacity 0.45s;
-  opacity: 0; visibility: hidden; pointer-events: none;
-  z-index: var(--z-screen);
+  text-align: center;
+  padding: 20px;
+  z-index: 200;
+  overflow: hidden;
 }
-.screen.active { opacity: 1; visibility: visible; pointer-events: auto; }
+.screen.active { display: flex; }
+/* Game screen is a transparent container — balloons etc are absolutely positioned inside */
+#scrGame.active { display: block; padding: 0; }
 
-/* Title */
-.screen-title .emoji-row {
+/* ═══ TITLE ═══ */
+#scrTitle .alphie {
+  font-size: clamp(68px, 18vw, 120px);
+  display: inline-block;
+  filter: drop-shadow(0 0 18px var(--glow-green));
+  animation: alphieBounce 1.6s ease-in-out infinite;
+}
+@keyframes alphieBounce {
+  0%,100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-14px) rotate(5deg); }
+}
+#scrTitle .emoji-row {
   display: flex; gap: 14px;
   justify-content: center; align-items: flex-end;
   margin-bottom: 8px;
 }
-.screen-title .emoji-row span { font-size: clamp(44px, 11vw, 72px); filter: drop-shadow(0 0 12px var(--glow-pink)); }
-.screen-title h1 {
+#scrTitle .emoji-row span { font-size: clamp(44px, 11vw, 72px); filter: drop-shadow(0 0 12px var(--glow-pink)); }
+#scrTitle h1 {
   font-size: clamp(30px, 8vw, 56px);
   color: var(--gold);
   text-shadow:
@@ -140,32 +191,21 @@ body {
   animation: titlePulse 2s ease-in-out infinite;
 }
 @keyframes titlePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
-.screen-title h2 {
+#scrTitle h2 {
   font-size: clamp(16px, 4vw, 24px);
   color: var(--pink);
   text-shadow: 0 0 10px var(--glow-pink);
   margin-bottom: 6px;
   letter-spacing: 3px;
 }
-.screen-title p {
+#scrTitle p {
   font-size: clamp(14px, 3.5vw, 20px);
   color: #fff;
   max-width: 440px; line-height: 1.5;
   text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   margin-top: 8px;
 }
-.screen-title .alphie {
-  font-size: clamp(68px, 18vw, 120px);
-  display: inline-block;
-  filter: drop-shadow(0 0 18px var(--glow-green));
-  animation: alphieBounce 1.6s ease-in-out infinite;
-}
-@keyframes alphieBounce {
-  0%,100% { transform: translateY(0) rotate(-5deg); }
-  50% { transform: translateY(-14px) rotate(5deg); }
-}
 
-/* Buttons */
 .btn {
   min-width: var(--tap); min-height: 68px;
   padding: 16px 44px;
@@ -179,7 +219,6 @@ body {
     0 0 24px var(--glow-pink),
     inset 0 0 12px rgba(255,255,255,0.3);
   transition: transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
   text-transform: uppercase;
   letter-spacing: 2px;
   text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
@@ -199,10 +238,10 @@ body {
   50% { box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 0 40px var(--glow-gold), 0 0 60px var(--glow-pink), inset 0 0 12px rgba(255,255,255,0.3); }
 }
 
-/* HUD */
+/* ═══ HUD ═══ */
 .hud {
-  position: fixed; top: 18px; left: 10px; right: 10px;
-  z-index: var(--z-ui);
+  position: fixed; top: 14px; left: 92px; right: 12px;
+  z-index: 50;
   display: none;
   align-items: center; justify-content: space-between;
   gap: 10px;
@@ -213,9 +252,9 @@ body {
   background: linear-gradient(135deg, rgba(10,4,32,0.85), rgba(42,14,74,0.85));
   border: 3px solid var(--gold);
   border-radius: 14px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   color: var(--gold);
-  font-size: clamp(14px, 3.5vw, 20px);
+  font-size: clamp(12px, 3vw, 16px);
   text-shadow: 0 0 8px var(--glow-gold);
   box-shadow: 0 0 16px var(--glow-purple);
   font-weight: bold;
@@ -225,13 +264,13 @@ body {
 .hud-stars { color: var(--pink); border-color: var(--pink); text-shadow: 0 0 8px var(--glow-pink); }
 .hud-progress {
   flex: 1;
-  height: 22px;
+  height: 18px;
   background: rgba(10,4,32,0.7);
   border: 3px solid var(--blue);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 0 14px var(--glow-blue);
-  min-width: 60px;
+  min-width: 50px;
 }
 .hud-progress-fill {
   height: 100%;
@@ -241,34 +280,19 @@ body {
   box-shadow: 0 0 10px var(--glow-gold);
 }
 
-/* Alphie character */
-.alphie-char {
-  position: fixed;
-  bottom: 20px; left: 12px;
-  z-index: var(--z-char);
-  font-size: clamp(48px, 12vw, 80px);
-  pointer-events: none;
-  filter: drop-shadow(0 0 16px var(--glow-green));
-  animation: alphieFloat 3s ease-in-out infinite;
-  display: none;
-}
-.alphie-char.active { display: block; }
-@keyframes alphieFloat {
-  0%,100% { transform: translateY(0) rotate(-4deg); }
-  50% { transform: translateY(-10px) rotate(4deg); }
-}
+/* ═══ SPEECH BUBBLE ═══ */
 .speech-bubble {
   position: fixed;
-  bottom: 110px; left: 90px;
+  top: 70px; right: 80px;
   background: linear-gradient(135deg, var(--gold), var(--pink));
   color: var(--dark);
-  padding: 10px 18px;
+  padding: 8px 14px;
   border-radius: 20px;
-  font-size: clamp(14px, 3.5vw, 18px);
+  font-size: clamp(12px, 3vw, 15px);
   font-weight: bold;
   border: 3px solid #fff;
   box-shadow: 0 0 20px var(--glow-gold);
-  z-index: var(--z-char);
+  z-index: 60;
   opacity: 0;
   transform: scale(0.5);
   transition: all 0.3s;
@@ -283,17 +307,7 @@ body {
   75% { transform: scale(1.05) rotate(3deg); }
 }
 
-/* Game area */
-.game-area {
-  position: fixed; inset: 0;
-  z-index: var(--z-game);
-  display: none;
-  padding-top: 80px;
-  padding-bottom: 20px;
-}
-.game-area.active { display: block; }
-
-/* ===== LEVEL 1 — BALLOON BURST ===== */
+/* ═══ LEVEL 1 — BALLOON BURST ═══ */
 .balloon {
   position: absolute;
   width: clamp(90px, 22vw, 140px);
@@ -313,7 +327,6 @@ body {
   animation: balloonFloat 4s ease-in-out infinite;
   transition: transform 0.2s;
   will-change: transform;
-  -webkit-tap-highlight-color: transparent;
 }
 .balloon::after {
   content: '';
@@ -340,7 +353,7 @@ body {
 .balloon .upper { font-size: 1.1em; }
 .balloon .lower { font-size: 0.7em; opacity: 0.9; }
 
-/* ===== LEVEL 2 — SPIN WHEEL ===== */
+/* ═══ LEVEL 2 — SPIN WHEEL ═══ */
 .wheel-wrap {
   position: absolute;
   top: 50%; left: 50%;
@@ -370,7 +383,6 @@ body {
   display: flex; align-items: flex-start; justify-content: center;
   padding-top: 18px;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 .wheel-slice .slice-inner {
   font-size: clamp(20px, 5vw, 34px);
@@ -409,7 +421,7 @@ body {
   font-size: clamp(20px, 5vw, 30px);
 }
 
-/* ===== LEVEL 3 — SPEED MATCH ===== */
+/* ═══ LEVEL 3 — SPEED MATCH ═══ */
 .speed-grid {
   position: absolute;
   top: 50%; left: 50%;
@@ -435,7 +447,6 @@ body {
     0 0 18px var(--glow-blue),
     inset 0 0 14px rgba(255,255,255,0.25);
   transition: transform 0.15s;
-  -webkit-tap-highlight-color: transparent;
   flex-direction: column;
 }
 .speed-card .upper { line-height: 1; }
@@ -453,27 +464,29 @@ body {
   25% { transform: translateX(-8px); }
   75% { transform: translateX(8px); }
 }
-.speed-target {
+
+/* ═══ TARGET BANNER (shared across levels) ═══ */
+.target-banner {
   position: absolute;
-  top: 90px; left: 50%;
+  top: 70px; left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, var(--pink), var(--purple));
   border: 4px solid var(--gold);
   border-radius: 20px;
-  padding: 12px 26px;
+  padding: 10px 24px;
   font-size: clamp(18px, 4.5vw, 24px);
   font-weight: bold;
   color: #fff;
   box-shadow: 0 0 24px var(--glow-pink);
   text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
   letter-spacing: 1px;
-  z-index: 4;
+  z-index: 40;
   text-align: center;
   white-space: nowrap;
 }
-.speed-target .big { font-size: 1.5em; color: var(--gold); }
+.target-banner .big { font-size: 1.5em; color: var(--gold); }
 
-/* ===== LEVEL 4 — SURPRISE BOXES ===== */
+/* ═══ LEVEL 4 — SURPRISE BOXES ═══ */
 .box-grid {
   position: absolute;
   top: 50%; left: 50%;
@@ -497,7 +510,6 @@ body {
     0 0 24px var(--glow-purple),
     inset 0 0 18px rgba(0,0,0,0.4);
   transition: transform 0.2s;
-  -webkit-tap-highlight-color: transparent;
   perspective: 600px;
 }
 .mbox .box-inner {
@@ -543,7 +555,7 @@ body {
   100% { transform: scale(0); opacity: 0; }
 }
 
-/* ===== LEVEL 5 — FIREWORKS FINALE ===== */
+/* ═══ LEVEL 5 — FIREWORKS FINALE ═══ */
 .firework {
   position: absolute;
   width: clamp(72px, 16vw, 96px);
@@ -558,7 +570,6 @@ body {
   box-shadow:
     0 0 30px currentColor,
     inset 0 0 14px rgba(255,255,255,0.4);
-  -webkit-tap-highlight-color: transparent;
   animation: fireworkShoot 3.2s ease-out forwards;
   will-change: transform, opacity;
   flex-direction: column;
@@ -580,93 +591,13 @@ body {
   50% { transform: scale(1.8); filter: brightness(2.5); }
   100% { transform: scale(0); opacity: 0; }
 }
-.firework-target {
-  position: absolute;
-  top: 94px; left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, var(--gold), var(--pink));
-  border: 4px solid #fff;
-  border-radius: 20px;
-  padding: 10px 26px;
-  font-size: clamp(16px, 4.2vw, 22px);
-  font-weight: bold;
-  color: var(--dark);
-  box-shadow: 0 0 26px var(--glow-gold);
-  letter-spacing: 1px;
-  z-index: 4;
-  text-align: center;
-  white-space: nowrap;
-}
-.firework-target .big { font-size: 1.6em; color: var(--pink); text-shadow: 1px 1px 0 #fff; }
 
-/* Level banner */
-.level-banner {
-  position: fixed; inset: 0;
-  z-index: var(--z-overlay);
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s;
-  flex-direction: column;
-  gap: 12px;
-}
-.level-banner.show { opacity: 1; }
-.level-banner::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(10,4,32,0.82);
-  z-index: -1;
-}
-.level-banner .level-num {
-  font-size: clamp(22px, 5vw, 32px);
-  color: var(--pink);
-  text-shadow: 0 0 14px var(--glow-pink);
-  letter-spacing: 6px;
-  font-weight: bold;
-  animation: bannerSlide 0.7s ease-out;
-}
-.level-banner .level-name {
-  font-size: clamp(36px, 9vw, 66px);
-  color: var(--gold);
-  text-shadow: 0 0 24px var(--glow-gold), 0 0 48px var(--glow-pink);
-  font-weight: bold;
-  letter-spacing: 3px;
-  animation: bannerSlide 0.7s ease-out 0.15s backwards;
-  text-align: center;
-  padding: 0 20px;
-}
-.level-banner .level-sub {
-  font-size: clamp(16px, 4vw, 22px);
-  color: var(--green);
-  text-shadow: 0 0 10px var(--glow-green);
-  letter-spacing: 2px;
-  animation: bannerSlide 0.7s ease-out 0.3s backwards;
-}
-@keyframes bannerSlide {
-  0% { transform: translateY(40px) scale(0.7); opacity: 0; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-/* Celebration */
-.celebration {
-  position: fixed; inset: 0;
-  z-index: var(--z-celeb);
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s;
-  padding: 20px;
-}
-.celebration.show { opacity: 1; pointer-events: auto; }
-.celebration::before {
-  content: '';
-  position: absolute; inset: 0;
+/* ═══ CELEBRATION ═══ */
+#scrCeleb {
   background:
     radial-gradient(circle at 30% 30%, rgba(236,72,153,0.4), transparent 50%),
     radial-gradient(circle at 70% 60%, rgba(168,85,247,0.4), transparent 50%),
     rgba(10,4,32,0.9);
-  z-index: -1;
 }
 .celeb-title {
   font-size: clamp(28px, 7.5vw, 52px);
@@ -721,7 +652,7 @@ body {
   50% { transform: scale(1.12) rotate(8deg); }
 }
 
-/* Confetti */
+/* ═══ EFFECTS ═══ */
 .confetti {
   position: fixed;
   top: -20px;
@@ -734,12 +665,10 @@ body {
   0% { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(105vh) rotate(720deg); opacity: 0.7; }
 }
-
-/* Firework burst */
 .burst {
   position: fixed;
   pointer-events: none;
-  z-index: var(--z-overlay);
+  z-index: 150;
   width: 6px; height: 6px;
   border-radius: 50%;
   box-shadow: 0 0 10px currentColor;
@@ -749,14 +678,11 @@ body {
   0% { transform: translate(0,0) scale(1); opacity: 1; }
   100% { transform: translate(var(--bx), var(--by)) scale(0); opacity: 0; }
 }
-
-/* Utility hidden */
-.hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<!-- Background -->
+<!-- Background decor -->
 <div class="bg-grid"></div>
 <div class="bg-scanlines"></div>
 <div class="marquee"></div>
@@ -764,27 +690,13 @@ body {
 <div class="marquee-bulbs bot"></div>
 <div id="bgDeco"></div>
 
-<!-- Back to hub button (always visible) -->
+<!-- ALWAYS-ON back button — lives outside all screens so nothing can trap it -->
 <a href="../../" class="back-home-btn" id="backHomeBtn" aria-label="Back to home">← Home</a>
-<style>
-.back-home-btn{
-  position:fixed;top:14px;left:14px;z-index:500;
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  color:#FCD34D;text-decoration:none;
-  padding:8px 14px;border-radius:20px;
-  font-family:'Arial Rounded MT Bold','Nunito',system-ui,sans-serif;
-  font-weight:800;font-size:13px;
-  border:2px solid rgba(252,211,77,0.5);
-  box-shadow:0 3px 10px rgba(0,0,0,0.4);
-  transition:transform 0.15s,background 0.2s;
-  -webkit-tap-highlight-color:transparent;
-}
-.back-home-btn:hover,.back-home-btn:active{background:rgba(252,211,77,0.25);transform:scale(1.05)}
-</style>
+<!-- Failsafe duplicate shown during game play -->
+<a href="../../" class="home-bubble" id="homeBubble" aria-label="Go home">🏠</a>
 
-<!-- Title Screen -->
-<div class="screen screen-title active" id="screenTitle">
+<!-- ═══ TITLE SCREEN ═══ -->
+<div class="screen active" id="scrTitle">
   <div class="alphie" aria-hidden="true">🎮</div>
   <div class="emoji-row">
     <span>🅰️</span><span>🎯</span><span>⚡</span><span>🅱️</span><span>🎪</span>
@@ -795,29 +707,19 @@ body {
   <button class="btn btn-start" id="btnStart">START</button>
 </div>
 
-<!-- HUD -->
-<div class="hud" id="hud">
-  <div class="hud-level" id="hudLevel">LEVEL 1/5</div>
-  <div class="hud-progress"><div class="hud-progress-fill" id="hudProgress"></div></div>
-  <div class="hud-stars" id="hudStars">⭐ 0</div>
+<!-- ═══ GAME SCREEN ═══ -->
+<div class="screen" id="scrGame">
+  <div class="hud" id="hud">
+    <div class="hud-level" id="hudLevel">LEVEL 1/5</div>
+    <div class="hud-progress"><div class="hud-progress-fill" id="hudProgress"></div></div>
+    <div class="hud-stars" id="hudStars">⭐ 0</div>
+  </div>
+  <div class="speech-bubble" id="speechBubble">GO!</div>
+  <div id="gameArea" style="position:absolute;inset:0;z-index:10;"></div>
 </div>
 
-<!-- Game Area -->
-<div class="game-area" id="gameArea"></div>
-
-<!-- Alphie sidekick -->
-<div class="alphie-char" id="alphieChar">🎮</div>
-<div class="speech-bubble" id="speechBubble">HIGH SCORE!</div>
-
-<!-- Level Banner -->
-<div class="level-banner" id="levelBanner">
-  <div class="level-num" id="bannerNum">LEVEL 1</div>
-  <div class="level-name" id="bannerName">BALLOON BURST</div>
-  <div class="level-sub" id="bannerSub">GET READY!</div>
-</div>
-
-<!-- Celebration -->
-<div class="celebration" id="celebration">
+<!-- ═══ CELEBRATION SCREEN ═══ -->
+<div class="screen" id="scrCeleb">
   <div class="celeb-alphie">🎮</div>
   <div class="celeb-title">YOU'RE AN ALPHABET CHAMPION!</div>
   <div class="celeb-score" id="celebScore">⭐ 5 LEVELS COMPLETE ⭐</div>
@@ -840,7 +742,7 @@ const VOICE_B = {
   'game-complete': ['voice-b/game-complete/you-finished-how-marvellous.mp3','voice-b/game-complete/i-am-so-proud-of-you.mp3','voice-b/game-complete/you-are-truly-amazing.mp3','voice-b/game-complete/what-a-star-you-are.mp3','voice-b/game-complete/oh-my-goodness-you-did-it.mp3'],
 };
 
-// ==== AUDIO ====
+// ═══ AUDIO ═══
 class GameAudio {
   constructor() {
     this.ctx = null;
@@ -852,12 +754,17 @@ class GameAudio {
     this.currentVoiceAudio = null;
     this.musicStep = 0;
   }
-  async unlock() {
+  // Synchronous unlock — fire and forget, never blocks startup
+  unlock() {
     if (this.unlocked) return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
       this.ctx = new AC();
-      if (this.ctx.state === 'suspended') await this.ctx.resume();
+      if (this.ctx.state === 'suspended') {
+        // resume returns a promise but we don't await — just kick it off
+        this.ctx.resume().catch(() => {});
+      }
       const buf = this.ctx.createBuffer(1, 1, 22050);
       const src = this.ctx.createBufferSource();
       src.buffer = buf; src.connect(this.ctx.destination); src.start(0);
@@ -867,11 +774,9 @@ class GameAudio {
       this.unlocked = true;
     } catch (e) { console.warn('audio unlock failed', e); }
   }
-  // Arcade chiptune pentatonic loop
   startMusic() {
     if (!this.ctx || !this.musicOn) return;
     this.stopMusic();
-    // Pentatonic C major: C E G A C' + bass
     const notes = [261.63, 329.63, 392.00, 440.00, 523.25, 659.25, 523.25, 440.00, 392.00, 329.63];
     const bass = [65.41, 98.00, 65.41, 82.41];
     this.musicStep = 0;
@@ -880,7 +785,6 @@ class GameAudio {
     const playStep = () => {
       if (!this.ctx || !this.musicOn) return;
       const t = this.ctx.currentTime;
-      // Lead (square wave — chiptune feel)
       const lead = this.ctx.createOscillator();
       lead.type = 'square';
       lead.frequency.value = notes[this.musicStep % notes.length];
@@ -890,7 +794,6 @@ class GameAudio {
       leadG.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
       lead.connect(leadG); leadG.connect(this.musicGain);
       lead.start(t); lead.stop(t + 0.25);
-      // Bass (triangle) every 2 steps
       if (this.musicStep % 2 === 0) {
         const b = this.ctx.createOscillator();
         b.type = 'triangle';
@@ -913,17 +816,8 @@ class GameAudio {
       this.musicGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.3);
     }
   }
-  duckMusic() {
-    if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(0.02, this.ctx.currentTime, 0.1);
-    }
-  }
-  unduckMusic() {
-    if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(0.08, this.ctx.currentTime, 0.3);
-    }
-  }
-  // SFX generators
+  duckMusic() { if (this.musicGain && this.ctx) this.musicGain.gain.setTargetAtTime(0.02, this.ctx.currentTime, 0.1); }
+  unduckMusic() { if (this.musicGain && this.ctx) this.musicGain.gain.setTargetAtTime(0.08, this.ctx.currentTime, 0.3); }
   beep(freq, dur = 0.12, type = 'square', vol = 0.15) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
@@ -961,7 +855,6 @@ class GameAudio {
   sfxFirework() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    // Whistle up
     const o = this.ctx.createOscillator();
     o.type = 'sine';
     o.frequency.setValueAtTime(400, t);
@@ -971,8 +864,8 @@ class GameAudio {
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
     o.connect(g); g.connect(this.ctx.destination);
     o.start(t); o.stop(t + 0.5);
-    // Bang
     setTimeout(() => {
+      if (!this.ctx) return;
       const bufSize = this.ctx.sampleRate * 0.3;
       const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
       const data = buf.getChannelData(0);
@@ -991,12 +884,10 @@ class GameAudio {
   }
   sfxSpin() {
     if (!this.ctx) return;
-    const t = this.ctx.currentTime;
     for (let i = 0; i < 12; i++) {
       setTimeout(() => this.beep(440 + (i * 30), 0.05, 'square', 0.08), i * 100);
     }
   }
-  // Stop any currently playing voice — used before announcing a new target
   clearQueue() {
     if (this.currentVoiceAudio) {
       try { this.currentVoiceAudio.pause(); } catch(e) {}
@@ -1005,7 +896,6 @@ class GameAudio {
       this.unduckMusic();
     }
   }
-  // Non-blocking speak via HTMLAudio
   speak(path, onEnd) {
     try {
       if (this.currentVoiceAudio) {
@@ -1045,7 +935,7 @@ class GameAudio {
   }
 }
 
-// ==== GAME STATE ====
+// ═══ GAME STATE ═══
 const audio = new GameAudio();
 const state = {
   level: 1,
@@ -1054,24 +944,21 @@ const state = {
   levelTarget: 5,
   currentTarget: null,
   busy: false,
-  levelTimer: null,
   currentGameCleanup: null,
-  highScore: 0,
 };
 
 const LEVELS = [
-  { num: 1, name: 'BALLOON BURST', sub: 'POP THE LETTERS!', target: 5, fn: startLevel1 },
-  { num: 2, name: 'SPIN THE WHEEL', sub: 'FIND THE SLICE!', target: 5, fn: startLevel2 },
-  { num: 3, name: 'SPEED MATCH', sub: 'TAP FAST!', target: 5, fn: startLevel3 },
-  { num: 4, name: 'SURPRISE BOXES', sub: 'FLIP TO FIND!', target: 5, fn: startLevel4 },
-  { num: 5, name: 'FIREWORKS FINALE', sub: 'BLAST THE LETTER!', target: 7, fn: startLevel5 },
+  { num: 1, name: 'BALLOON BURST',    target: 5, fn: startLevel1 },
+  { num: 2, name: 'SPIN THE WHEEL',   target: 5, fn: startLevel2 },
+  { num: 3, name: 'SPEED MATCH',      target: 5, fn: startLevel3 },
+  { num: 4, name: 'SURPRISE BOXES',   target: 5, fn: startLevel4 },
+  { num: 5, name: 'FIREWORKS FINALE', target: 7, fn: startLevel5 },
 ];
 
 const SPEECH_BUBBLES = ['HIGH SCORE!','LEVEL UP!','ALPHABET CHAMP!','GREAT JOB!','SUPER!','WOW!','AMAZING!','ARCADE HERO!','NICE!','COMBO!'];
 
-// ==== UI HELPERS ====
+// ═══ UI HELPERS ═══
 const $ = (id) => document.getElementById(id);
-
 function randInt(max) { return Math.floor(Math.random() * max); }
 function randPick(arr) { return arr[randInt(arr.length)]; }
 function shuffle(arr) {
@@ -1082,18 +969,19 @@ function shuffle(arr) {
   }
   return a;
 }
-function pickDistinct(pool, count, exclude = null) {
-  const available = pool.filter(x => x !== exclude);
-  return shuffle(available).slice(0, count);
-}
-
-function letterHTML(l) {
-  const u = l.toUpperCase();
-  const lo = l.toLowerCase();
-  return `<span class="letter-pair"><span class="upper">${u}</span><span class="lower">${lo}</span></span>`;
-}
 function letterInline(l) {
   return `<span class="upper">${l.toUpperCase()}</span><span class="lower">${l.toLowerCase()}</span>`;
+}
+function letterHTML(l) {
+  return `<span class="letter-pair">${letterInline(l)}</span>`;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  // Show failsafe home button only during gameplay
+  if (id === 'scrGame') $('homeBubble').classList.add('show');
+  else $('homeBubble').classList.remove('show');
 }
 
 function showSpeech(text) {
@@ -1104,14 +992,9 @@ function showSpeech(text) {
   showSpeech._t = setTimeout(() => bubble.classList.remove('show'), 1800);
 }
 
-// Shared helper — updates whatever target-letter element the current level exposes.
-// Every level's target-letter element has id ending with 'TargetL' (wheelTargetL,
-// speedTargetL, boxTargetL, fwTargetL), plus Level 1 balloon burst uses #balloonTargetL.
 function updateTargetHUD(letter) {
-  const ids = ['balloonTargetL','wheelTargetL','speedTargetL','boxTargetL','fwTargetL'];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = letterInline(letter);
+  document.querySelectorAll('.target-banner .big').forEach(el => {
+    el.innerHTML = letterInline(letter);
   });
 }
 
@@ -1127,25 +1010,12 @@ function addStar(n = 1) {
   updateHUD();
 }
 
-function showLevelBanner(level, onDone) {
-  $('bannerNum').textContent = `LEVEL ${level.num}`;
-  $('bannerName').textContent = level.name;
-  $('bannerSub').textContent = level.sub;
-  const b = $('levelBanner');
-  b.classList.add('show');
-  audio.sfxLevelUp();
-  setTimeout(() => {
-    b.classList.remove('show');
-    setTimeout(onDone, 400);
-  }, 2800);
-}
-
 function clearGameArea() {
   if (state.currentGameCleanup) { try { state.currentGameCleanup(); } catch(e){} state.currentGameCleanup = null; }
   $('gameArea').innerHTML = '';
 }
 
-// ==== CONFETTI / BURSTS ====
+// ═══ EFFECTS ═══
 function burstConfetti(amount = 40) {
   const colors = ['#ec4899','#3b82f6','#22c55e','#a855f7','#fbbf24','#fff'];
   for (let i = 0; i < amount; i++) {
@@ -1180,7 +1050,7 @@ function burstAt(x, y, color = '#fbbf24', count = 14) {
   }
 }
 
-// ==== CORRECT / WRONG ====
+// ═══ CORRECT / WRONG ═══
 function handleCorrect(letter, onReady) {
   if (state.busy) return;
   state.busy = true;
@@ -1188,11 +1058,9 @@ function handleCorrect(letter, onReady) {
   state.levelProgress++;
   addStar(1);
   showSpeech(randPick(SPEECH_BUBBLES));
-  // Speak letter once
   audio.speakLetter(letter);
   updateHUD();
   setTimeout(() => {
-    // Occasional voice phrase (non-blocking — speak function stops previous)
     if (Math.random() < 0.55) audio.speakPhrase('correct');
     if (state.levelProgress >= state.levelTarget) {
       finishLevel();
@@ -1209,7 +1077,7 @@ function handleWrong(onReady) {
   if (onReady) onReady();
 }
 
-// ==== LEVEL FLOW ====
+// ═══ LEVEL FLOW ═══
 function finishLevel() {
   state.busy = true;
   clearGameArea();
@@ -1224,32 +1092,28 @@ function finishLevel() {
       const nextLevel = LEVELS[state.level - 1];
       state.levelTarget = nextLevel.target;
       updateHUD();
-      showLevelBanner(nextLevel, () => {
+      audio.sfxLevelUp();
+      // Short, non-blocking delay then straight into next level — no blocking banner
+      setTimeout(() => {
         nextLevel.fn();
         state.busy = false;
-      });
+      }, 800);
     }
-  }, 1600);
+  }, 1400);
 }
 
 function winGame() {
   clearGameArea();
-  $('hud').classList.remove('active');
-  $('alphieChar').classList.remove('active');
-  $('gameArea').classList.remove('active');
   audio.stopMusic();
-  // Massive celebration
   const scoreDigits = String(state.stars * 1337).padStart(6, '0');
   $('celebHighScore').textContent = scoreDigits;
   $('celebScore').textContent = `⭐ ${state.stars} STARS — 5 LEVELS COMPLETE ⭐`;
-  $('celebration').classList.add('show');
+  showScreen('scrCeleb');
   audio.speakPhrase('game-complete');
   setTimeout(() => audio.speakPhrase('game-complete'), 3500);
-  // Massive confetti wave
   burstConfetti(80);
   setTimeout(() => burstConfetti(80), 600);
   setTimeout(() => burstConfetti(80), 1200);
-  // Fireworks
   const firerInt = setInterval(() => {
     audio.sfxFirework();
     const cx = Math.random() * window.innerWidth;
@@ -1260,18 +1124,17 @@ function winGame() {
   setTimeout(() => clearInterval(firerInt), 8000);
 }
 
-// ====================================================
+// ════════════════════════════════════
 // LEVEL 1 — BALLOON BURST
-// ====================================================
+// ════════════════════════════════════
 function startLevel1() {
   const ga = $('gameArea');
   ga.innerHTML = '';
   state.busy = false;
 
-  // Visible target banner so the child always sees WHICH letter to pop.
   const targetEl = document.createElement('div');
-  targetEl.className = 'speed-target';
-  targetEl.innerHTML = `POP <span class="big" id="balloonTargetL"></span>`;
+  targetEl.className = 'target-banner';
+  targetEl.innerHTML = `POP <span class="big"></span>`;
   ga.appendChild(targetEl);
 
   const colors = ['#ec4899','#3b82f6','#22c55e','#a855f7','#fbbf24','#f97316'];
@@ -1293,7 +1156,6 @@ function startLevel1() {
     if (activeBalloons.size > 5) return;
     const bal = document.createElement('div');
     bal.className = 'balloon';
-    // 55% chance to spawn target letter, 45% distractor
     const letter = Math.random() < 0.55 ? targetLetter : randPick(LETTERS.filter(l => l !== targetLetter));
     bal.dataset.letter = letter;
     bal.innerHTML = letterHTML(letter);
@@ -1330,9 +1192,7 @@ function startLevel1() {
       audio.sfxPop();
       burstAt(cx, cy, bal.style.color || '#fbbf24', 16);
       setTimeout(() => { bal.remove(); activeBalloons.delete(bal); }, 400);
-      handleCorrect(letter, () => {
-        pickNewTarget();
-      });
+      handleCorrect(letter, () => { pickNewTarget(); });
     } else {
       bal.style.transform = 'scale(0.9) rotate(-10deg)';
       setTimeout(() => bal.style.transform = '', 200);
@@ -1342,7 +1202,10 @@ function startLevel1() {
 
   pickNewTarget();
   audio.speakPhrase('greetings');
+  // Spawn balloons IMMEDIATELY — no delay, user sees action right away
   spawnBalloon();
+  setTimeout(spawnBalloon, 250);
+  setTimeout(spawnBalloon, 500);
   spawnInterval = setInterval(spawnBalloon, 1100);
 
   state.currentGameCleanup = () => {
@@ -1353,9 +1216,9 @@ function startLevel1() {
   };
 }
 
-// ====================================================
+// ════════════════════════════════════
 // LEVEL 2 — SPIN THE WHEEL
-// ====================================================
+// ════════════════════════════════════
 function startLevel2() {
   const ga = $('gameArea');
   ga.innerHTML = '';
@@ -1370,24 +1233,22 @@ function startLevel2() {
   `;
   ga.appendChild(wrap);
 
-  // Target box
   const targetEl = document.createElement('div');
-  targetEl.className = 'speed-target';
-  targetEl.innerHTML = `FIND <span class="big" id="wheelTargetL"></span>`;
+  targetEl.className = 'target-banner';
+  targetEl.innerHTML = `FIND <span class="big"></span>`;
   ga.appendChild(targetEl);
 
   const wheel = $('wheelEl');
   const NUM_SLICES = 8;
   const sliceDeg = 360 / NUM_SLICES;
-  let wheelLetters = [];
   let targetLetter = null;
   let currentRotation = 0;
+  let stopped = false;
 
   function buildWheel() {
-    wheelLetters = shuffle(LETTERS).slice(0, NUM_SLICES);
+    const wheelLetters = shuffle(LETTERS).slice(0, NUM_SLICES);
     targetLetter = randPick(wheelLetters);
     state.currentTarget = targetLetter;
-    $('wheelTargetL').innerHTML = letterInline(targetLetter);
     wheel.innerHTML = '';
     const colors = ['#ec4899','#3b82f6','#22c55e','#a855f7','#fbbf24','#f97316','#06b6d4','#ef4444'];
     wheelLetters.forEach((letter, i) => {
@@ -1405,13 +1266,12 @@ function startLevel2() {
       slice.addEventListener('touchstart', (e) => { e.preventDefault(); onSliceTap(slice, letter); }, { passive: false });
       wheel.appendChild(slice);
     });
-    // Spin the wheel
     audio.sfxSpin();
     currentRotation += 720 + randInt(360);
     wheel.style.transform = `rotate(${currentRotation}deg)`;
     updateTargetHUD(targetLetter);
     audio.clearQueue();
-    setTimeout(() => { if (!state.busy) audio.speakLetter(targetLetter); }, 1400);
+    setTimeout(() => { if (!stopped && !state.busy) audio.speakLetter(targetLetter); }, 1400);
   }
 
   function onSliceTap(sliceEl, letter) {
@@ -1423,9 +1283,7 @@ function startLevel2() {
       audio.sfxPop();
       burstAt(cx, cy, '#fbbf24', 18);
       sliceEl.style.filter = 'brightness(1.8)';
-      handleCorrect(letter, () => {
-        buildWheel();
-      });
+      handleCorrect(letter, () => { buildWheel(); });
     } else {
       sliceEl.style.filter = 'brightness(0.5)';
       setTimeout(() => sliceEl.style.filter = '', 300);
@@ -1434,20 +1292,20 @@ function startLevel2() {
   }
 
   buildWheel();
-  state.currentGameCleanup = () => {};
+  state.currentGameCleanup = () => { stopped = true; };
 }
 
-// ====================================================
+// ════════════════════════════════════
 // LEVEL 3 — SPEED MATCH
-// ====================================================
+// ════════════════════════════════════
 function startLevel3() {
   const ga = $('gameArea');
   ga.innerHTML = '';
   state.busy = false;
 
   const targetEl = document.createElement('div');
-  targetEl.className = 'speed-target';
-  targetEl.innerHTML = `TAP <span class="big" id="speedTargetL"></span>`;
+  targetEl.className = 'target-banner';
+  targetEl.innerHTML = `TAP <span class="big"></span>`;
   ga.appendChild(targetEl);
 
   const grid = document.createElement('div');
@@ -1455,15 +1313,13 @@ function startLevel3() {
   ga.appendChild(grid);
 
   let targetLetter = null;
-  let cards = [];
+  let stopped = false;
 
   function rebuildGrid() {
     grid.innerHTML = '';
-    cards = [];
     const gridLetters = shuffle(LETTERS).slice(0, 9);
     targetLetter = randPick(gridLetters);
     state.currentTarget = targetLetter;
-    $('speedTargetL').innerHTML = letterInline(targetLetter);
     gridLetters.forEach(letter => {
       const card = document.createElement('div');
       card.className = 'speed-card';
@@ -1474,11 +1330,10 @@ function startLevel3() {
       card.addEventListener('click', () => onCardTap(card, letter));
       card.addEventListener('touchstart', (e) => { e.preventDefault(); onCardTap(card, letter); }, { passive: false });
       grid.appendChild(card);
-      cards.push(card);
     });
     updateTargetHUD(targetLetter);
     audio.clearQueue();
-    setTimeout(() => { if (!state.busy) audio.speakLetter(targetLetter); }, 200);
+    setTimeout(() => { if (!stopped && !state.busy) audio.speakLetter(targetLetter); }, 200);
   }
 
   function onCardTap(card, letter) {
@@ -1491,9 +1346,7 @@ function startLevel3() {
       card.classList.add('correct');
       audio.sfxPop();
       burstAt(cx, cy, '#22c55e', 14);
-      handleCorrect(letter, () => {
-        rebuildGrid();
-      });
+      handleCorrect(letter, () => { rebuildGrid(); });
     } else {
       card.classList.add('wrong');
       setTimeout(() => card.classList.remove('wrong'), 400);
@@ -1502,20 +1355,20 @@ function startLevel3() {
   }
 
   rebuildGrid();
-  state.currentGameCleanup = () => {};
+  state.currentGameCleanup = () => { stopped = true; };
 }
 
-// ====================================================
+// ════════════════════════════════════
 // LEVEL 4 — SURPRISE BOXES
-// ====================================================
+// ════════════════════════════════════
 function startLevel4() {
   const ga = $('gameArea');
   ga.innerHTML = '';
   state.busy = false;
 
   const targetEl = document.createElement('div');
-  targetEl.className = 'speed-target';
-  targetEl.innerHTML = `FIND <span class="big" id="boxTargetL"></span>`;
+  targetEl.className = 'target-banner';
+  targetEl.innerHTML = `FIND <span class="big"></span>`;
   ga.appendChild(targetEl);
 
   const grid = document.createElement('div');
@@ -1524,13 +1377,13 @@ function startLevel4() {
 
   const BOX_EMOJIS = ['🎁','📦','🎀','🎲','🎪','🎨'];
   let targetLetter = null;
+  let stopped = false;
 
   function newRound() {
     grid.innerHTML = '';
     const boxLetters = shuffle(LETTERS).slice(0, 6);
     targetLetter = randPick(boxLetters);
     state.currentTarget = targetLetter;
-    $('boxTargetL').innerHTML = letterInline(targetLetter);
     const emojis = shuffle(BOX_EMOJIS);
     boxLetters.forEach((letter, i) => {
       const box = document.createElement('div');
@@ -1548,7 +1401,7 @@ function startLevel4() {
     });
     updateTargetHUD(targetLetter);
     audio.clearQueue();
-    setTimeout(() => { if (!state.busy) audio.speakLetter(targetLetter); }, 300);
+    setTimeout(() => { if (!stopped && !state.busy) audio.speakLetter(targetLetter); }, 300);
   }
 
   function onBoxTap(box, letter) {
@@ -1564,16 +1417,11 @@ function startLevel4() {
         box.classList.add('correct');
         audio.sfxPop();
         burstAt(cx, cy, '#22c55e', 18);
-        handleCorrect(letter, () => {
-          newRound();
-        });
+        handleCorrect(letter, () => { newRound(); });
       } else {
-        // Not the target — still reveal, count as wrong attempt
         handleWrong(() => {
           setTimeout(() => {
-            if (box.parentNode) {
-              box.classList.remove('flipped');
-            }
+            if (box.parentNode) box.classList.remove('flipped');
           }, 900);
         });
       }
@@ -1581,20 +1429,20 @@ function startLevel4() {
   }
 
   newRound();
-  state.currentGameCleanup = () => {};
+  state.currentGameCleanup = () => { stopped = true; };
 }
 
-// ====================================================
+// ════════════════════════════════════
 // LEVEL 5 — FIREWORKS FINALE
-// ====================================================
+// ════════════════════════════════════
 function startLevel5() {
   const ga = $('gameArea');
   ga.innerHTML = '';
   state.busy = false;
 
   const targetEl = document.createElement('div');
-  targetEl.className = 'firework-target';
-  targetEl.innerHTML = `BLAST <span class="big" id="fwTargetL"></span>`;
+  targetEl.className = 'target-banner';
+  targetEl.innerHTML = `BLAST <span class="big"></span>`;
   ga.appendChild(targetEl);
 
   const colors = ['#ec4899','#3b82f6','#22c55e','#a855f7','#fbbf24','#f97316','#06b6d4'];
@@ -1606,7 +1454,6 @@ function startLevel5() {
   function pickTarget() {
     targetLetter = randPick(LETTERS);
     state.currentTarget = targetLetter;
-    $('fwTargetL').innerHTML = letterInline(targetLetter);
     updateTargetHUD(targetLetter);
     audio.clearQueue();
     setTimeout(() => { if (!stopped && !state.busy) audio.speakLetter(targetLetter); }, 200);
@@ -1617,7 +1464,6 @@ function startLevel5() {
     if (activeFW.size > 6) return;
     const fw = document.createElement('div');
     fw.className = 'firework';
-    // 50/50 target or distractor
     const letter = Math.random() < 0.5 ? targetLetter : randPick(LETTERS.filter(l => l !== targetLetter));
     fw.dataset.letter = letter;
     fw.innerHTML = letterInline(letter);
@@ -1651,9 +1497,7 @@ function startLevel5() {
       audio.sfxFirework();
       burstAt(cx, cy, fw.style.color || '#fbbf24', 24);
       setTimeout(() => { fw.remove(); activeFW.delete(fw); }, 500);
-      handleCorrect(letter, () => {
-        pickTarget();
-      });
+      handleCorrect(letter, () => { pickTarget(); });
     } else {
       fw.style.filter = 'grayscale(0.8) brightness(0.5)';
       setTimeout(() => fw.style.filter = '', 300);
@@ -1663,6 +1507,7 @@ function startLevel5() {
 
   pickTarget();
   spawnFirework();
+  setTimeout(spawnFirework, 300);
   spawnInterval = setInterval(spawnFirework, 900);
 
   state.currentGameCleanup = () => {
@@ -1673,30 +1518,30 @@ function startLevel5() {
   };
 }
 
-// ==== START GAME ====
-async function startGame() {
-  $('screenTitle').classList.remove('active');
-  $('hud').classList.add('active');
-  $('alphieChar').classList.add('active');
-  // CRITICAL — activate the game area so balloons, wheels, cards, boxes, fireworks are visible.
-  // Without this, .game-area stays display:none and nothing renders.
-  $('gameArea').classList.add('active');
-  $('celebration').classList.remove('show');
-  state.level = 1;
-  state.stars = 0;
-  state.levelProgress = 0;
-  state.levelTarget = LEVELS[0].target;
-  state.busy = false;
-  updateHUD();
-  audio.startMusic();
-  audio.speakPhrase('greetings');
-  const firstLevel = LEVELS[0];
-  showLevelBanner(firstLevel, () => {
-    firstLevel.fn();
-  });
+// ═══ START GAME ═══
+function startGame() {
+  try {
+    showScreen('scrGame');
+    $('hud').classList.add('active');
+    state.level = 1;
+    state.stars = 0;
+    state.levelProgress = 0;
+    state.levelTarget = LEVELS[0].target;
+    state.busy = false;
+    updateHUD();
+    audio.startMusic();
+    audio.speakPhrase('greetings');
+    // Straight into Level 1 — no blocking banner
+    LEVELS[0].fn();
+  } catch (e) {
+    console.error('startGame failed', e);
+    // If startup crashes, let the user still see the title so they can retry or hit home
+    showScreen('scrTitle');
+    $('btnStart').disabled = false;
+  }
 }
 
-// ==== BACKGROUND DECOR ====
+// ═══ BACKGROUND DECOR ═══
 function addBackgroundDeco() {
   const host = $('bgDeco');
   const sparkles = ['✨','⭐','💫','🌟'];
@@ -1725,44 +1570,41 @@ function addBackgroundDeco() {
   }
 }
 
-// ==== EVENTS ====
-document.addEventListener('DOMContentLoaded', () => {
+// ═══ TAP HELPER ═══
+function onTap(el, fn) {
+  if (!el) return;
+  let locked = false;
+  const handler = (e) => {
+    if (locked) return;
+    locked = true;
+    try { fn(e); } catch(err) { console.error('onTap handler error', err); }
+    setTimeout(() => locked = false, 300);
+  };
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); handler(e); }, { passive: false });
+  el.addEventListener('click', handler);
+}
+
+// ═══ EVENTS ═══
+function init() {
   addBackgroundDeco();
 
-  let starting = false;
-  const startHandler = async () => {
-    if (starting) return;
-    starting = true;
-    $('btnStart').disabled = true;
-    // Try audio unlock but don't block startup if it fails/times out
-    try {
-      await Promise.race([
-        audio.unlock(),
-        new Promise(r => setTimeout(r, 1500)) // 1.5s timeout
-      ]);
-    } catch (e) { console.warn('unlock timeout', e); }
-    try {
-      startGame();
-    } catch (e) {
-      console.error('startGame failed', e);
-      // Re-enable button so user can try again
-      $('btnStart').disabled = false;
-      starting = false;
-    }
-  };
-  $('btnStart').addEventListener('click', startHandler);
-  $('btnStart').addEventListener('touchstart', (e) => { e.preventDefault(); startHandler(); }, { passive: false });
-
-  const againHandler = async () => {
-    $('btnAgain').disabled = true;
-    $('celebration').classList.remove('show');
-    await audio.unlock();
+  onTap($('btnStart'), () => {
+    audio.unlock();  // Fire and forget — never blocks
     startGame();
-    setTimeout(() => { $('btnAgain').disabled = false; }, 1500);
-  };
-  $('btnAgain').addEventListener('click', againHandler);
-  $('btnAgain').addEventListener('touchstart', (e) => { e.preventDefault(); againHandler(); }, { passive: false });
-});
+  });
+
+  onTap($('btnAgain'), () => {
+    audio.unlock();
+    startGame();
+  });
+}
+
+// Run init immediately if DOM already loaded, otherwise wait
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 /* ═══ AHA! PROGRESS TRACKING ═══ */
 (function(){

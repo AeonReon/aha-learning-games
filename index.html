@@ -322,7 +322,9 @@ body{
 .th-carnival{background:linear-gradient(145deg,#EC4899,#7C3AED)}
 .th-arcade{background:linear-gradient(145deg,#A855F7,#3B82F6)}
 .th-funzone{background:linear-gradient(145deg,#EC4899,#F59E0B);animation:funGradShift 6s ease-in-out infinite}
+.th-reading{background:linear-gradient(145deg,#7C3AED,#3B82F6);animation:readGradShift 7s ease-in-out infinite}
 @keyframes funGradShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(25deg)}}
+@keyframes readGradShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(-20deg)}}
 
 /* ── Divider ── */
 .section-divider{
@@ -520,6 +522,27 @@ body{
     </div>
   </div>
 
+  <!-- Reading Zone Category -->
+  <div class="category">
+    <div class="category-title">
+      <span class="big-emoji">📖</span>
+      <span>Reading Zone</span>
+    </div>
+    <div class="category-subtle">Sound it out · Build words · Learn to read</div>
+    <hr class="section-divider">
+
+    <div class="theme-grid">
+      <a href="v2/reading-zone/" class="theme-card th-reading" data-theme="reading">
+        <span class="theme-emoji">📖</span>
+        <div class="theme-info">
+          <div class="theme-name">Reading Zone</div>
+          <div class="theme-sub">Phonics · Rhyming · Letter play</div>
+          <span class="theme-pill">📚 11 Reading Games</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
   <!-- Fun Zone Category -->
   <div class="category">
     <div class="category-title">
@@ -535,7 +558,7 @@ body{
         <div class="theme-info">
           <div class="theme-name">Fun Zone</div>
           <div class="theme-sub">Silly · Playful · No lessons</div>
-          <span class="theme-pill">🎪 5 Fun Games</span>
+          <span class="theme-pill">🎪 13 Fun Games</span>
         </div>
       </a>
     </div>
@@ -756,7 +779,8 @@ function playTapSound(){
     '10-50': 5, '60-100': 5,
     'a-e': 5, 'f-j': 5, 'k-o': 5, 'p-t': 5, 'u-z': 5,
     'number-carnival': 1,
-    'fun-zone': 8
+    'fun-zone': 13,
+    'reading-zone': 11
   };
   function loadProgress(){
     try { return JSON.parse(localStorage.getItem('aha_progress') || '{}'); }

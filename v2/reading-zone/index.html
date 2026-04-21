@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#ec4899">
-<title>Fun Zone · aha!</title>
+<meta name="theme-color" content="#4c1d95">
+<title>Reading Zone · aha!</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
   font-family:'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
-  background:linear-gradient(160deg,#ec4899 0%,#f59e0b 35%,#8b5cf6 70%,#3b82f6 100%);
+  background:linear-gradient(170deg,#4338ca 0%,#7c3aed 50%,#3b82f6 100%);
   color:#fff;min-height:100vh;overflow-x:hidden;position:relative;
 }
 
@@ -20,41 +20,41 @@ body{
 
 .back-btn{
   display:inline-flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,0.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  background:rgba(255,255,255,0.25);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   color:#fff;text-decoration:none;padding:10px 18px;border-radius:24px;
   font-weight:800;font-size:14px;border:2px solid rgba(255,255,255,0.5);
   transition:transform 0.2s,background 0.2s;margin-bottom:30px;
   text-shadow:0 1px 3px rgba(0,0,0,0.25);
 }
-.back-btn:hover{background:rgba(255,255,255,0.5);transform:translateX(-3px)}
+.back-btn:hover{background:rgba(255,255,255,0.4);transform:translateX(-3px)}
 
 .music-btn{
   position:fixed;top:16px;right:16px;z-index:50;
   width:48px;height:48px;border-radius:50%;border:none;
-  background:rgba(255,255,255,0.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   color:#fff;font-size:20px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:transform 0.2s,background 0.2s;
   border:2px solid rgba(255,255,255,0.4);
 }
-.music-btn:hover{background:rgba(255,255,255,0.4);transform:scale(1.08)}
+.music-btn:hover{background:rgba(255,255,255,0.35);transform:scale(1.08)}
 
 .page-header{text-align:center;margin-bottom:30px;position:relative}
 .fun-emoji{
   font-size:70px;display:inline-block;
-  animation:funBounce 1.8s ease-in-out infinite;
-  filter:drop-shadow(0 6px 18px rgba(0,0,0,0.3))
+  animation:funBounce 2s ease-in-out infinite;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,0.4))
 }
 @keyframes funBounce{
-  0%,100%{transform:translateY(0) rotate(-8deg) scale(1)}
-  50%{transform:translateY(-14px) rotate(8deg) scale(1.08)}
+  0%,100%{transform:translateY(0) rotate(-6deg) scale(1)}
+  50%{transform:translateY(-12px) rotate(6deg) scale(1.08)}
 }
 .page-title{
   font-size:clamp(40px,10vw,64px);font-weight:900;margin:6px 0 6px;
   color:#fff;
-  text-shadow:0 0 30px rgba(255,255,255,0.5),
-              3px 3px 0 #DB2777,
-              6px 6px 0 rgba(0,0,0,0.25);
+  text-shadow:0 0 30px rgba(255,255,255,0.6),
+              3px 3px 0 #1e1b4b,
+              6px 6px 0 rgba(0,0,0,0.3);
   letter-spacing:-1px;
   animation:titleWiggle 4s ease-in-out infinite;
 }
@@ -65,16 +65,16 @@ body{
 .page-sub{
   font-size:clamp(14px,3.8vw,18px);letter-spacing:0.25em;text-transform:uppercase;
   font-weight:800;color:#fff;
-  text-shadow:0 2px 8px rgba(0,0,0,0.3);
+  text-shadow:0 2px 8px rgba(0,0,0,0.4);
   opacity:0.95;margin-top:4px;
 }
 .fun-tag{
   display:inline-block;margin-top:12px;
   font-size:clamp(12px,3vw,15px);font-weight:800;
-  background:rgba(0,0,0,0.3);color:#FDE68A;
+  background:rgba(0,0,0,0.35);color:#c4b5fd;
   padding:6px 16px;border-radius:20px;
   letter-spacing:0.1em;text-transform:uppercase;
-  border:2px dashed rgba(253,230,138,0.6);
+  border:2px dashed rgba(196,181,253,0.6);
 }
 
 .game-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
@@ -84,7 +84,7 @@ body{
   display:flex;flex-direction:column;align-items:center;text-align:center;
   transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.25s ease;
   cursor:pointer;position:relative;overflow:hidden;
-  box-shadow:0 8px 22px rgba(0,0,0,0.3);
+  box-shadow:0 8px 22px rgba(0,0,0,0.35);
   border:3px solid rgba(255,255,255,0.3);
   min-height:180px;
 }
@@ -99,25 +99,22 @@ body{
   pointer-events:none;opacity:0;transition:opacity 0.3s;
 }
 .game-card:hover::after,.game-card:focus::after{opacity:1}
-.game-card:hover,.game-card:focus{transform:translateY(-8px) scale(1.04) rotate(-1deg);box-shadow:0 18px 40px rgba(0,0,0,0.35)}
+.game-card:hover,.game-card:focus{transform:translateY(-8px) scale(1.04) rotate(-1deg);box-shadow:0 18px 40px rgba(0,0,0,0.4)}
 .game-card:nth-child(even):hover{transform:translateY(-8px) scale(1.04) rotate(1deg)}
 .game-card:active{transform:translateY(-3px) scale(0.98)}
 
-/* Big bold colors per game */
-.gc-trex{background:linear-gradient(145deg,#FBBF24,#D97706)}
-.gc-dragon{background:linear-gradient(145deg,#DC2626,#7F1D1D)}
-.gc-monster{background:linear-gradient(145deg,#A855F7,#5B21B6)}
-.gc-icecream{background:linear-gradient(145deg,#FDA4AF,#DB2777)}
-.gc-cat{background:linear-gradient(145deg,#F97316,#9A3412)}
-.gc-fish{background:linear-gradient(145deg,#0EA5E9,#0369A1)}
-.gc-hungry{background:linear-gradient(145deg,#10B981,#065F46)}
-.gc-bakery{background:linear-gradient(145deg,#F472B6,#BE185D)}
-.gc-garden{background:linear-gradient(145deg,#86EFAC,#15803D)}
-.gc-balloon{background:linear-gradient(145deg,#60A5FA,#1E3A8A)}
-.gc-bonds{background:linear-gradient(145deg,#FB923C,#C2410C)}
-.gc-rocket{background:linear-gradient(145deg,#7C3AED,#1E1B4B)}
-.gc-dino{background:linear-gradient(145deg,#22C55E,#14532D)}
-.gc-shape{background:linear-gradient(145deg,#D946EF,#6B21A8)}
+/* Reading-zone card colours — cool tones */
+.gc-wordbuild{background:linear-gradient(145deg,#A78BFA,#5B21B6)}
+.gc-soundmatch{background:linear-gradient(145deg,#60A5FA,#1D4ED8)}
+.gc-rhyme{background:linear-gradient(145deg,#C084FC,#7E22CE)}
+.gc-bubble{background:linear-gradient(145deg,#5EEAD4,#0F766E)}
+.gc-train{background:linear-gradient(145deg,#84CC16,#4D7C0F)}
+.gc-hunt{background:linear-gradient(145deg,#F59E0B,#B45309)}
+.gc-first{background:linear-gradient(145deg,#FDA4AF,#9F1239)}
+.gc-last{background:linear-gradient(145deg,#34D399,#065F46)}
+.gc-case{background:linear-gradient(145deg,#FBBF24,#B45309)}
+.gc-ladder{background:linear-gradient(145deg,#FB923C,#9A3412)}
+.gc-spot{background:linear-gradient(145deg,#22D3EE,#155E75)}
 
 .card-emoji{
   font-size:clamp(54px,13vw,72px);margin-bottom:10px;
@@ -125,10 +122,12 @@ body{
   animation:cardBob 3s ease-in-out infinite;
 }
 .game-card:nth-child(1) .card-emoji{animation-delay:0s}
-.game-card:nth-child(2) .card-emoji{animation-delay:0.3s}
-.game-card:nth-child(3) .card-emoji{animation-delay:0.6s}
-.game-card:nth-child(4) .card-emoji{animation-delay:0.9s}
-.game-card:nth-child(5) .card-emoji{animation-delay:1.2s}
+.game-card:nth-child(2) .card-emoji{animation-delay:0.2s}
+.game-card:nth-child(3) .card-emoji{animation-delay:0.4s}
+.game-card:nth-child(4) .card-emoji{animation-delay:0.6s}
+.game-card:nth-child(5) .card-emoji{animation-delay:0.8s}
+.game-card:nth-child(6) .card-emoji{animation-delay:1.0s}
+.game-card:nth-child(7) .card-emoji{animation-delay:1.2s}
 @keyframes cardBob{
   0%,100%{transform:translateY(0) rotate(-5deg) scale(1)}
   50%{transform:translateY(-8px) rotate(5deg) scale(1.06)}
@@ -141,9 +140,9 @@ body{
 }
 .card-pill{
   font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;
-  background:rgba(0,0,0,0.35);color:rgba(255,255,255,0.95);
+  background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.95);
   letter-spacing:0.06em;text-transform:uppercase;
-  border:1px solid rgba(255,255,255,0.2);
+  border:1px solid rgba(255,255,255,0.25);
 }
 
 .tap-ring{
@@ -157,9 +156,8 @@ body{
   100%{width:140px;height:140px;opacity:0;border-width:1px}
 }
 
-.footer{text-align:center;padding:26px 20px 10px;color:rgba(255,255,255,0.85);font-size:12px;letter-spacing:0.05em;font-weight:700}
+.footer{text-align:center;padding:26px 20px 10px;color:rgba(255,255,255,0.8);font-size:12px;letter-spacing:0.05em;font-weight:700}
 
-/* Progress badge */
 .progress-badge{
   position:absolute;top:10px;right:10px;z-index:2;
   display:flex;align-items:center;gap:4px;
@@ -170,9 +168,9 @@ body{
   box-shadow:0 2px 6px rgba(0,0,0,0.4);
 }
 .progress-badge.done{
-  background:linear-gradient(135deg,#FDE68A,#F59E0B);
-  color:#78350F;border-color:#FDE68A;
-  box-shadow:0 0 14px rgba(253,230,138,0.8);
+  background:linear-gradient(135deg,#c4b5fd,#7c3aed);
+  color:#1e1b4b;border-color:#c4b5fd;
+  box-shadow:0 0 14px rgba(196,181,253,0.8);
   animation:badgePulse 2s ease-in-out infinite;
 }
 @keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
@@ -198,128 +196,113 @@ body{
   <a href="../../" class="back-btn">← Back to aha!</a>
 
   <div class="page-header">
-    <div class="fun-emoji">🎉</div>
-    <h1 class="page-title">FUN ZONE</h1>
-    <div class="page-sub">Silly · Playful · Maths</div>
-    <div class="fun-tag">⚡ 13 Games ⚡</div>
+    <div class="fun-emoji">📖</div>
+    <h1 class="page-title">READING ZONE</h1>
+    <div class="page-sub">Letters · Sounds · Words</div>
+    <div class="fun-tag">📚 11 Reading Games 📚</div>
   </div>
 
   <div class="game-grid">
-    <a href="tickle-trex.html" class="game-card gc-trex">
-      <span class="card-emoji">🦖</span>
+    <a href="word-builder.html" class="game-card gc-wordbuild">
+      <span class="card-emoji">🔤</span>
       <div class="card-info">
-        <div class="card-title">Tickle the T-Rex</div>
-        <span class="card-pill">Tap to Giggle</span>
+        <div class="card-title">Word Builder</div>
+        <span class="card-pill">Sound It Out</span>
       </div>
     </a>
 
-    <a href="monster-mixer.html" class="game-card gc-monster">
-      <span class="card-emoji">👾</span>
+    <a href="sound-match.html" class="game-card gc-soundmatch">
+      <span class="card-emoji">👂</span>
       <div class="card-info">
-        <div class="card-title">Monster Mixer</div>
-        <span class="card-pill">Mix &amp; Match</span>
+        <div class="card-title">Sound Match</div>
+        <span class="card-pill">Listen &amp; Match</span>
       </div>
     </a>
 
-    <a href="ice-cream-tower.html" class="game-card gc-icecream">
-      <span class="card-emoji">🍦</span>
+    <a href="rhyme-time.html" class="game-card gc-rhyme">
+      <span class="card-emoji">🎤</span>
       <div class="card-info">
-        <div class="card-title">Ice Cream Tower</div>
-        <span class="card-pill">Stack Fast!</span>
+        <div class="card-title">Rhyme Time</div>
+        <span class="card-pill">Find the Rhyme</span>
       </div>
     </a>
 
-    <a href="cat-cafe.html" class="game-card gc-cat">
-      <span class="card-emoji">🐱</span>
+    <a href="bubble-letters.html" class="game-card gc-bubble">
+      <span class="card-emoji">🫧</span>
       <div class="card-info">
-        <div class="card-title">Cat Café</div>
-        <span class="card-pill">Serve &amp; Purr</span>
+        <div class="card-title">Bubble Letters</div>
+        <span class="card-pill">Pop the Letter</span>
       </div>
     </a>
 
-    <a href="number-fish.html" class="game-card gc-fish">
-      <span class="card-emoji">🐟</span>
+    <a href="alphabet-train.html" class="game-card gc-train">
+      <span class="card-emoji">🚂</span>
       <div class="card-info">
-        <div class="card-title">Number Fish</div>
-        <span class="card-pill">Catch &amp; Count</span>
+        <div class="card-title">Alphabet Train</div>
+        <span class="card-pill">Sequence Letters</span>
       </div>
     </a>
 
-    <a href="hungry-monster.html" class="game-card gc-hungry">
-      <span class="card-emoji">👾</span>
+    <a href="letter-hunt.html" class="game-card gc-hunt">
+      <span class="card-emoji">🔍</span>
       <div class="card-info">
-        <div class="card-title">Hungry Monster</div>
-        <span class="card-pill">Feed Letters</span>
+        <div class="card-title">Letter Hunt</div>
+        <span class="card-pill">Find the Letter</span>
       </div>
     </a>
 
-    <a href="bakery-counter.html" class="game-card gc-bakery">
-      <span class="card-emoji">🧁</span>
+    <a href="first-sound.html" class="game-card gc-first">
+      <span class="card-emoji">👄</span>
       <div class="card-info">
-        <div class="card-title">Bakery Counter</div>
-        <span class="card-pill">Count &amp; Serve</span>
+        <div class="card-title">First Sound</div>
+        <span class="card-pill">Starting Letter</span>
       </div>
     </a>
 
-    <a href="letter-garden.html" class="game-card gc-garden">
-      <span class="card-emoji">🌸</span>
+    <a href="last-sound.html" class="game-card gc-last">
+      <span class="card-emoji">🎯</span>
       <div class="card-info">
-        <div class="card-title">Letter Garden</div>
-        <span class="card-pill">Find &amp; Bloom</span>
+        <div class="card-title">Last Sound</div>
+        <span class="card-pill">Ending Letter</span>
       </div>
     </a>
 
-    <a href="balloon-pop.html" class="game-card gc-balloon">
-      <span class="card-emoji">🎈</span>
+    <a href="match-case.html" class="game-card gc-case">
+      <span class="card-emoji">🤝</span>
       <div class="card-info">
-        <div class="card-title">Balloon Pop</div>
-        <span class="card-pill">Pop the Right Ones</span>
+        <div class="card-title">Match Case</div>
+        <span class="card-pill">Big &amp; Small</span>
       </div>
     </a>
 
-    <a href="number-bonds.html" class="game-card gc-bonds">
-      <span class="card-emoji">🦊</span>
+    <a href="alphabet-ladder.html" class="game-card gc-ladder">
+      <span class="card-emoji">🪜</span>
       <div class="card-info">
-        <div class="card-title">Number Bonds</div>
-        <span class="card-pill">Split &amp; Count</span>
+        <div class="card-title">ABC Ladder</div>
+        <span class="card-pill">What Comes Next?</span>
       </div>
     </a>
 
-    <a href="rocket-countdown.html" class="game-card gc-rocket">
-      <span class="card-emoji">🚀</span>
+    <a href="spot-the-word.html" class="game-card gc-spot">
+      <span class="card-emoji">🔎</span>
       <div class="card-info">
-        <div class="card-title">Rocket Countdown</div>
-        <span class="card-pill">Count Down!</span>
-      </div>
-    </a>
-
-    <a href="dino-eggs.html" class="game-card gc-dino">
-      <span class="card-emoji">🥚</span>
-      <div class="card-info">
-        <div class="card-title">Dino Eggs</div>
-        <span class="card-pill">Count &amp; Hatch</span>
-      </div>
-    </a>
-
-    <a href="shape-party.html" class="game-card gc-shape">
-      <span class="card-emoji">🪩</span>
-      <div class="card-info">
-        <div class="card-title">Shape Party</div>
-        <span class="card-pill">Sort &amp; Dance</span>
+        <div class="card-title">Spot the Word</div>
+        <span class="card-pill">Listen &amp; Find</span>
       </div>
     </a>
   </div>
 
-  <div class="footer">aha! · Fun Zone · Silly games for silly kids</div>
+  <div class="footer">aha! · Reading Zone · Learn to Read</div>
 </div>
 
 <script>
-/* Floating confetti bits in background */
+/* Floating letters in background */
 (function(){
   const canvas = document.getElementById('bgCanvas');
   const ctx = canvas.getContext('2d');
   let bits = [];
-  const COUNT = 80;
+  const COUNT = 60;
+  const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   function resize(){ canvas.width = window.innerWidth; canvas.height = document.documentElement.scrollHeight; }
   function init(){
     resize();
@@ -327,30 +310,28 @@ body{
     for(let i = 0; i < COUNT; i++){
       bits.push({
         x:Math.random()*canvas.width, y:Math.random()*canvas.height,
-        r:Math.random()*3+1.2,
-        vy:-(Math.random()*0.35+0.1), vx:(Math.random()-0.5)*0.5,
-        alpha:Math.random()*0.7+0.25, pulse:Math.random()*Math.PI*2,
-        hue:['#FDE68A','#FCA5A5','#86EFAC','#93C5FD','#F0ABFC','#FDBA74'][Math.floor(Math.random()*6)]
+        ch:LETTERS[Math.floor(Math.random()*26)],
+        size:Math.random()*22+14,
+        vy:-(Math.random()*0.35+0.1), vx:(Math.random()-0.5)*0.3,
+        alpha:Math.random()*0.4+0.15, pulse:Math.random()*Math.PI*2,
+        hue:['#c4b5fd','#a7f3d0','#93c5fd','#f0abfc','#fde68a','#fca5a5'][Math.floor(Math.random()*6)]
       });
     }
   }
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     for(const b of bits){
-      b.x+=b.vx; b.y+=b.vy; b.pulse+=0.04;
-      if(b.y<-10) b.y=canvas.height+10;
+      b.x+=b.vx; b.y+=b.vy; b.pulse+=0.03;
+      if(b.y<-20) b.y=canvas.height+10;
       if(b.x<-10) b.x=canvas.width+10;
       if(b.x>canvas.width+10) b.x=-10;
       const alpha=b.alpha*(0.6+0.4*Math.sin(b.pulse));
-      ctx.beginPath();
-      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
       ctx.fillStyle=b.hue;
       ctx.globalAlpha=alpha;
-      ctx.shadowColor=b.hue;
-      ctx.shadowBlur=11;
-      ctx.fill();
+      ctx.font='900 '+b.size+'px Arial Rounded MT Bold, Nunito, sans-serif';
+      ctx.fillText(b.ch, b.x, b.y);
     }
-    ctx.shadowBlur=0; ctx.globalAlpha=1;
+    ctx.globalAlpha=1;
     requestAnimationFrame(draw);
   }
   window.addEventListener('resize', init);
@@ -364,7 +345,7 @@ body{
   let parts = [];
   function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
   resize(); window.addEventListener('resize', resize);
-  const COLORS = ['#FDE68A','#FCA5A5','#86EFAC','#93C5FD','#F0ABFC','#FDBA74','#FFF'];
+  const COLORS = ['#c4b5fd','#a7f3d0','#93c5fd','#f0abfc','#fde68a','#fca5a5','#FFF'];
   window.burstConfetti = function(x,y,count=40){
     for(let i=0;i<count;i++){
       const a=(Math.PI*2*i)/count+Math.random()*0.5;
@@ -373,8 +354,7 @@ body{
         x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,
         color:COLORS[Math.floor(Math.random()*COLORS.length)],
         size:Math.random()*7+3,rot:Math.random()*Math.PI,
-        vr:(Math.random()-0.5)*0.3,life:1,
-        shape:Math.random()>0.5?'rect':'star'
+        vr:(Math.random()-0.5)*0.3,life:1
       });
     }
   };
@@ -389,17 +369,7 @@ body{
       ctx.translate(p.x,p.y); ctx.rotate(p.rot);
       ctx.globalAlpha=Math.max(0,p.life);
       ctx.fillStyle=p.color;
-      if(p.shape==='rect'){
-        ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
-      } else {
-        ctx.beginPath();
-        for(let k=0;k<5;k++){
-          const ang=(k*2*Math.PI)/5-Math.PI/2;
-          const r=k%2===0?p.size/2:p.size/4;
-          ctx.lineTo(Math.cos(ang)*r,Math.sin(ang)*r);
-        }
-        ctx.closePath(); ctx.fill();
-      }
+      ctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
       ctx.restore();
     }
     requestAnimationFrame(loop);
@@ -416,11 +386,11 @@ function ensureAudio(){
 }
 function playTapSound(){
   const c=ensureAudio(); const now=c.currentTime;
-  [659.25,783.99,1046.5].forEach((f,i)=>{
+  [523.25,659.25,783.99].forEach((f,i)=>{
     const osc=c.createOscillator(); const g=c.createGain();
     osc.type='triangle'; osc.frequency.value=f;
     g.gain.setValueAtTime(0.0001,now+i*0.05);
-    g.gain.exponentialRampToValueAtTime(0.12,now+i*0.05+0.02);
+    g.gain.exponentialRampToValueAtTime(0.1,now+i*0.05+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001,now+i*0.05+0.3);
     osc.connect(g).connect(c.destination);
     osc.start(now+i*0.05); osc.stop(now+i*0.05+0.35);
@@ -435,7 +405,7 @@ function playTapSound(){
     document.querySelectorAll('.game-card').forEach(card => {
       const href = card.getAttribute('href') || '';
       const game = href.replace('.html','');
-      const key = 'fun-zone/' + game;
+      const key = 'reading-zone/' + game;
       const existing = card.querySelector('.progress-badge');
       if (existing) existing.remove();
       if (p[key] && p[key].completed) {
@@ -475,43 +445,43 @@ document.querySelectorAll('.game-card').forEach(card=>{
   });
 });
 
-/* Playful fun music — major pentatonic, bouncy */
+/* Quiet reading music — soft pentatonic in minor feel */
 (function(){
   const btn=document.getElementById('musicBtn');
   let playing=false, nextNote=0, scheduler=null, master=null;
-  const SCALE=[523.25,587.33,659.25,783.99,880.00,1046.50];
+  const SCALE=[261.63,329.63,392.00,440.00,523.25,659.25];
   const CHORDS=[
-    [130.81,196.00,261.63],[146.83,220.00,293.66],
-    [174.61,261.63,349.23],[164.81,246.94,329.63]
+    [130.81,196.00,246.94],[146.83,220.00,293.66],
+    [164.81,220.00,261.63],[130.81,196.00,261.63]
   ];
   let ci=0, ni=0;
   function note(f,when,dur,gain=0.035,type='triangle'){
     const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
     o.type=type; o.frequency.value=f;
     g.gain.setValueAtTime(0.0001,when);
-    g.gain.exponentialRampToValueAtTime(gain,when+0.04);
+    g.gain.exponentialRampToValueAtTime(gain,when+0.06);
     g.gain.exponentialRampToValueAtTime(0.0001,when+dur);
     o.connect(g).connect(master);
     o.start(when); o.stop(when+dur+0.05);
   }
   function sched(){
-    while(nextNote<audioCtx.currentTime+0.25){
-      note(SCALE[Math.floor(Math.random()*SCALE.length)],nextNote,0.45,0.03,'triangle');
+    while(nextNote<audioCtx.currentTime+0.3){
+      note(SCALE[Math.floor(Math.random()*SCALE.length)],nextNote,0.5,0.025,'triangle');
       if(ni%4===0){
-        CHORDS[ci%CHORDS.length].forEach(f=>note(f,nextNote,2.2,0.02,'sine'));
+        CHORDS[ci%CHORDS.length].forEach(f=>note(f,nextNote,2.5,0.018,'sine'));
         ci++;
       }
       ni++;
-      nextNote+=0.42;
+      nextNote+=0.52;
     }
   }
   function start(){
     ensureAudio();
     master=audioCtx.createGain(); master.gain.value=0;
-    master.gain.linearRampToValueAtTime(0.4,audioCtx.currentTime+1);
+    master.gain.linearRampToValueAtTime(0.35,audioCtx.currentTime+1);
     master.connect(audioCtx.destination);
     nextNote=audioCtx.currentTime+0.1; ni=0; ci=0;
-    scheduler=setInterval(sched,50);
+    scheduler=setInterval(sched,60);
     playing=true; btn.textContent='🎵';
     try{localStorage.setItem('aha_music','1')}catch(e){}
   }

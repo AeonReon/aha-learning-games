@@ -114,6 +114,28 @@ body{
 .gc-bakery{background:linear-gradient(145deg,#F472B6,#BE185D)}
 .gc-garden{background:linear-gradient(145deg,#86EFAC,#15803D)}
 .gc-balloon{background:linear-gradient(145deg,#60A5FA,#1E3A8A)}
+.gc-bonds{background:linear-gradient(145deg,#FB923C,#C2410C)}
+/* Reading Zone colors (blues/purples) */
+.gc-wordbuild{background:linear-gradient(145deg,#A78BFA,#5B21B6)}
+.gc-soundmatch{background:linear-gradient(145deg,#60A5FA,#1D4ED8)}
+.gc-rhyme{background:linear-gradient(145deg,#C084FC,#7E22CE)}
+.gc-bubble{background:linear-gradient(145deg,#5EEAD4,#0F766E)}
+
+/* Zone section headers */
+.zone-header{
+  display:flex;align-items:center;gap:10px;margin:30px 0 12px;
+  padding:10px 16px;border-radius:18px;
+  background:rgba(0,0,0,0.25);backdrop-filter:blur(8px);
+  border:2px solid rgba(255,255,255,0.35);
+}
+.zone-emoji{font-size:36px;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.3))}
+.zone-title{font-size:clamp(20px,5vw,26px);font-weight:900;color:#fff;
+  text-shadow:0 2px 4px rgba(0,0,0,0.4);letter-spacing:-0.3px}
+.zone-count{margin-left:auto;font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;
+  background:rgba(255,255,255,0.25);color:#fff;letter-spacing:0.06em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,0.3)}
+.zone-reading .zone-header{background:linear-gradient(135deg,rgba(91,33,182,0.55),rgba(30,64,175,0.55));
+  border-color:rgba(167,139,250,0.7)}
 
 .card-emoji{
   font-size:clamp(54px,13vw,72px);margin-bottom:10px;
@@ -197,81 +219,139 @@ body{
     <div class="fun-emoji">🎉</div>
     <h1 class="page-title">FUN ZONE</h1>
     <div class="page-sub">Just Play · Just Silly</div>
-    <div class="fun-tag">⚡ 9 Pure-Fun Games ⚡</div>
+    <div class="fun-tag">⚡ 14 Play-and-Learn Games ⚡</div>
   </div>
 
-  <div class="game-grid">
-    <a href="tickle-trex.html" class="game-card gc-trex">
-      <span class="card-emoji">🦖</span>
-      <div class="card-info">
-        <div class="card-title">Tickle the T-Rex</div>
-        <span class="card-pill">Tap to Giggle</span>
-      </div>
-    </a>
+  <!-- Reading Zone -->
+  <div class="zone-reading">
+    <div class="zone-header">
+      <span class="zone-emoji">📖</span>
+      <span class="zone-title">Reading Zone</span>
+      <span class="zone-count">4 Games</span>
+    </div>
+    <div class="game-grid">
+      <a href="word-builder.html" class="game-card gc-wordbuild">
+        <span class="card-emoji">🔤</span>
+        <div class="card-info">
+          <div class="card-title">Word Builder</div>
+          <span class="card-pill">Sound It Out</span>
+        </div>
+      </a>
 
-    <a href="monster-mixer.html" class="game-card gc-monster">
-      <span class="card-emoji">👾</span>
-      <div class="card-info">
-        <div class="card-title">Monster Mixer</div>
-        <span class="card-pill">Mix &amp; Match</span>
-      </div>
-    </a>
+      <a href="sound-match.html" class="game-card gc-soundmatch">
+        <span class="card-emoji">👂</span>
+        <div class="card-info">
+          <div class="card-title">Sound Match</div>
+          <span class="card-pill">Listen &amp; Match</span>
+        </div>
+      </a>
 
-    <a href="ice-cream-tower.html" class="game-card gc-icecream">
-      <span class="card-emoji">🍦</span>
-      <div class="card-info">
-        <div class="card-title">Ice Cream Tower</div>
-        <span class="card-pill">Stack Fast!</span>
-      </div>
-    </a>
+      <a href="rhyme-time.html" class="game-card gc-rhyme">
+        <span class="card-emoji">🎤</span>
+        <div class="card-info">
+          <div class="card-title">Rhyme Time</div>
+          <span class="card-pill">Find the Rhyme</span>
+        </div>
+      </a>
 
-    <a href="cat-cafe.html" class="game-card gc-cat">
-      <span class="card-emoji">🐱</span>
-      <div class="card-info">
-        <div class="card-title">Cat Café</div>
-        <span class="card-pill">Serve &amp; Purr</span>
-      </div>
-    </a>
+      <a href="bubble-letters.html" class="game-card gc-bubble">
+        <span class="card-emoji">🫧</span>
+        <div class="card-info">
+          <div class="card-title">Bubble Letters</div>
+          <span class="card-pill">Pop the Letter</span>
+        </div>
+      </a>
+    </div>
+  </div>
 
-    <a href="number-fish.html" class="game-card gc-fish">
-      <span class="card-emoji">🐟</span>
-      <div class="card-info">
-        <div class="card-title">Number Fish</div>
-        <span class="card-pill">Catch &amp; Count</span>
-      </div>
-    </a>
+  <!-- Fun Zone -->
+  <div class="zone-fun">
+    <div class="zone-header">
+      <span class="zone-emoji">🎉</span>
+      <span class="zone-title">Fun Zone</span>
+      <span class="zone-count">10 Games</span>
+    </div>
+    <div class="game-grid">
+      <a href="tickle-trex.html" class="game-card gc-trex">
+        <span class="card-emoji">🦖</span>
+        <div class="card-info">
+          <div class="card-title">Tickle the T-Rex</div>
+          <span class="card-pill">Tap to Giggle</span>
+        </div>
+      </a>
 
-    <a href="hungry-monster.html" class="game-card gc-hungry">
-      <span class="card-emoji">👾</span>
-      <div class="card-info">
-        <div class="card-title">Hungry Monster</div>
-        <span class="card-pill">Feed Letters</span>
-      </div>
-    </a>
+      <a href="monster-mixer.html" class="game-card gc-monster">
+        <span class="card-emoji">👾</span>
+        <div class="card-info">
+          <div class="card-title">Monster Mixer</div>
+          <span class="card-pill">Mix &amp; Match</span>
+        </div>
+      </a>
 
-    <a href="bakery-counter.html" class="game-card gc-bakery">
-      <span class="card-emoji">🧁</span>
-      <div class="card-info">
-        <div class="card-title">Bakery Counter</div>
-        <span class="card-pill">Count &amp; Serve</span>
-      </div>
-    </a>
+      <a href="ice-cream-tower.html" class="game-card gc-icecream">
+        <span class="card-emoji">🍦</span>
+        <div class="card-info">
+          <div class="card-title">Ice Cream Tower</div>
+          <span class="card-pill">Stack Fast!</span>
+        </div>
+      </a>
 
-    <a href="letter-garden.html" class="game-card gc-garden">
-      <span class="card-emoji">🌸</span>
-      <div class="card-info">
-        <div class="card-title">Letter Garden</div>
-        <span class="card-pill">Find &amp; Bloom</span>
-      </div>
-    </a>
+      <a href="cat-cafe.html" class="game-card gc-cat">
+        <span class="card-emoji">🐱</span>
+        <div class="card-info">
+          <div class="card-title">Cat Café</div>
+          <span class="card-pill">Serve &amp; Purr</span>
+        </div>
+      </a>
 
-    <a href="balloon-pop.html" class="game-card gc-balloon">
-      <span class="card-emoji">🎈</span>
-      <div class="card-info">
-        <div class="card-title">Balloon Pop</div>
-        <span class="card-pill">Pop the Right Ones</span>
-      </div>
-    </a>
+      <a href="number-fish.html" class="game-card gc-fish">
+        <span class="card-emoji">🐟</span>
+        <div class="card-info">
+          <div class="card-title">Number Fish</div>
+          <span class="card-pill">Catch &amp; Count</span>
+        </div>
+      </a>
+
+      <a href="hungry-monster.html" class="game-card gc-hungry">
+        <span class="card-emoji">👾</span>
+        <div class="card-info">
+          <div class="card-title">Hungry Monster</div>
+          <span class="card-pill">Feed Letters</span>
+        </div>
+      </a>
+
+      <a href="bakery-counter.html" class="game-card gc-bakery">
+        <span class="card-emoji">🧁</span>
+        <div class="card-info">
+          <div class="card-title">Bakery Counter</div>
+          <span class="card-pill">Count &amp; Serve</span>
+        </div>
+      </a>
+
+      <a href="letter-garden.html" class="game-card gc-garden">
+        <span class="card-emoji">🌸</span>
+        <div class="card-info">
+          <div class="card-title">Letter Garden</div>
+          <span class="card-pill">Find &amp; Bloom</span>
+        </div>
+      </a>
+
+      <a href="balloon-pop.html" class="game-card gc-balloon">
+        <span class="card-emoji">🎈</span>
+        <div class="card-info">
+          <div class="card-title">Balloon Pop</div>
+          <span class="card-pill">Pop the Right Ones</span>
+        </div>
+      </a>
+
+      <a href="number-bonds.html" class="game-card gc-bonds">
+        <span class="card-emoji">🦊</span>
+        <div class="card-info">
+          <div class="card-title">Number Bonds</div>
+          <span class="card-pill">Split &amp; Count</span>
+        </div>
+      </a>
+    </div>
   </div>
 
   <div class="footer">aha! · Fun Zone · Just for the love of it</div>

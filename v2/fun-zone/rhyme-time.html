@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Rhyme Time · aha!</title>
+<style>
+:root{--bounce:cubic-bezier(0.34,1.56,0.64,1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100vh;height:100dvh;overflow:hidden;
+  font-family:'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  background:linear-gradient(180deg,#fce7f3 0%,#f9a8d4 45%,#ec4899 100%);color:#831843;touch-action:manipulation}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+.screen.active{display:flex}
+.back-home-btn{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);left:14px;z-index:9999;
+  background:#fff;color:#831843;border:4px solid #f9a8d4;border-radius:999px;padding:10px 18px;
+  font-size:16px;font-weight:900;text-decoration:none;box-shadow:0 4px 0 #831843,0 6px 12px rgba(0,0,0,0.2)}
+.home-bubble{position:fixed;bottom:18px;right:18px;z-index:9999;width:56px;height:56px;border-radius:50%;
+  background:#fff;border:4px solid #f9a8d4;display:flex;align-items:center;justify-content:center;
+  font-size:28px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+
+.heart-float{position:absolute;font-size:28px;pointer-events:none;animation:heartRise linear infinite;opacity:0.8}
+@keyframes heartRise{0%{transform:translateY(100vh) scale(0.5) rotate(0);opacity:0}20%{opacity:1}100%{transform:translateY(-10vh) scale(1.1) rotate(360deg);opacity:0}}
+
+.title-wrap{text-align:center;z-index:5}
+.title-big{font-size:clamp(42px,10vw,80px);color:#fff;-webkit-text-stroke:3px #831843;
+  text-shadow:4px 6px 0 #fbbf24,0 8px 14px rgba(0,0,0,0.3);line-height:1.05;margin-bottom:10px;
+  animation:titleBounce 2.2s ease-in-out infinite}
+@keyframes titleBounce{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
+.title-emoji{font-size:clamp(140px,32vw,240px);display:inline-block;animation:micBob 2s ease-in-out infinite;
+  filter:drop-shadow(0 10px 20px rgba(0,0,0,0.3));margin:10px 0}
+@keyframes micBob{0%,100%{transform:rotate(-10deg) scale(1)}50%{transform:rotate(10deg) scale(1.08)}}
+.title-sub{font-size:clamp(18px,4.2vw,28px);color:#fff;margin-bottom:22px;font-weight:900;text-shadow:2px 2px 0 #831843}
+.start-btn{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#7c2d12;border:5px solid #fff;
+  border-radius:999px;padding:22px 56px;font-size:clamp(24px,5.5vw,32px);font-weight:900;
+  box-shadow:0 6px 0 #b45309,0 10px 20px rgba(0,0,0,0.3);cursor:pointer;
+  animation:glow 2.4s ease-in-out infinite;transition:transform 0.15s var(--bounce)}
+@keyframes glow{0%,100%{box-shadow:0 6px 0 #b45309,0 10px 20px rgba(0,0,0,0.3),0 0 20px rgba(251,191,36,0.5)}
+  50%{box-shadow:0 6px 0 #b45309,0 10px 20px rgba(0,0,0,0.3),0 0 40px rgba(251,191,36,0.9)}}
+.start-btn:active{transform:translateY(3px) scale(0.97)}
+
+.game-inner{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;gap:22px;padding-top:80px}
+.hud-round{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);right:14px;z-index:50;
+  background:rgba(0,0,0,0.4);color:#fff;border-radius:16px;padding:6px 14px;font-weight:900;font-size:14px}
+
+.mystery-card{width:clamp(130px,30vw,160px);height:clamp(130px,30vw,160px);
+  background:linear-gradient(180deg,#fbbf24,#f59e0b);border-radius:28px;border:6px solid #fff;
+  box-shadow:0 10px 0 #b45309,0 14px 22px rgba(0,0,0,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(70px,18vw,100px);color:#fff;font-weight:900;-webkit-text-stroke:3px #7c2d12;
+  animation:mystBounce 1.5s ease-in-out infinite;cursor:pointer;position:relative}
+@keyframes mystBounce{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+.mystery-card::after{content:'?';position:absolute;font-size:inherit}
+
+.prompt-text{font-size:clamp(16px,4vw,22px);font-weight:900;background:rgba(255,255,255,0.95);color:#831843;
+  padding:10px 18px;border-radius:20px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  max-width:90vw}
+
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:400px}
+.choice-card{aspect-ratio:1;background:#fff;border-radius:24px;border:5px solid #831843;
+  box-shadow:0 8px 0 #831843,0 12px 18px rgba(0,0,0,0.25);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;
+  transition:transform 0.12s var(--bounce)}
+.choice-card:active{transform:translateY(3px) scale(0.96)}
+.choice-card svg{width:70%;height:70%}
+.choice-label{font-size:clamp(16px,4vw,22px);font-weight:900;color:#831843;margin-top:4px}
+.choice-card.wobble{animation:wobbleC 0.55s ease-in-out}
+@keyframes wobbleC{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.choice-card.correct-pop{animation:cPop 0.6s var(--bounce) forwards}
+@keyframes cPop{0%{transform:scale(1)}60%{transform:scale(1.25)}100%{transform:scale(1.1);border-color:#22c55e;box-shadow:0 8px 0 #166534,0 0 22px rgba(34,197,94,0.8)}}
+
+.star{position:fixed;font-size:32px;pointer-events:none;z-index:200;animation:starFly 0.8s ease-out forwards}
+@keyframes starFly{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
+
+.celeb-wrap{text-align:center;z-index:5;animation:celebBounce 0.8s var(--bounce)}
+@keyframes celebBounce{0%{transform:scale(0)}100%{transform:scale(1)}}
+.celeb-big{font-size:clamp(40px,9vw,70px);color:#fff;-webkit-text-stroke:3px #831843;
+  text-shadow:4px 6px 0 #fbbf24;margin-bottom:10px}
+.celeb-emoji{font-size:clamp(140px,32vw,240px);animation:celebDance 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 10px 20px rgba(0,0,0,0.3))}
+@keyframes celebDance{0%,100%{transform:rotate(-12deg) scale(1)}50%{transform:rotate(12deg) scale(1.08)}}
+.celeb-count{font-size:clamp(20px,5vw,32px);color:#fff;font-weight:900;margin:10px 0 20px;text-shadow:2px 2px 0 #831843}
+
+.banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:300;
+  background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#7c2d12;border:5px solid #fff;
+  border-radius:32px;padding:30px 50px;font-size:clamp(22px,5vw,34px);font-weight:900;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);pointer-events:none;text-align:center;max-width:90vw}
+.banner.show{animation:bannerPop 1.4s var(--bounce) forwards}
+@keyframes bannerPop{0%{transform:translate(-50%,-50%) scale(0)}20%{transform:translate(-50%,-50%) scale(1.1)}
+  30%{transform:translate(-50%,-50%) scale(1)}80%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(0.8);opacity:0}}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-home-btn">← Home</a>
+<a href="index.html" class="home-bubble" id="homeBubble" style="display:none">🏠</a>
+
+<div id="scrTitle" class="screen active">
+  <div class="title-wrap">
+    <div class="title-big">RHYME TIME</div>
+    <div class="title-emoji">🎤</div>
+    <div class="title-sub">Tap the picture that rhymes!</div>
+    <button class="start-btn" id="btnStart">🎵 Let's Rhyme!</button>
+  </div>
+</div>
+
+<div id="scrGame" class="screen">
+  <div class="hud-round" id="hudRound">1/8</div>
+  <div class="game-inner">
+    <div class="mystery-card" id="mysteryCard"></div>
+    <div class="prompt-text" id="promptText">Which one rhymes?</div>
+    <div class="choices" id="choices"></div>
+  </div>
+  <div class="banner" id="banner">Round 1</div>
+</div>
+
+<div id="scrCeleb" class="screen">
+  <div class="celeb-wrap">
+    <div class="celeb-big">RHYME STAR!</div>
+    <div class="celeb-emoji">🌟</div>
+    <div class="celeb-count" id="celebCount">You're a rhyming champion!</div>
+    <button class="start-btn" id="btnAgain">🎵 Play Again</button>
+  </div>
+</div>
+
+<canvas id="fxCanvas" style="position:fixed;inset:0;z-index:150;pointer-events:none"></canvas>
+
+<script>
+const AUDIO='audio/rhyme-time/';
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function onTap(el,fn){el.addEventListener('click',fn);el.addEventListener('touchend',e=>{e.preventDefault();fn(e);})}
+
+class GameAudio{
+  constructor(){this.ctx=null;this.musicGain=null;this.sfxGain=null;this.musicVol=0.08;this.musicDucked=0.02;this.speaking=false;this.queue=[];this._last={}}
+  _init(){if(this.ctx)return;this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const m=this.ctx.createGain();m.gain.value=1;m.connect(this.ctx.destination);
+    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=this.musicVol;this.musicGain.connect(m);
+    this.sfxGain=this.ctx.createGain();this.sfxGain.gain.value=0.35;this.sfxGain.connect(m);}
+  unlock(){this._init();if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{})}
+  tone(type){this._init();const c=this.ctx,n=c.currentTime;
+    const f={correct:[523.25,659.25,783.99],wrong:[392,349.23],pop:[880,1175,659.25],ding:[1046.5,1318.5]}[type]||[440];
+    f.forEach((hz,i)=>{const o=c.createOscillator(),g=c.createGain();o.type=type==='pop'?'square':'sine';o.frequency.value=hz;
+      g.gain.setValueAtTime(0.0001,n+i*0.06);g.gain.exponentialRampToValueAtTime(0.15,n+i*0.06+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,n+i*0.06+0.22);
+      o.connect(g);g.connect(this.sfxGain);o.start(n+i*0.06);o.stop(n+i*0.06+0.3);});}
+  _duck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicDucked,n+0.1)}
+  _unduck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicVol,n+0.3)}
+  _playFile(p){
+    const fb=()=>new Promise(r=>{const a=new Audio(p);a.onended=r;a.onerror=()=>r();a.play().catch(()=>r())});
+    if(this.ctx&&this.ctx.state!=='closed'){
+      return fetch(p).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+        .then(b=>this.ctx.decodeAudioData(b))
+        .then(buf=>new Promise(r=>{const s=this.ctx.createBufferSource();s.buffer=buf;s.connect(this.ctx.destination);s.onended=r;s.start()}))
+        .catch(()=>fb());
+    }return fb();}
+  speak(p){const j={path:p,resolve:null};const pr=new Promise(r=>j.resolve=r);this.queue.push(j);this._drain();return pr}
+  async _drain(){if(this.speaking)return;this.speaking=true;
+    while(this.queue.length){const j=this.queue.shift();this._duck();try{await this._playFile(j.path)}catch(e){}j.resolve();this._unduck()}
+    this.speaking=false}
+  clearQueue(){this.queue.forEach(j=>j.resolve());this.queue=[]}
+  play(name){return this.speak(AUDIO+name+'.mp3')}
+  playPick(keys){const a=keys.filter(k=>k!==this._last._pool);const c=a.length?a:keys;const k=c[Math.floor(Math.random()*c.length)];this._last._pool=k;return this.play(k)}
+  startMusic(){this._init();
+    const scale=[523.25,587.33,659.25,783.99,880.00,1046.50];
+    let t=this.ctx.currentTime+0.2;
+    const step=()=>{if(!this.musicGain)return;
+      const f=scale[Math.floor(Math.random()*scale.length)];
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.9,t+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+      o.connect(g);g.connect(this.musicGain);
+      o.start(t);o.stop(t+0.6);t+=0.42;
+      if(this.musicGain)setTimeout(step,400);};step();}
+}
+const audio=new GameAudio();
+
+// ── SVG pictures ──
+const PICS={
+  cat:`<svg viewBox='0 0 100 100'><circle cx='50' cy='58' r='28' fill='#fbbf24' stroke='#92400e' stroke-width='3'/><polygon points='28,36 22,18 40,30' fill='#fbbf24' stroke='#92400e' stroke-width='2'/><polygon points='72,36 78,18 60,30' fill='#fbbf24' stroke='#92400e' stroke-width='2'/><circle cx='42' cy='54' r='3' fill='#1f2937'/><circle cx='58' cy='54' r='3' fill='#1f2937'/><polygon points='47,64 53,64 50,68' fill='#831843'/><path d='M50 68 Q46 74 42 72' fill='none' stroke='#1f2937' stroke-width='2'/><path d='M50 68 Q54 74 58 72' fill='none' stroke='#1f2937' stroke-width='2'/><line x1='28' y1='60' x2='18' y2='58' stroke='#1f2937' stroke-width='1.5'/><line x1='72' y1='60' x2='82' y2='58' stroke='#1f2937' stroke-width='1.5'/></svg>`,
+  hat:`<svg viewBox='0 0 100 100'><ellipse cx='50' cy='72' rx='38' ry='8' fill='#000' stroke='#000' stroke-width='2'/><rect x='26' y='36' width='48' height='38' fill='#1f2937' stroke='#000' stroke-width='3' rx='3'/><rect x='26' y='60' width='48' height='10' fill='#dc2626' stroke='#7f1d1d' stroke-width='2'/><rect x='42' y='60' width='10' height='10' fill='#fbbf24' stroke='#92400e' stroke-width='1.5'/></svg>`,
+  dog:`<svg viewBox='0 0 100 100'><circle cx='50' cy='56' r='28' fill='#d4a373' stroke='#78350f' stroke-width='3'/><ellipse cx='26' cy='44' rx='10' ry='16' fill='#78350f' stroke='#451a03' stroke-width='2' transform='rotate(-20 26 44)'/><ellipse cx='74' cy='44' rx='10' ry='16' fill='#78350f' stroke='#451a03' stroke-width='2' transform='rotate(20 74 44)'/><circle cx='42' cy='52' r='3' fill='#000'/><circle cx='58' cy='52' r='3' fill='#000'/><ellipse cx='50' cy='64' rx='4' ry='3' fill='#000'/><path d='M46 68 Q50 74 54 68' fill='none' stroke='#000' stroke-width='2'/></svg>`,
+  log:`<svg viewBox='0 0 100 100'><ellipse cx='24' cy='50' rx='10' ry='18' fill='#78350f' stroke='#451a03' stroke-width='3'/><rect x='24' y='32' width='52' height='36' fill='#a16207' stroke='#451a03' stroke-width='3'/><ellipse cx='76' cy='50' rx='10' ry='18' fill='#b45309' stroke='#451a03' stroke-width='3'/><ellipse cx='76' cy='50' rx='6' ry='12' fill='#78350f' stroke='#451a03' stroke-width='2'/><circle cx='76' cy='50' r='3' fill='#451a03'/><path d='M30 40 L70 40 M30 50 L70 50 M30 60 L70 60' stroke='#451a03' stroke-width='1.5'/></svg>`,
+  fish:`<svg viewBox='0 0 100 100'><path d='M20 50 Q30 30 60 30 Q80 30 85 50 Q80 70 60 70 Q30 70 20 50' fill='#60a5fa' stroke='#1e40af' stroke-width='3'/><polygon points='18,50 4,36 10,50 4,64' fill='#60a5fa' stroke='#1e40af' stroke-width='2.5'/><circle cx='68' cy='44' r='4' fill='#fff' stroke='#1e40af' stroke-width='2'/><circle cx='70' cy='44' r='2' fill='#000'/></svg>`,
+  dish:`<svg viewBox='0 0 100 100'><ellipse cx='50' cy='68' rx='40' ry='8' fill='#cbd5e1' stroke='#475569' stroke-width='3'/><ellipse cx='50' cy='60' rx='38' ry='10' fill='#e2e8f0' stroke='#475569' stroke-width='3'/><ellipse cx='50' cy='56' rx='32' ry='6' fill='#fff' stroke='#475569' stroke-width='2'/><circle cx='42' cy='56' r='4' fill='#ef4444'/><circle cx='52' cy='54' r='4' fill='#fbbf24'/><circle cx='62' cy='56' r='4' fill='#22c55e'/></svg>`,
+  cake:`<svg viewBox='0 0 100 100'><rect x='18' y='54' width='64' height='30' fill='#fbcfe8' stroke='#be185d' stroke-width='3' rx='4'/><path d='M18 54 Q30 48 42 54 Q54 48 66 54 Q78 48 82 54' fill='#fff' stroke='#be185d' stroke-width='2'/><rect x='46' y='34' width='8' height='20' fill='#fbbf24' stroke='#92400e' stroke-width='2'/><path d='M50 34 Q46 26 50 20 Q54 26 50 34' fill='#f97316' stroke='#c2410c' stroke-width='1.5'/><circle cx='30' cy='70' r='3' fill='#ef4444'/><circle cx='50' cy='74' r='3' fill='#22c55e'/><circle cx='70' cy='70' r='3' fill='#3b82f6'/></svg>`,
+  lake:`<svg viewBox='0 0 100 100'><ellipse cx='50' cy='68' rx='44' ry='18' fill='#3b82f6' stroke='#1e3a8a' stroke-width='3'/><ellipse cx='50' cy='64' rx='40' ry='12' fill='#60a5fa'/><path d='M20 62 Q30 58 40 62 M50 64 Q60 60 70 64' stroke='#fff' stroke-width='2' fill='none'/><polygon points='80,20 84,36 78,34' fill='#fbbf24' stroke='#b45309' stroke-width='1.5'/><polygon points='14,14 18,30 10,26' fill='#fbbf24' stroke='#b45309' stroke-width='1.5'/><path d='M30 40 Q40 30 46 40 L46 60 L30 60 Z' fill='#16a34a' stroke='#14532d' stroke-width='2'/></svg>`,
+  star:`<svg viewBox='0 0 100 100'><polygon points='50,10 61,38 91,38 67,56 76,84 50,66 24,84 33,56 9,38 39,38' fill='#fbbf24' stroke='#b45309' stroke-width='3'/><circle cx='40' cy='40' r='3' fill='#fff' opacity='0.7'/><circle cx='60' cy='50' r='2' fill='#fff' opacity='0.7'/></svg>`,
+  car:`<svg viewBox='0 0 100 100'><rect x='14' y='48' width='72' height='24' fill='#ef4444' stroke='#7f1d1d' stroke-width='3' rx='6'/><path d='M22 48 L32 32 L68 32 L78 48 Z' fill='#ef4444' stroke='#7f1d1d' stroke-width='3' stroke-linejoin='round'/><rect x='36' y='36' width='14' height='10' fill='#93c5fd' stroke='#1e40af' stroke-width='1.5'/><rect x='52' y='36' width='14' height='10' fill='#93c5fd' stroke='#1e40af' stroke-width='1.5'/><circle cx='28' cy='76' r='8' fill='#1f2937' stroke='#000' stroke-width='2'/><circle cx='72' cy='76' r='8' fill='#1f2937' stroke='#000' stroke-width='2'/><circle cx='28' cy='76' r='3' fill='#9ca3af'/><circle cx='72' cy='76' r='3' fill='#9ca3af'/></svg>`,
+  bee:`<svg viewBox='0 0 100 100'><ellipse cx='50' cy='54' rx='26' ry='18' fill='#fbbf24' stroke='#92400e' stroke-width='3'/><rect x='28' y='44' width='44' height='6' fill='#1f2937'/><rect x='28' y='58' width='44' height='6' fill='#1f2937'/><ellipse cx='34' cy='38' rx='10' ry='6' fill='#fff' opacity='0.8' stroke='#1e40af' stroke-width='1.5'/><ellipse cx='66' cy='38' rx='10' ry='6' fill='#fff' opacity='0.8' stroke='#1e40af' stroke-width='1.5'/><circle cx='42' cy='52' r='2.5' fill='#000'/><line x1='30' y1='44' x2='22' y2='38' stroke='#1f2937' stroke-width='1.5'/><circle cx='22' cy='38' r='2' fill='#000'/></svg>`,
+  tree:`<svg viewBox='0 0 100 100'><rect x='44' y='60' width='12' height='28' fill='#78350f' stroke='#451a03' stroke-width='2'/><circle cx='50' cy='42' r='26' fill='#22c55e' stroke='#166534' stroke-width='3'/><circle cx='34' cy='50' r='16' fill='#16a34a' stroke='#166534' stroke-width='2'/><circle cx='66' cy='50' r='16' fill='#16a34a' stroke='#166534' stroke-width='2'/><circle cx='40' cy='38' r='3' fill='#ef4444'/><circle cx='60' cy='44' r='3' fill='#ef4444'/></svg>`,
+  ball:`<svg viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='#ef4444' stroke='#7f1d1d' stroke-width='3'/><path d='M16 50 Q50 20 84 50' fill='none' stroke='#fff' stroke-width='3'/><path d='M16 50 Q50 80 84 50' fill='none' stroke='#fff' stroke-width='3'/><circle cx='50' cy='50' r='10' fill='none' stroke='#fff' stroke-width='3'/></svg>`,
+  wall:`<svg viewBox='0 0 100 100'><rect x='10' y='14' width='80' height='72' fill='#fca5a5' stroke='#7f1d1d' stroke-width='2'/><g stroke='#7f1d1d' stroke-width='1.5' fill='none'><line x1='10' y1='30' x2='90' y2='30'/><line x1='10' y1='46' x2='90' y2='46'/><line x1='10' y1='62' x2='90' y2='62'/><line x1='10' y1='78' x2='90' y2='78'/><line x1='30' y1='14' x2='30' y2='30'/><line x1='50' y1='14' x2='50' y2='30'/><line x1='70' y1='14' x2='70' y2='30'/><line x1='20' y1='30' x2='20' y2='46'/><line x1='40' y1='30' x2='40' y2='46'/><line x1='60' y1='30' x2='60' y2='46'/><line x1='80' y1='30' x2='80' y2='46'/><line x1='30' y1='46' x2='30' y2='62'/><line x1='50' y1='46' x2='50' y2='62'/><line x1='70' y1='46' x2='70' y2='62'/><line x1='20' y1='62' x2='20' y2='78'/><line x1='40' y1='62' x2='40' y2='78'/><line x1='60' y1='62' x2='60' y2='78'/><line x1='80' y1='62' x2='80' y2='78'/></g></svg>`,
+  pig:`<svg viewBox='0 0 100 100'><circle cx='50' cy='54' r='30' fill='#f9a8d4' stroke='#be185d' stroke-width='3'/><ellipse cx='50' cy='66' rx='14' ry='10' fill='#fbcfe8' stroke='#be185d' stroke-width='2.5'/><circle cx='45' cy='66' r='2.5' fill='#831843'/><circle cx='55' cy='66' r='2.5' fill='#831843'/><circle cx='40' cy='48' r='3' fill='#1f2937'/><circle cx='60' cy='48' r='3' fill='#1f2937'/><polygon points='30,30 26,16 40,26' fill='#f9a8d4' stroke='#be185d' stroke-width='2'/><polygon points='70,30 74,16 60,26' fill='#f9a8d4' stroke='#be185d' stroke-width='2'/></svg>`,
+  wig:`<svg viewBox='0 0 100 100'><ellipse cx='50' cy='56' rx='34' ry='14' fill='#fde68a' stroke='#92400e' stroke-width='2'/><path d='M16 60 Q14 86 24 82 Q26 70 20 60' fill='#fbbf24' stroke='#92400e' stroke-width='2.5'/><path d='M84 60 Q86 86 76 82 Q74 70 80 60' fill='#fbbf24' stroke='#92400e' stroke-width='2.5'/><path d='M20 40 Q26 16 50 14 Q74 16 80 40 Q80 56 50 50 Q20 56 20 40' fill='#fbbf24' stroke='#92400e' stroke-width='3'/><path d='M30 26 Q38 18 50 18 Q62 18 70 26' fill='none' stroke='#fde68a' stroke-width='2'/><path d='M36 40 Q40 34 44 40' fill='none' stroke='#92400e' stroke-width='1.5'/><path d='M56 40 Q60 34 64 40' fill='none' stroke='#92400e' stroke-width='1.5'/></svg>`
+};
+
+const PAIRS=[['cat','hat'],['dog','log'],['fish','dish'],['cake','lake'],['star','car'],['bee','tree'],['ball','wall'],['pig','wig']];
+let order=[], idx=0, currentPair=null, correctPic='', decoyPic='';
+
+// heart float bg
+(function(){const hearts=['💖','💕','💗','🌸','🎵'];
+  for(let i=0;i<10;i++){const h=document.createElement('div');h.className='heart-float';h.textContent=pick(hearts);
+    h.style.left=(Math.random()*100)+'vw';h.style.animationDuration=(Math.random()*10+15)+'s';
+    h.style.animationDelay=(Math.random()*12)+'s';h.style.fontSize=(Math.random()*12+20)+'px';
+    document.body.appendChild(h);
+  }})();
+
+const fxCanvas=$('fxCanvas'),fxCtx=fxCanvas.getContext('2d');
+function resizeFx(){fxCanvas.width=innerWidth;fxCanvas.height=innerHeight}
+resizeFx();addEventListener('resize',resizeFx);
+let confetti=[];const CC=['#fbbf24','#ec4899','#3b82f6','#22c55e','#ef4444','#fff','#a855f7'];
+function burstConfetti(x,y,n=40){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=Math.random()*8+4;
+  confetti.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,size:Math.random()*7+4,
+    color:pick(CC),rot:Math.random()*Math.PI*2,vr:(Math.random()-0.5)*0.3,life:1})}}
+function fxLoop(){fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  for(let i=confetti.length-1;i>=0;i--){const p=confetti[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.vx*=0.99;
+    p.rot+=p.vr;p.life-=0.012;if(p.life<=0){confetti.splice(i,1);continue}
+    fxCtx.save();fxCtx.translate(p.x,p.y);fxCtx.rotate(p.rot);fxCtx.globalAlpha=Math.max(0,p.life);
+    fxCtx.fillStyle=p.color;fxCtx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);fxCtx.restore();
+  }requestAnimationFrame(fxLoop)}
+fxLoop();
+
+function starBurst(x,y){const e=['✨','⭐','💫','🌟','💖'];
+  for(let i=0;i<8;i++){const s=document.createElement('div');s.className='star';s.textContent=pick(e);
+    s.style.left=x+'px';s.style.top=y+'px';const a=(Math.PI*2*i)/8,d=80+Math.random()*40;
+    s.style.setProperty('--dx',`calc(-50% + ${Math.cos(a)*d}px)`);
+    s.style.setProperty('--dy',`calc(-50% + ${Math.sin(a)*d}px)`);
+    document.body.appendChild(s);setTimeout(()=>s.remove(),800);}}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');$('homeBubble').style.display=id==='scrGame'?'flex':'none'}
+function showBanner(text){const b=$('banner');b.textContent=text;b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}return r}
+
+function nextRound(){
+  currentPair=order[idx];
+  const [w1,w2]=currentPair;
+  // prompt word = w1, correct answer pic = w2
+  // pick a decoy from a different pair
+  const otherPairs=PAIRS.filter(p=>p[0]!==w1);
+  const decoyPair=pick(otherPairs);
+  decoyPic=pick(decoyPair);
+  correctPic=w2;
+  $('hudRound').textContent=(idx+1)+'/'+order.length;
+  $('mysteryCard').innerHTML='?';
+  // show the choices + the prompt word
+  const choices=shuffle([correctPic, decoyPic]);
+  const grid=$('choices'); grid.innerHTML='';
+  choices.forEach(name=>{
+    const c=document.createElement('button'); c.className='choice-card';
+    c.innerHTML=PICS[name]+`<div class='choice-label'>${name.toUpperCase()}</div>`;
+    onTap(c,()=>handleChoice(c,name));
+    grid.appendChild(c);
+  });
+  $('promptText').textContent=`Rhymes with ${w1.toUpperCase()}...`;
+  audio.clearQueue();
+  setTimeout(()=>audio.play('which_'+w1), 300);
+}
+
+function handleChoice(btn,name){
+  const rect=btn.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  if(name===correctPic){
+    btn.classList.add('correct-pop');
+    audio.tone('ding'); starBurst(cx,cy); burstConfetti(cx,cy,34);
+    // reveal mystery card -> show rhyming pic emoji-style or word
+    $('mysteryCard').innerHTML=PICS[correctPic];
+    audio.play('yes_'+currentPair[0]+'_'+currentPair[1]);
+    setTimeout(()=>audio.playPick(['correct1','correct2','correct3']), 2000);
+    document.querySelectorAll('.choice-card').forEach(b=>b.style.pointerEvents='none');
+    idx++;
+    setTimeout(()=>{
+      if(idx>=order.length) finishGame();
+      else nextRound();
+    }, 2800);
+  } else {
+    btn.classList.add('wobble');
+    audio.tone('wrong');
+    audio.play('listen_again');
+    setTimeout(()=>btn.classList.remove('wobble'), 600);
+    setTimeout(()=>audio.play('which_'+currentPair[0]), 1000);
+  }
+}
+
+function finishGame(){
+  showScreen('scrCeleb');
+  setTimeout(()=>{for(let i=0;i<4;i++)burstConfetti(Math.random()*innerWidth, innerHeight*0.3, 25)},100);
+  setTimeout(()=>{for(let i=0;i<3;i++)burstConfetti(Math.random()*innerWidth, innerHeight*0.3, 20)}, 600);
+  audio.play('complete');
+}
+
+function startGame(){
+  order=shuffle(PAIRS);
+  idx=0;
+  showScreen('scrGame');
+  audio.startMusic();
+  audio.play('start');
+  setTimeout(()=>{showBanner('Listen for rhymes!');setTimeout(nextRound,900);}, 900);
+}
+
+onTap($('btnStart'),()=>{audio.unlock();audio.tone('pop');startGame();});
+onTap($('btnAgain'),()=>{audio.unlock();audio.tone('pop');startGame();});
+onTap($('mysteryCard'),()=>{if(currentPair) audio.play('which_'+currentPair[0])});
+
+/* progress tracking */
+(function(){function getKey(){var p=location.pathname.split('/').filter(Boolean);var last=p[p.length-1]||'index.html';
+    var g=last.replace('.html','');var t=p[p.length-2]||'root';if(g==='')g='index';return t+'/'+g}
+  function load(){try{return JSON.parse(localStorage.getItem('aha_progress')||'{}')}catch(e){return{}}}
+  function save(p){try{localStorage.setItem('aha_progress',JSON.stringify(p))}catch(e){}}
+  function markAttempt(){var p=load(),k=getKey();if(!p[k])p[k]={attempted:true,attemptedAt:Date.now()};save(p)}
+  function markComplete(){var p=load(),k=getKey();if(!p[k])p[k]={};p[k].completed=true;p[k].completedAt=Date.now();p[k].plays=(p[k].plays||0)+1;save(p)}
+  var c=document.getElementById('scrCeleb');
+  if(c){var o=new MutationObserver(function(){if(c.classList.contains('active'))markComplete()});o.observe(c,{attributes:true,attributeFilter:['class']})}
+  setTimeout(markAttempt,3000);
+})();
+</script>
+</body>
+</html>

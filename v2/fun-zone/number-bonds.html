@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Number Bonds · aha!</title>
+<style>
+:root{--bounce:cubic-bezier(0.34,1.56,0.64,1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100vh;height:100dvh;overflow:hidden;
+  font-family:'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  background:linear-gradient(180deg,#fef3c7 0%,#fbbf24 45%,#f97316 100%);color:#7c2d12;touch-action:manipulation}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+.screen.active{display:flex}
+.back-home-btn{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);left:14px;z-index:9999;
+  background:#fff;color:#7c2d12;border:4px solid #fbbf24;border-radius:999px;padding:10px 18px;
+  font-size:16px;font-weight:900;text-decoration:none;box-shadow:0 4px 0 #7c2d12,0 6px 12px rgba(0,0,0,0.2)}
+.home-bubble{position:fixed;bottom:18px;right:18px;z-index:9999;width:56px;height:56px;border-radius:50%;
+  background:#fff;border:4px solid #fbbf24;display:flex;align-items:center;justify-content:center;
+  font-size:28px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+
+.bgfloat{position:absolute;font-size:32px;pointer-events:none;animation:bgRise linear infinite;opacity:0.85}
+@keyframes bgRise{0%{transform:translateY(100vh) scale(0.6);opacity:0}20%{opacity:1}100%{transform:translateY(-10vh) scale(1.1);opacity:0}}
+
+.title-wrap{text-align:center;z-index:5}
+.title-big{font-size:clamp(42px,10vw,80px);color:#fff;-webkit-text-stroke:3px #7c2d12;
+  text-shadow:4px 6px 0 #ec4899,0 8px 14px rgba(0,0,0,0.3);line-height:1.05;margin-bottom:10px;
+  animation:titleBounce 2.2s ease-in-out infinite}
+@keyframes titleBounce{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
+.title-emoji{font-size:clamp(140px,32vw,240px);display:inline-block;animation:foxWave 2s ease-in-out infinite;
+  filter:drop-shadow(0 10px 20px rgba(0,0,0,0.3));margin:10px 0}
+@keyframes foxWave{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.08)}}
+.title-sub{font-size:clamp(18px,4.2vw,28px);color:#fff;margin-bottom:22px;font-weight:900;text-shadow:2px 2px 0 #7c2d12}
+.start-btn{background:linear-gradient(180deg,#ec4899,#be185d);color:#fff;border:5px solid #fff;
+  border-radius:999px;padding:22px 56px;font-size:clamp(24px,5.5vw,32px);font-weight:900;
+  box-shadow:0 6px 0 #831843,0 10px 20px rgba(0,0,0,0.3);cursor:pointer;
+  animation:glow 2.4s ease-in-out infinite;transition:transform 0.15s var(--bounce)}
+@keyframes glow{0%,100%{box-shadow:0 6px 0 #831843,0 10px 20px rgba(0,0,0,0.3),0 0 20px rgba(236,72,153,0.5)}
+  50%{box-shadow:0 6px 0 #831843,0 10px 20px rgba(0,0,0,0.3),0 0 40px rgba(236,72,153,0.9)}}
+.start-btn:active{transform:translateY(3px) scale(0.97)}
+
+.game-inner{width:100%;max-width:540px;display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:72px}
+.hud-round{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);right:14px;z-index:50;
+  background:rgba(0,0,0,0.4);color:#fff;border-radius:16px;padding:6px 14px;font-weight:900;font-size:14px}
+
+.character{position:relative;display:flex;flex-direction:column;align-items:center}
+.char-num{width:clamp(64px,15vw,82px);height:clamp(64px,15vw,82px);background:#fbbf24;
+  border-radius:22px;border:5px solid #7c2d12;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(38px,9vw,50px);font-weight:900;color:#fff;-webkit-text-stroke:3px #7c2d12;
+  text-shadow:2px 2px 0 #7c2d12;box-shadow:0 6px 0 #7c2d12,0 10px 14px rgba(0,0,0,0.25);
+  animation:numFloat 1.8s ease-in-out infinite;margin-bottom:4px}
+@keyframes numFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+.char-emoji{font-size:clamp(80px,18vw,110px);filter:drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+  animation:charBounce 2s ease-in-out infinite}
+@keyframes charBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+.bowls-row{display:flex;gap:16px;align-items:flex-end;justify-content:center;width:100%}
+.bowl-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:200px}
+.bowl-label{font-size:clamp(14px,3.6vw,18px);font-weight:900;color:#7c2d12;
+  background:rgba(255,255,255,0.9);padding:4px 12px;border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.15)}
+.bowl{width:100%;aspect-ratio:2/1;background:linear-gradient(180deg,#fff 0%,#fff 40%,#fef3c7 100%);
+  border:5px solid #7c2d12;border-radius:0 0 50% 50%/0 0 100% 100%;
+  box-shadow:0 6px 0 #7c2d12,0 10px 16px rgba(0,0,0,0.25),inset 0 4px 0 rgba(255,255,255,0.5);
+  position:relative;overflow:visible;display:flex;align-items:center;justify-content:center;padding:10px}
+.bowl.active{border-color:#ec4899;animation:bowlPulse 1.2s ease-in-out infinite}
+@keyframes bowlPulse{0%,100%{box-shadow:0 6px 0 #be185d,0 10px 16px rgba(0,0,0,0.25),inset 0 4px 0 rgba(255,255,255,0.5),0 0 0 rgba(236,72,153,0.4)}
+  50%{box-shadow:0 6px 0 #be185d,0 10px 16px rgba(0,0,0,0.25),inset 0 4px 0 rgba(255,255,255,0.5),0 0 24px rgba(236,72,153,0.8)}}
+.bowl-q{font-size:clamp(36px,9vw,52px);font-weight:900;color:#be185d;-webkit-text-stroke:2px #831843;
+  text-shadow:2px 2px 0 #fff;animation:qPulse 1s ease-in-out infinite}
+@keyframes qPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+
+.dots{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:90%;justify-items:center;align-items:center}
+.dot{width:clamp(14px,3.5vw,20px);height:clamp(14px,3.5vw,20px);background:#ec4899;border-radius:50%;
+  border:2px solid #7c2d12;box-shadow:inset -2px -2px 3px rgba(0,0,0,0.2);
+  animation:dotPop 0.5s var(--bounce)}
+@keyframes dotPop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+.dot.fly-in{animation:flyIn 0.6s var(--bounce)}
+@keyframes flyIn{0%{transform:translate(var(--fx),var(--fy)) scale(0.2);opacity:0}100%{transform:translate(0,0) scale(1);opacity:1}}
+
+.prompt-bar{background:rgba(255,255,255,0.95);border-radius:20px;padding:8px 20px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.2);color:#7c2d12;font-weight:900;
+  font-size:clamp(15px,3.8vw,19px);text-align:center}
+
+.num-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:460px}
+.num-btn{aspect-ratio:1;background:linear-gradient(180deg,#60a5fa,#2563eb);color:#fff;border:5px solid #fff;
+  border-radius:22px;font-size:clamp(32px,8vw,44px);font-weight:900;cursor:pointer;
+  box-shadow:0 6px 0 #1e3a8a,0 8px 14px rgba(0,0,0,0.25);text-shadow:2px 2px 0 rgba(0,0,0,0.3);
+  -webkit-text-stroke:2px rgba(0,0,0,0.2);
+  transition:transform 0.12s var(--bounce)}
+.num-btn:active{transform:translateY(3px) scale(0.96)}
+.num-btn.wobble{animation:wobbleB 0.5s ease-in-out}
+@keyframes wobbleB{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.num-btn.correct-pop{animation:popGrow 0.6s var(--bounce) forwards}
+@keyframes popGrow{0%{transform:scale(1)}50%{transform:scale(1.3);background:linear-gradient(180deg,#22c55e,#15803d)}100%{transform:scale(1);background:linear-gradient(180deg,#22c55e,#15803d)}}
+
+.star{position:fixed;font-size:32px;pointer-events:none;z-index:200;animation:starFly 0.8s ease-out forwards}
+@keyframes starFly{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
+
+.celeb-wrap{text-align:center;z-index:5;animation:celebBounce 0.8s var(--bounce)}
+@keyframes celebBounce{0%{transform:scale(0)}100%{transform:scale(1)}}
+.celeb-big{font-size:clamp(40px,9vw,70px);color:#fff;-webkit-text-stroke:3px #7c2d12;
+  text-shadow:4px 6px 0 #ec4899;margin-bottom:10px}
+.celeb-emoji{font-size:clamp(140px,32vw,240px);animation:celebDance 1.6s ease-in-out infinite;filter:drop-shadow(0 10px 20px rgba(0,0,0,0.3))}
+@keyframes celebDance{0%,100%{transform:rotate(-12deg) scale(1)}50%{transform:rotate(12deg) scale(1.08)}}
+.celeb-count{font-size:clamp(20px,5vw,32px);color:#fff;font-weight:900;margin:10px 0 20px;text-shadow:2px 2px 0 #7c2d12}
+
+.banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:300;
+  background:linear-gradient(180deg,#ec4899,#be185d);color:#fff;border:5px solid #fff;
+  border-radius:32px;padding:30px 50px;font-size:clamp(24px,5.2vw,36px);font-weight:900;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);pointer-events:none;text-align:center;max-width:90vw}
+.banner.show{animation:bannerPop 1.4s var(--bounce) forwards}
+@keyframes bannerPop{0%{transform:translate(-50%,-50%) scale(0)}20%{transform:translate(-50%,-50%) scale(1.1)}
+  30%{transform:translate(-50%,-50%) scale(1)}80%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(0.8);opacity:0}}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-home-btn">← Home</a>
+<a href="index.html" class="home-bubble" id="homeBubble" style="display:none">🏠</a>
+
+<div id="scrTitle" class="screen active">
+  <div class="title-wrap">
+    <div class="title-big">NUMBER BONDS</div>
+    <div class="title-emoji">🦊</div>
+    <div class="title-sub">Split the number — fill the bowl!</div>
+    <button class="start-btn" id="btnStart">🍎 Let's Count!</button>
+  </div>
+</div>
+
+<div id="scrGame" class="screen">
+  <div class="hud-round" id="hudRound">1/10</div>
+  <div class="game-inner">
+    <div class="character">
+      <div class="char-num" id="charNum">5</div>
+      <div class="char-emoji">🦊</div>
+    </div>
+    <div class="bowls-row">
+      <div class="bowl-wrap">
+        <div class="bowl-label" id="bowlLabelA">3</div>
+        <div class="bowl"><div class="dots" id="bowlA"></div></div>
+      </div>
+      <div class="bowl-wrap">
+        <div class="bowl-label" id="bowlLabelB">?</div>
+        <div class="bowl active"><div class="bowl-q">?</div></div>
+      </div>
+    </div>
+    <div class="prompt-bar" id="promptBar">How many make 5?</div>
+    <div class="num-grid" id="numGrid"></div>
+  </div>
+  <div class="banner" id="banner">Round 1</div>
+</div>
+
+<div id="scrCeleb" class="screen">
+  <div class="celeb-wrap">
+    <div class="celeb-big">NUMBER HERO!</div>
+    <div class="celeb-emoji">🦊</div>
+    <div class="celeb-count" id="celebCount">You did it!</div>
+    <button class="start-btn" id="btnAgain">🍎 Play Again</button>
+  </div>
+</div>
+
+<canvas id="fxCanvas" style="position:fixed;inset:0;z-index:150;pointer-events:none"></canvas>
+
+<script>
+const AUDIO='audio/number-bonds/';
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function onTap(el,fn){el.addEventListener('click',fn);el.addEventListener('touchend',e=>{e.preventDefault();fn(e);})}
+
+class GameAudio{
+  constructor(){this.ctx=null;this.musicGain=null;this.sfxGain=null;this.musicVol=0.08;this.musicDucked=0.02;this.speaking=false;this.queue=[];this._last={}}
+  _init(){if(this.ctx)return;this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const m=this.ctx.createGain();m.gain.value=1;m.connect(this.ctx.destination);
+    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=this.musicVol;this.musicGain.connect(m);
+    this.sfxGain=this.ctx.createGain();this.sfxGain.gain.value=0.35;this.sfxGain.connect(m);}
+  unlock(){this._init();if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{})}
+  tone(type){this._init();const c=this.ctx,n=c.currentTime;
+    const f={correct:[523.25,659.25,783.99],wrong:[392,349.23],pop:[880,1175,659.25],ding:[1046.5,1318.5]}[type]||[440];
+    f.forEach((hz,i)=>{const o=c.createOscillator(),g=c.createGain();o.type=type==='pop'?'square':'sine';o.frequency.value=hz;
+      g.gain.setValueAtTime(0.0001,n+i*0.06);g.gain.exponentialRampToValueAtTime(0.15,n+i*0.06+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,n+i*0.06+0.22);
+      o.connect(g);g.connect(this.sfxGain);o.start(n+i*0.06);o.stop(n+i*0.06+0.3);});}
+  _duck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicDucked,n+0.1)}
+  _unduck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicVol,n+0.3)}
+  _playFile(p){
+    const fb=()=>new Promise(r=>{const a=new Audio(p);a.onended=r;a.onerror=()=>r();a.play().catch(()=>r())});
+    if(this.ctx&&this.ctx.state!=='closed'){
+      return fetch(p).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+        .then(b=>this.ctx.decodeAudioData(b))
+        .then(buf=>new Promise(r=>{const s=this.ctx.createBufferSource();s.buffer=buf;s.connect(this.ctx.destination);s.onended=r;s.start()}))
+        .catch(()=>fb());
+    }return fb();}
+  speak(p){const j={path:p,resolve:null};const pr=new Promise(r=>j.resolve=r);this.queue.push(j);this._drain();return pr}
+  async _drain(){if(this.speaking)return;this.speaking=true;
+    while(this.queue.length){const j=this.queue.shift();this._duck();try{await this._playFile(j.path)}catch(e){}j.resolve();this._unduck()}
+    this.speaking=false}
+  clearQueue(){this.queue.forEach(j=>j.resolve());this.queue=[]}
+  play(name){return this.speak(AUDIO+name+'.mp3')}
+  playPick(keys){const a=keys.filter(k=>k!==this._last._pool);const c=a.length?a:keys;const k=c[Math.floor(Math.random()*c.length)];this._last._pool=k;return this.play(k)}
+  startMusic(){this._init();
+    const scale=[523.25,587.33,659.25,783.99,880.00,1046.50];
+    let t=this.ctx.currentTime+0.2;
+    const step=()=>{if(!this.musicGain)return;
+      const f=scale[Math.floor(Math.random()*scale.length)];
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.9,t+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+      o.connect(g);g.connect(this.musicGain);
+      o.start(t);o.stop(t+0.6);t+=0.42;
+      if(this.musicGain)setTimeout(step,400);};step();}
+}
+const audio=new GameAudio();
+
+// generate rounds: z (total) between 3 and 8, split into x known + y unknown, x in 1..z-1
+function genRounds(n){
+  const rounds=[];
+  const used=new Set();
+  while(rounds.length<n){
+    const z=3+Math.floor(Math.random()*6); // 3..8
+    const x=1+Math.floor(Math.random()*(z-1));
+    const y=z-x;
+    const key=`${x}+${y}=${z}`;
+    if(used.has(key)) continue;
+    used.add(key);
+    rounds.push({z,x,y});
+  }
+  return rounds;
+}
+
+let rounds=[], idx=0, currentRound=null, correctFound=false;
+
+// bg floats
+(function(){const icons=['🍎','🍊','🍋','🍓','🫐'];
+  for(let i=0;i<8;i++){const d=document.createElement('div');d.className='bgfloat';d.textContent=pick(icons);
+    d.style.left=(Math.random()*100)+'vw';d.style.animationDuration=(Math.random()*10+18)+'s';
+    d.style.animationDelay=(Math.random()*12)+'s';d.style.fontSize=(Math.random()*14+22)+'px';
+    document.body.appendChild(d);
+  }})();
+
+const fxCanvas=$('fxCanvas'),fxCtx=fxCanvas.getContext('2d');
+function resizeFx(){fxCanvas.width=innerWidth;fxCanvas.height=innerHeight}
+resizeFx();addEventListener('resize',resizeFx);
+let confetti=[];const CC=['#fbbf24','#ec4899','#3b82f6','#22c55e','#ef4444','#fff','#a855f7'];
+function burstConfetti(x,y,n=40){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=Math.random()*8+4;
+  confetti.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,size:Math.random()*7+4,
+    color:pick(CC),rot:Math.random()*Math.PI*2,vr:(Math.random()-0.5)*0.3,life:1})}}
+function fxLoop(){fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  for(let i=confetti.length-1;i>=0;i--){const p=confetti[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.vx*=0.99;
+    p.rot+=p.vr;p.life-=0.012;if(p.life<=0){confetti.splice(i,1);continue}
+    fxCtx.save();fxCtx.translate(p.x,p.y);fxCtx.rotate(p.rot);fxCtx.globalAlpha=Math.max(0,p.life);
+    fxCtx.fillStyle=p.color;fxCtx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);fxCtx.restore();
+  }requestAnimationFrame(fxLoop)}
+fxLoop();
+
+function starBurst(x,y){const e=['✨','⭐','💫','🌟'];
+  for(let i=0;i<8;i++){const s=document.createElement('div');s.className='star';s.textContent=pick(e);
+    s.style.left=x+'px';s.style.top=y+'px';const a=(Math.PI*2*i)/8,d=80+Math.random()*40;
+    s.style.setProperty('--dx',`calc(-50% + ${Math.cos(a)*d}px)`);
+    s.style.setProperty('--dy',`calc(-50% + ${Math.sin(a)*d}px)`);
+    document.body.appendChild(s);setTimeout(()=>s.remove(),800);}}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');$('homeBubble').style.display=id==='scrGame'?'flex':'none'}
+function showBanner(text){const b=$('banner');b.textContent=text;b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}return r}
+
+function renderDots(container,count){
+  container.innerHTML='';
+  for(let i=0;i<count;i++){
+    const d=document.createElement('div'); d.className='dot'; container.appendChild(d);
+  }
+}
+
+function nextRound(){
+  currentRound=rounds[idx];
+  correctFound=false;
+  const {z,x,y}=currentRound;
+  $('charNum').textContent=z;
+  $('bowlLabelA').textContent=x;
+  $('bowlLabelB').textContent='?';
+  $('promptBar').textContent=`How many make ${z}?`;
+  $('hudRound').textContent=(idx+1)+'/'+rounds.length;
+  renderDots($('bowlA'), x);
+  // reset bowlB container
+  const bowlB=document.querySelector('.bowl.active');
+  bowlB.innerHTML=`<div class="bowl-q">?</div>`;
+  bowlB.classList.add('active');
+  // number choices: correct y + 3 distractors, 1..10
+  const choices=new Set([y]);
+  while(choices.size<4){
+    const d=1+Math.floor(Math.random()*8);
+    if(d!==y) choices.add(d);
+  }
+  const arr=shuffle([...choices]);
+  const grid=$('numGrid'); grid.innerHTML='';
+  arr.forEach(n=>{
+    const b=document.createElement('button'); b.className='num-btn'; b.textContent=n;
+    onTap(b,()=>handleNumTap(b,n));
+    grid.appendChild(b);
+  });
+  audio.clearQueue();
+  setTimeout(()=>audio.play('how_many_'+z), 300);
+  setTimeout(()=>audio.play('count_dots'), 1700);
+}
+
+function handleNumTap(btn,n){
+  if(correctFound) return;
+  const {z,x,y}=currentRound;
+  const rect=btn.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  if(n===y){
+    correctFound=true;
+    btn.classList.add('correct-pop');
+    audio.tone('ding'); starBurst(cx,cy); burstConfetti(cx,cy,30);
+    // animate dots flying into bowlB
+    const bowlB=document.querySelector('.bowl.active');
+    bowlB.innerHTML=`<div class="dots" id="bowlB"></div>`;
+    const target=$('bowlB');
+    for(let i=0;i<y;i++){
+      const d=document.createElement('div'); d.className='dot fly-in';
+      d.style.setProperty('--fx', (cx - innerWidth/2)+'px');
+      d.style.setProperty('--fy', (cy - innerHeight/2)+'px');
+      target.appendChild(d);
+    }
+    $('bowlLabelB').textContent=y;
+    document.querySelectorAll('.num-btn').forEach(b=>b.style.pointerEvents='none');
+    audio.play('make_'+x+'_'+y+'_'+z);
+    setTimeout(()=>audio.playPick(['correct1','correct2','correct3']), 2400);
+    idx++;
+    setTimeout(()=>{
+      if(idx>=rounds.length) finishGame();
+      else nextRound();
+    }, 3200);
+  } else {
+    btn.classList.add('wobble');
+    audio.tone('wrong');
+    setTimeout(()=>btn.classList.remove('wobble'), 600);
+    setTimeout(()=>audio.play('count_dots'), 700);
+    setTimeout(()=>audio.play('how_many_'+z), 2000);
+  }
+}
+
+function finishGame(){
+  showScreen('scrCeleb');
+  $('celebCount').textContent=`You solved ${rounds.length} puzzles!`;
+  setTimeout(()=>{for(let i=0;i<4;i++)burstConfetti(Math.random()*innerWidth, innerHeight*0.3, 25)},100);
+  setTimeout(()=>{for(let i=0;i<3;i++)burstConfetti(Math.random()*innerWidth, innerHeight*0.3, 20)}, 600);
+  audio.play('complete');
+}
+
+function startGame(){
+  rounds=genRounds(10); idx=0;
+  showScreen('scrGame');
+  audio.startMusic();
+  audio.play('start');
+  setTimeout(()=>{showBanner('Count with me!');setTimeout(nextRound,900);}, 900);
+}
+
+onTap($('btnStart'),()=>{audio.unlock();audio.tone('pop');startGame();});
+onTap($('btnAgain'),()=>{audio.unlock();audio.tone('pop');startGame();});
+onTap($('charNum'),()=>{if(currentRound) audio.play('how_many_'+currentRound.z)});
+
+/* progress tracking */
+(function(){function getKey(){var p=location.pathname.split('/').filter(Boolean);var last=p[p.length-1]||'index.html';
+    var g=last.replace('.html','');var t=p[p.length-2]||'root';if(g==='')g='index';return t+'/'+g}
+  function load(){try{return JSON.parse(localStorage.getItem('aha_progress')||'{}')}catch(e){return{}}}
+  function save(p){try{localStorage.setItem('aha_progress',JSON.stringify(p))}catch(e){}}
+  function markAttempt(){var p=load(),k=getKey();if(!p[k])p[k]={attempted:true,attemptedAt:Date.now()};save(p)}
+  function markComplete(){var p=load(),k=getKey();if(!p[k])p[k]={};p[k].completed=true;p[k].completedAt=Date.now();p[k].plays=(p[k].plays||0)+1;save(p)}
+  var c=document.getElementById('scrCeleb');
+  if(c){var o=new MutationObserver(function(){if(c.classList.contains('active'))markComplete()});o.observe(c,{attributes:true,attributeFilter:['class']})}
+  setTimeout(markAttempt,3000);
+})();
+</script>
+</body>
+</html>

@@ -323,8 +323,10 @@ body{
 .th-arcade{background:linear-gradient(145deg,#A855F7,#3B82F6)}
 .th-funzone{background:linear-gradient(145deg,#EC4899,#F59E0B);animation:funGradShift 6s ease-in-out infinite}
 .th-reading{background:linear-gradient(145deg,#7C3AED,#3B82F6);animation:readGradShift 7s ease-in-out infinite}
+.th-math{background:linear-gradient(145deg,#F59E0B,#0EA5E9);animation:mathGradShift 8s ease-in-out infinite}
 @keyframes funGradShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(25deg)}}
 @keyframes readGradShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(-20deg)}}
+@keyframes mathGradShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(20deg)}}
 
 /* ── Divider ── */
 .section-divider{
@@ -564,6 +566,27 @@ body{
     </div>
   </div>
 
+  <!-- Math Zone Category -->
+  <div class="category">
+    <div class="category-title">
+      <span class="big-emoji">🧮</span>
+      <span>Math Zone</span>
+    </div>
+    <div class="category-subtle">Add · Subtract · Simple fun sums</div>
+    <hr class="section-divider">
+
+    <div class="theme-grid">
+      <a href="v2/math-zone/" class="theme-card th-math" data-theme="math">
+        <span class="theme-emoji">➕</span>
+        <div class="theme-info">
+          <div class="theme-name">Math Zone</div>
+          <div class="theme-sub">Count · Add · Take Away</div>
+          <span class="theme-pill">🧮 10 Math Games</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
   <div class="progress-summary" id="progressSummary"></div>
   <div class="footer">
     aha! Learning Games &copy; 2026 · Made with love
@@ -780,7 +803,8 @@ function playTapSound(){
     'a-e': 5, 'f-j': 5, 'k-o': 5, 'p-t': 5, 'u-z': 5,
     'number-carnival': 1,
     'fun-zone': 13,
-    'reading-zone': 11
+    'reading-zone': 11,
+    'math-zone': 10
   };
   function loadProgress(){
     try { return JSON.parse(localStorage.getItem('aha_progress') || '{}'); }

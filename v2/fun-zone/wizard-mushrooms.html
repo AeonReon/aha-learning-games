@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Wizard Mushrooms · aha!</title>
+<style>
+:root{--bounce:cubic-bezier(0.34,1.56,0.64,1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100vh;height:100dvh;overflow:hidden;
+  font-family:'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  background:radial-gradient(ellipse at 50% 20%,#6b21a8 0%,#2e1065 60%,#14062a 100%);
+  color:#fff;touch-action:manipulation}
+
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+.screen.active{display:flex}
+
+.back-home-btn{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);left:14px;z-index:9999;
+  background:#fde68a;color:#581c87;border:4px solid #c084fc;border-radius:999px;padding:10px 18px;
+  font-size:16px;font-weight:900;text-decoration:none;box-shadow:0 4px 0 #14062a,0 6px 12px rgba(0,0,0,0.4)}
+.home-bubble{position:fixed;bottom:18px;right:18px;z-index:9999;width:56px;height:56px;border-radius:50%;
+  background:#fde68a;border:4px solid #c084fc;display:flex;align-items:center;justify-content:center;
+  font-size:28px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.4)}
+
+.mist{position:absolute;width:6px;height:6px;border-radius:50%;background:#c084fc;
+  box-shadow:0 0 12px 3px #a855f7;animation:mistFloat linear infinite;pointer-events:none;z-index:1;opacity:0.7}
+@keyframes mistFloat{from{transform:translate(0,110vh)}to{transform:translate(80px,-40px)}}
+
+.title-wrap{text-align:center;z-index:5}
+.title-big{font-size:clamp(36px,8.8vw,62px);color:#fde68a;-webkit-text-stroke:2px #14062a;
+  text-shadow:0 0 24px rgba(192,132,252,0.7),4px 6px 0 #6b21a8;line-height:1.05;margin-bottom:8px;
+  animation:titleBounce 2.2s ease-in-out infinite}
+@keyframes titleBounce{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
+.title-emoji{font-size:clamp(140px,32vw,220px);display:inline-block;animation:wizBob 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 30px rgba(192,132,252,0.7));margin:6px 0}
+@keyframes wizBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+.title-sub{font-size:clamp(18px,4.2vw,26px);color:#c084fc;margin-bottom:20px;font-weight:900;
+  text-shadow:0 2px 10px rgba(0,0,0,0.5)}
+.start-btn{background:linear-gradient(180deg,#fde68a,#f59e0b);color:#581c87;border:5px solid #fff;
+  border-radius:999px;padding:22px 54px;font-size:clamp(22px,5vw,30px);font-weight:900;
+  box-shadow:0 6px 0 #581c87,0 10px 20px rgba(0,0,0,0.4),0 0 30px rgba(192,132,252,0.5);cursor:pointer;
+  animation:glow 2.4s ease-in-out infinite;transition:transform 0.15s var(--bounce)}
+@keyframes glow{0%,100%{box-shadow:0 6px 0 #581c87,0 10px 20px rgba(0,0,0,0.4),0 0 20px rgba(192,132,252,0.5)}
+  50%{box-shadow:0 6px 0 #581c87,0 10px 20px rgba(0,0,0,0.4),0 0 45px rgba(192,132,252,1)}}
+.start-btn:active{transform:translateY(3px) scale(0.97)}
+
+.hud-round{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);right:14px;z-index:50;
+  background:rgba(192,132,252,0.9);color:#2e1065;border-radius:16px;padding:6px 14px;font-weight:900;font-size:14px;
+  border:2px solid #fde68a}
+
+.game-inner{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:68px}
+
+.wiz-scene{position:relative;width:100%;height:clamp(130px,22vh,170px);display:flex;align-items:flex-end;justify-content:center}
+.wizard{font-size:clamp(90px,20vw,130px);animation:wizardCast 2s ease-in-out infinite;
+  filter:drop-shadow(0 0 22px rgba(192,132,252,0.6))}
+@keyframes wizardCast{0%,100%{transform:rotate(-4deg) translateY(0)}50%{transform:rotate(4deg) translateY(-8px)}}
+.wizard.cast{animation:wizardZap 0.8s var(--bounce)}
+@keyframes wizardZap{0%{transform:scale(1)}40%{transform:scale(1.3) rotate(-12deg)}70%{transform:scale(1.15) rotate(12deg)}100%{transform:scale(1.1)}}
+
+.prompt{font-size:clamp(22px,5.3vw,32px);font-weight:900;color:#fde68a;
+  background:rgba(46,16,101,0.85);padding:10px 22px;border-radius:22px;border:3px solid #c084fc;
+  text-shadow:0 2px 10px rgba(192,132,252,0.6);text-align:center;max-width:90%}
+
+.mush-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:440px}
+.mush-tile{position:relative;background:linear-gradient(180deg,#ef4444 0%,#b91c1c 100%);
+  border:5px solid #fde68a;border-radius:55% 55% 18% 18%/60% 60% 40% 40%;padding:18px 6px 12px;cursor:pointer;
+  box-shadow:0 6px 0 #7f1d1d,0 10px 16px rgba(0,0,0,0.5),0 0 25px rgba(192,132,252,0.3);
+  transition:transform 0.15s var(--bounce);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:150px}
+.mush-tile::before{content:'';position:absolute;top:10px;left:20%;width:22%;height:18%;
+  background:#fff;border-radius:50%;opacity:0.7}
+.mush-tile::after{content:'';position:absolute;top:28%;right:20%;width:14%;height:12%;
+  background:#fff;border-radius:50%;opacity:0.7}
+.mush-tile:active{transform:translateY(3px) scale(0.94)}
+.mush-tile.wobble{animation:wobbleM 0.55s ease-in-out}
+@keyframes wobbleM{0%,100%{transform:rotate(0)}25%{transform:rotate(-11deg)}75%{transform:rotate(11deg)}}
+.mush-tile.correct-pop{animation:mushPop 0.8s var(--bounce) forwards;z-index:10}
+@keyframes mushPop{0%{transform:scale(1)}55%{transform:scale(1.22)}100%{transform:scale(1.1)}}
+.letter-block{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:34px}
+.letter-upper{font-size:clamp(34px,8.5vw,46px);font-weight:900;color:#fde68a;
+  -webkit-text-stroke:2px #7f1d1d;text-shadow:2px 2px 0 #450a0a;line-height:1}
+.letter-lower{font-size:clamp(26px,6.5vw,36px);font-weight:900;color:#fff;
+  -webkit-text-stroke:2px #7f1d1d;text-shadow:2px 2px 0 #450a0a;line-height:1;opacity:0.95}
+
+.star{position:fixed;font-size:30px;pointer-events:none;z-index:200;animation:starFly 0.8s ease-out forwards}
+@keyframes starFly{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
+
+.celeb-wrap{text-align:center;z-index:5;animation:celebBounce 0.8s var(--bounce)}
+@keyframes celebBounce{0%{transform:scale(0)}100%{transform:scale(1)}}
+.celeb-big{font-size:clamp(38px,9vw,64px);color:#fde68a;-webkit-text-stroke:2px #14062a;
+  text-shadow:0 0 24px rgba(192,132,252,0.7),4px 6px 0 #6b21a8;margin-bottom:10px}
+.celeb-emoji{font-size:clamp(140px,32vw,220px);animation:celebDance 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 30px rgba(192,132,252,0.7))}
+@keyframes celebDance{0%,100%{transform:rotate(-10deg) scale(1)}50%{transform:rotate(10deg) scale(1.08)}}
+.celeb-count{font-size:clamp(18px,4.6vw,28px);color:#fde68a;font-weight:900;margin:10px 0 20px;
+  text-shadow:0 2px 10px rgba(0,0,0,0.5)}
+
+.banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:300;
+  background:linear-gradient(180deg,#fde68a,#c084fc);color:#2e1065;border:5px solid #fff;
+  border-radius:32px;padding:24px 38px;font-size:clamp(24px,5.3vw,36px);font-weight:900;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5),0 0 40px rgba(192,132,252,0.5);pointer-events:none;text-align:center;max-width:90vw}
+.banner.show{animation:bannerPop 1.5s var(--bounce) forwards}
+@keyframes bannerPop{0%{transform:translate(-50%,-50%) scale(0)}20%{transform:translate(-50%,-50%) scale(1.1)}
+  30%{transform:translate(-50%,-50%) scale(1)}80%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(0.8);opacity:0}}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-home-btn">← Home</a>
+<a href="index.html" class="home-bubble" id="homeBubble" style="display:none">🏠</a>
+
+<div id="scrTitle" class="screen active">
+  <div class="title-wrap">
+    <div class="title-big">WIZARD MUSHROOMS</div>
+    <div class="title-emoji">🧙</div>
+    <div class="title-sub">Cast a spell on the right mushroom!</div>
+    <button class="start-btn" id="btnStart">🍄 Start!</button>
+  </div>
+</div>
+
+<div id="scrGame" class="screen">
+  <div class="hud-round" id="hudRound">1/8</div>
+  <div class="game-inner">
+    <div class="wiz-scene">
+      <div class="wizard" id="wizard">🧙</div>
+    </div>
+    <div class="prompt" id="prompt">Find the letter!</div>
+    <div class="mush-row" id="mushRow"></div>
+  </div>
+  <div class="banner" id="banner">Round 1</div>
+</div>
+
+<div id="scrCeleb" class="screen">
+  <div class="celeb-wrap">
+    <div class="celeb-big">SPELL CAST!</div>
+    <div class="celeb-emoji">🧙</div>
+    <div class="celeb-count" id="celebCount">Every mushroom glows!</div>
+    <button class="start-btn" id="btnAgain">🍄 Play Again</button>
+  </div>
+</div>
+
+<canvas id="fxCanvas" style="position:fixed;inset:0;z-index:150;pointer-events:none"></canvas>
+
+<script>
+const AUDIO_BASE='../../audio';
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function onTap(el,fn){el.addEventListener('click',fn);el.addEventListener('touchend',e=>{e.preventDefault();fn(e)})}
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}return r}
+
+const VOICE_POOLS={
+  greetings:['hello-ready-to-play','i-am-so-glad-youre-here','lets-begin-our-adventure','lets-discover-something-wonderful','oh-i-love-this-game','time-to-learn-something-new','wonderful-are-you-ready'],
+  correct:['beautiful-thats-exactly-right','gorgeous-work','i-am-so-proud-of-you','oh-how-clever','oh-my-goodness-yes','oh-wonderful-well-done','oh-yes-well-done','splendid-absolutely-splendid','thats-perfect-my-dear','what-a-star-you-are','you-did-it-wonderful','you-make-me-so-happy','youre-such-a-clever-one'],
+  wrong:['dont-worry-try-once-more','have-another-go-you-can-do-it','keep-trying-youre-doing-so-well','nearly-there-my-clever-one','not-that-one-but-youll-find-it','so-close-have-another-lovely-go'],
+  'round-complete':['gorgeous-work-keep-going','oh-how-marvellous-round-done','oh-that-was-beautiful-next-round','wonderful-round-youre-blooming'],
+  'game-complete':['i-am-so-proud-of-you','oh-my-goodness-you-did-it','what-a-star-you-are','you-are-truly-amazing','you-finished-how-marvellous']
+};
+const VOICE='voice-b';
+
+class GameAudio{
+  constructor(){this.ctx=null;this.musicGain=null;this.sfxGain=null;this.musicVol=0.08;this.musicDucked=0.02;this.speaking=false;this.queue=[];this._last={}}
+  _init(){if(this.ctx)return;this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const m=this.ctx.createGain();m.gain.value=1;m.connect(this.ctx.destination);
+    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=this.musicVol;this.musicGain.connect(m);
+    this.sfxGain=this.ctx.createGain();this.sfxGain.gain.value=0.35;this.sfxGain.connect(m)}
+  unlock(){this._init();if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{})}
+  tone(type){this._init();const c=this.ctx,n=c.currentTime;
+    const f={correct:[523.25,659.25,783.99],wrong:[392,329.63],ding:[1046.5,1318.5],pop:[880,1175,659.25]}[type]||[440];
+    f.forEach((hz,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=hz;
+      g.gain.setValueAtTime(0.0001,n+i*0.06);g.gain.exponentialRampToValueAtTime(0.15,n+i*0.06+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,n+i*0.06+0.22);
+      o.connect(g);g.connect(this.sfxGain);o.start(n+i*0.06);o.stop(n+i*0.06+0.3)})}
+  _duck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicDucked,n+0.1)}
+  _unduck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicVol,n+0.3)}
+  _playFile(p){
+    const fb=()=>new Promise(r=>{const a=new Audio(p);a.onended=r;a.onerror=()=>r();a.play().catch(()=>r())});
+    if(this.ctx&&this.ctx.state!=='closed'){
+      return fetch(p).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+        .then(b=>this.ctx.decodeAudioData(b))
+        .then(buf=>new Promise(r=>{const s=this.ctx.createBufferSource();s.buffer=buf;s.connect(this.ctx.destination);s.onended=r;s.start()}))
+        .catch(()=>fb())}
+    return fb()}
+  _speak(p){const j={path:p,resolve:null};const pr=new Promise(r=>j.resolve=r);this.queue.push(j);this._drain();return pr}
+  async _drain(){if(this.speaking)return;this.speaking=true;
+    while(this.queue.length){const j=this.queue.shift();this._duck();try{await this._playFile(j.path)}catch(e){}j.resolve();this._unduck()}
+    this.speaking=false}
+  clearQueue(){this.queue.forEach(j=>j.resolve());this.queue=[]}
+  speakNumber(n){return this._speak(`${AUDIO_BASE}/numbers/${n}.mp3`)}
+  speakLetter(l){return this._speak(`${AUDIO_BASE}/letters/${l.toLowerCase()}.mp3`)}
+  phrase(name){return this._speak(`${AUDIO_BASE}/phrases/${name}.mp3`)}
+  play(pool){const arr=VOICE_POOLS[pool]||[];if(!arr.length)return Promise.resolve();
+    const avail=arr.filter(x=>x!==this._last[pool]);const c=avail.length?avail:arr;
+    const id=c[Math.floor(Math.random()*c.length)];this._last[pool]=id;
+    return this._speak(`${AUDIO_BASE}/${VOICE}/${pool}/${id}.mp3`)}
+  startMusic(){this._init();
+    const scale=[220,261.63,329.63,392,466.16,523.25];
+    let t=this.ctx.currentTime+0.2;
+    const step=()=>{if(!this.musicGain)return;
+      const f=scale[Math.floor(Math.random()*scale.length)];
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.7,t+0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+      o.connect(g);g.connect(this.musicGain);
+      o.start(t);o.stop(t+0.65);t+=0.55;
+      if(this.musicGain)setTimeout(step,520)};step()}
+}
+const audio=new GameAudio();
+
+const ROUNDS_TOTAL=8;
+const LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+let targets=[],idx=0,currentTarget='',locked=false;
+
+// mist sparks
+(function(){
+  for(let i=0;i<25;i++){const l=document.createElement('div');l.className='mist';
+    l.style.left=(Math.random()*100)+'vw';l.style.animationDuration=(Math.random()*16+14)+'s';
+    l.style.animationDelay=(-Math.random()*25)+'s';document.body.appendChild(l)}
+})();
+
+const fxCanvas=$('fxCanvas'),fxCtx=fxCanvas.getContext('2d');
+function resizeFx(){fxCanvas.width=innerWidth;fxCanvas.height=innerHeight}
+resizeFx();addEventListener('resize',resizeFx);
+let confetti=[];const CC=['#fde68a','#c084fc','#a855f7','#ef4444','#fff','#60a5fa'];
+function burstConfetti(x,y,n=30){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=Math.random()*8+4;
+  confetti.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,size:Math.random()*7+4,
+    color:pick(CC),rot:Math.random()*Math.PI*2,vr:(Math.random()-0.5)*0.3,life:1})}}
+function fxLoop(){fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  for(let i=confetti.length-1;i>=0;i--){const p=confetti[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.vx*=0.99;
+    p.rot+=p.vr;p.life-=0.012;if(p.life<=0){confetti.splice(i,1);continue}
+    fxCtx.save();fxCtx.translate(p.x,p.y);fxCtx.rotate(p.rot);fxCtx.globalAlpha=Math.max(0,p.life);
+    fxCtx.fillStyle=p.color;fxCtx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);fxCtx.restore()}
+  requestAnimationFrame(fxLoop)}fxLoop();
+
+function starBurst(x,y){const e=['✨','⭐','💫','🌟'];
+  for(let i=0;i<10;i++){const s=document.createElement('div');s.className='star';s.textContent=pick(e);
+    s.style.left=x+'px';s.style.top=y+'px';const a=(Math.PI*2*i)/10,d=90+Math.random()*40;
+    s.style.setProperty('--dx',`calc(-50% + ${Math.cos(a)*d}px)`);
+    s.style.setProperty('--dy',`calc(-50% + ${Math.sin(a)*d}px)`);
+    document.body.appendChild(s);setTimeout(()=>s.remove(),800)}}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');$('homeBubble').style.display=id==='scrGame'?'flex':'none'}
+function showBanner(text){const b=$('banner');b.textContent=text;b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+
+function nextRound(){
+  currentTarget=targets[idx];
+  locked=false;
+  $('hudRound').textContent=(idx+1)+'/'+ROUNDS_TOTAL;
+  const pool=LETTERS.filter(x=>x!==currentTarget);
+  const distractors=shuffle(pool).slice(0,2);
+  const choices=shuffle([currentTarget,...distractors]);
+  const row=$('mushRow');row.innerHTML='';
+  choices.forEach(ch=>{
+    const tile=document.createElement('button');tile.className='mush-tile';
+    const block=document.createElement('div');block.className='letter-block';
+    const up=document.createElement('span');up.className='letter-upper';up.textContent=ch;
+    const lo=document.createElement('span');lo.className='letter-lower';lo.textContent=ch.toLowerCase();
+    block.appendChild(up);block.appendChild(lo);
+    tile.appendChild(block);
+    onTap(tile,()=>handleTap(tile,ch));
+    row.appendChild(tile)});
+  $('prompt').textContent='Find '+currentTarget+' '+currentTarget.toLowerCase();
+  audio.clearQueue();
+  setTimeout(()=>audio.speakLetter(currentTarget),350);
+}
+
+function handleTap(tile,ch){
+  if(locked)return;
+  const rect=tile.getBoundingClientRect();
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  if(ch===currentTarget){
+    locked=true;
+    tile.classList.add('correct-pop');
+    audio.tone('correct');starBurst(cx,cy);burstConfetti(cx,cy,35);
+    $('wizard').classList.add('cast');
+    setTimeout(()=>$('wizard').classList.remove('cast'),800);
+    audio.speakLetter(currentTarget);
+    setTimeout(()=>audio.play('correct'),420);
+    idx++;
+    setTimeout(()=>{if(idx>=ROUNDS_TOTAL)finishGame();else nextRound()},1800);
+  }else{
+    tile.classList.add('wobble');
+    audio.tone('wrong');
+    setTimeout(()=>tile.classList.remove('wobble'),600);
+    setTimeout(()=>audio.play('wrong'),200);
+    setTimeout(()=>audio.speakLetter(currentTarget),1400);
+  }
+}
+
+function finishGame(){
+  showScreen('scrCeleb');
+  setTimeout(()=>{for(let i=0;i<6;i++)burstConfetti(Math.random()*innerWidth,innerHeight*0.3,28)},100);
+  setTimeout(()=>{for(let i=0;i<4;i++)burstConfetti(Math.random()*innerWidth,innerHeight*0.4,22)},700);
+  audio.play('game-complete');
+  setTimeout(()=>audio.play('game-complete'),2400);
+}
+
+function startGame(){
+  targets=shuffle(LETTERS).slice(0,ROUNDS_TOTAL);
+  idx=0;
+  showScreen('scrGame');
+  audio.startMusic();
+  audio.play('greetings');
+  setTimeout(()=>{showBanner('Let the magic begin!');setTimeout(nextRound,1000)},900);
+}
+
+onTap($('btnStart'),()=>{audio.unlock();audio.tone('pop');startGame()});
+onTap($('btnAgain'),()=>{audio.unlock();audio.tone('pop');startGame()});
+onTap($('wizard'),()=>{audio.speakLetter(currentTarget)});
+
+(function(){function getKey(){var p=location.pathname.split('/').filter(Boolean);var last=p[p.length-1]||'index.html';
+    var g=last.replace('.html','');var t=p[p.length-2]||'root';if(g==='')g='index';return t+'/'+g}
+  function load(){try{return JSON.parse(localStorage.getItem('aha_progress')||'{}')}catch(e){return{}}}
+  function save(p){try{localStorage.setItem('aha_progress',JSON.stringify(p))}catch(e){}}
+  function markAttempt(){var p=load(),k=getKey();if(!p[k])p[k]={attempted:true,attemptedAt:Date.now()};save(p)}
+  function markComplete(){var p=load(),k=getKey();if(!p[k])p[k]={};p[k].completed=true;p[k].completedAt=Date.now();p[k].plays=(p[k].plays||0)+1;save(p)}
+  var c=document.getElementById('scrCeleb');
+  if(c){var o=new MutationObserver(function(){if(c.classList.contains('active'))markComplete()});o.observe(c,{attributes:true,attributeFilter:['class']})}
+  setTimeout(markAttempt,3000)})();
+</script>
+</body>
+</html>

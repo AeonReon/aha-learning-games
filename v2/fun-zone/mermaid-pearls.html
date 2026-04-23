@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Mermaid Pearls · aha!</title>
+<style>
+:root{--bounce:cubic-bezier(0.34,1.56,0.64,1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100vh;height:100dvh;overflow:hidden;
+  font-family:'Arial Rounded MT Bold','Nunito','Quicksand',system-ui,-apple-system,Arial,sans-serif;
+  background:radial-gradient(ellipse at 50% 20%,#7dd3fc 0%,#0ea5e9 50%,#0c4a6e 100%);
+  color:#0c4a6e;touch-action:manipulation}
+
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+.screen.active{display:flex}
+
+.back-home-btn{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);left:14px;z-index:9999;
+  background:#fff;color:#0369a1;border:4px solid #38bdf8;border-radius:999px;padding:10px 18px;
+  font-size:16px;font-weight:900;text-decoration:none;box-shadow:0 4px 0 #0c4a6e,0 6px 12px rgba(0,0,0,0.3)}
+.home-bubble{position:fixed;bottom:18px;right:18px;z-index:9999;width:56px;height:56px;border-radius:50%;
+  background:#fff;border:4px solid #38bdf8;display:flex;align-items:center;justify-content:center;
+  font-size:28px;text-decoration:none;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+
+.bubble{position:absolute;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.8),rgba(125,211,252,0.3));
+  border-radius:50%;animation:bubbleRise linear infinite;pointer-events:none;z-index:1;
+  box-shadow:0 0 8px rgba(255,255,255,0.4)}
+@keyframes bubbleRise{from{transform:translateY(110vh) scale(0.8)}to{transform:translateY(-60px) scale(1.1)}}
+
+.title-wrap{text-align:center;z-index:5}
+.title-big{font-size:clamp(40px,9.5vw,68px);color:#fff;-webkit-text-stroke:3px #0c4a6e;
+  text-shadow:4px 6px 0 #fbcfe8,0 8px 14px rgba(0,0,0,0.3);line-height:1.05;margin-bottom:8px;
+  animation:titleBounce 2.2s ease-in-out infinite}
+@keyframes titleBounce{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}
+.title-emoji{font-size:clamp(140px,32vw,220px);display:inline-block;animation:mermaidSwim 1.8s ease-in-out infinite;
+  filter:drop-shadow(0 10px 20px rgba(0,0,0,0.35));margin:6px 0}
+@keyframes mermaidSwim{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+.title-sub{font-size:clamp(18px,4.2vw,26px);color:#fff;margin-bottom:20px;font-weight:900;
+  text-shadow:2px 2px 0 #0c4a6e}
+.start-btn{background:linear-gradient(180deg,#fbcfe8,#ec4899);color:#fff;border:5px solid #fff;
+  border-radius:999px;padding:22px 54px;font-size:clamp(22px,5vw,30px);font-weight:900;
+  text-shadow:2px 2px 0 #831843;
+  box-shadow:0 6px 0 #831843,0 10px 20px rgba(0,0,0,0.3);cursor:pointer;
+  animation:glow 2.4s ease-in-out infinite;transition:transform 0.15s var(--bounce)}
+@keyframes glow{0%,100%{box-shadow:0 6px 0 #831843,0 10px 20px rgba(0,0,0,0.3),0 0 20px rgba(251,207,232,0.5)}
+  50%{box-shadow:0 6px 0 #831843,0 10px 20px rgba(0,0,0,0.3),0 0 40px rgba(251,207,232,1)}}
+.start-btn:active{transform:translateY(3px) scale(0.97)}
+
+.hud-round{position:fixed;top:max(12px,env(safe-area-inset-top,12px) + 6px);right:14px;z-index:50;
+  background:rgba(12,74,110,0.85);color:#fff;border-radius:16px;padding:6px 14px;font-weight:900;font-size:14px;
+  border:2px solid #38bdf8}
+
+.game-inner{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:68px}
+
+.m-scene{position:relative;width:100%;height:clamp(140px,24vh,190px);display:flex;align-items:flex-end;justify-content:center}
+.mermaid{font-size:clamp(90px,20vw,130px);animation:mermBob 2.2s ease-in-out infinite;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,0.4))}
+@keyframes mermBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+.mermaid.joy{animation:mermJoy 0.8s var(--bounce)}
+@keyframes mermJoy{0%{transform:scale(1)}40%{transform:scale(1.3) rotate(-10deg)}70%{transform:scale(1.15) rotate(10deg)}100%{transform:scale(1.1)}}
+
+.prompt{font-size:clamp(22px,5.3vw,32px);font-weight:900;color:#fff;
+  background:rgba(12,74,110,0.75);padding:10px 22px;border-radius:22px;border:3px solid #fbcfe8;
+  text-shadow:2px 2px 0 #0c4a6e;text-align:center;max-width:90%}
+
+.shell-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:440px}
+.shell-tile{position:relative;background:linear-gradient(180deg,#fbcfe8,#f472b6);
+  border:5px solid #be185d;border-radius:30px 30px 50% 50%/30px 30px 40% 40%;padding:14px 8px;cursor:pointer;
+  box-shadow:0 6px 0 #831843,0 10px 16px rgba(0,0,0,0.4);
+  transition:transform 0.15s var(--bounce);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:150px}
+.shell-tile:active{transform:translateY(3px) scale(0.94)}
+.shell-tile.wobble{animation:wobbleS 0.55s ease-in-out}
+@keyframes wobbleS{0%,100%{transform:rotate(0)}25%{transform:rotate(-11deg)}75%{transform:rotate(11deg)}}
+.shell-tile.correct-pop{animation:shellPop 0.8s var(--bounce) forwards;z-index:10}
+@keyframes shellPop{0%{transform:scale(1)}55%{transform:scale(1.25)}100%{transform:scale(1.1)}}
+.shell-emoji{font-size:clamp(42px,10vw,58px);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  animation:shellSway 2.6s ease-in-out infinite}
+.shell-tile:nth-child(2) .shell-emoji{animation-delay:0.4s}
+.shell-tile:nth-child(3) .shell-emoji{animation-delay:0.9s}
+@keyframes shellSway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.shell-num{font-size:clamp(34px,8.5vw,46px);font-weight:900;color:#fff;
+  -webkit-text-stroke:3px #831843;text-shadow:2px 2px 0 #be185d;line-height:1}
+
+.star{position:fixed;font-size:30px;pointer-events:none;z-index:200;animation:starFly 0.8s ease-out forwards}
+@keyframes starFly{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) scale(1.5);opacity:0}}
+
+.celeb-wrap{text-align:center;z-index:5;animation:celebBounce 0.8s var(--bounce)}
+@keyframes celebBounce{0%{transform:scale(0)}100%{transform:scale(1)}}
+.celeb-big{font-size:clamp(38px,9vw,64px);color:#fff;-webkit-text-stroke:3px #0c4a6e;
+  text-shadow:4px 6px 0 #fbcfe8;margin-bottom:10px}
+.celeb-emoji{font-size:clamp(140px,32vw,220px);animation:celebDance 1.6s ease-in-out infinite;
+  filter:drop-shadow(0 10px 20px rgba(0,0,0,0.3))}
+@keyframes celebDance{0%,100%{transform:rotate(-10deg) scale(1)}50%{transform:rotate(10deg) scale(1.08)}}
+.celeb-count{font-size:clamp(18px,4.6vw,28px);color:#fff;font-weight:900;margin:10px 0 20px;
+  text-shadow:2px 2px 0 #0c4a6e}
+
+.banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:300;
+  background:linear-gradient(180deg,#fbcfe8,#ec4899);color:#fff;border:5px solid #fff;
+  border-radius:32px;padding:24px 38px;font-size:clamp(24px,5.3vw,36px);font-weight:900;
+  text-shadow:2px 2px 0 #831843;
+  box-shadow:0 10px 30px rgba(0,0,0,0.35);pointer-events:none;text-align:center;max-width:90vw}
+.banner.show{animation:bannerPop 1.5s var(--bounce) forwards}
+@keyframes bannerPop{0%{transform:translate(-50%,-50%) scale(0)}20%{transform:translate(-50%,-50%) scale(1.1)}
+  30%{transform:translate(-50%,-50%) scale(1)}80%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(0.8);opacity:0}}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-home-btn">← Home</a>
+<a href="index.html" class="home-bubble" id="homeBubble" style="display:none">🏠</a>
+
+<div id="scrTitle" class="screen active">
+  <div class="title-wrap">
+    <div class="title-big">MERMAID PEARLS</div>
+    <div class="title-emoji">🧜‍♀️</div>
+    <div class="title-sub">Open the shell with the right number!</div>
+    <button class="start-btn" id="btnStart">🐚 Start!</button>
+  </div>
+</div>
+
+<div id="scrGame" class="screen">
+  <div class="hud-round" id="hudRound">1/8</div>
+  <div class="game-inner">
+    <div class="m-scene">
+      <div class="mermaid" id="mermaid">🧜‍♀️</div>
+    </div>
+    <div class="prompt" id="prompt">Find the shell!</div>
+    <div class="shell-row" id="shellRow"></div>
+  </div>
+  <div class="banner" id="banner">Round 1</div>
+</div>
+
+<div id="scrCeleb" class="screen">
+  <div class="celeb-wrap">
+    <div class="celeb-big">OCEAN MAGIC!</div>
+    <div class="celeb-emoji">🧜‍♀️</div>
+    <div class="celeb-count" id="celebCount">All the pearls are gathered!</div>
+    <button class="start-btn" id="btnAgain">🐚 Play Again</button>
+  </div>
+</div>
+
+<canvas id="fxCanvas" style="position:fixed;inset:0;z-index:150;pointer-events:none"></canvas>
+
+<script>
+const AUDIO_BASE='../../audio';
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function onTap(el,fn){el.addEventListener('click',fn);el.addEventListener('touchend',e=>{e.preventDefault();fn(e)})}
+function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]]}return r}
+
+const VOICE_POOLS={
+  greetings:['are-you-ready','lets-go','here-we-go','come-on-lets-play','this-is-going-to-be-fun'],
+  correct:['well-done','brilliant','amazing','fantastic','perfect','you-got-it','superstar','thats-right','incredible','yes-youre-so-clever','wow-look-at-you-go','youre-on-fire','i-knew-you-could-do-it'],
+  wrong:['almost-have-another-go','dont-worry-try-again','keep-trying-youre-so-close','nearly-give-it-another-go','not-quite-you-can-do-it','oops-not-that-one'],
+  'round-complete':['brilliant-round-keep-going','round-complete-amazing','round-done-youre-doing-so-well','you-did-it-on-to-the-next'],
+  'game-complete':['what-a-fantastic-player','you-are-a-superstar','you-did-the-whole-thing','you-finished-so-proud','youre-incredible-we-did-it']
+};
+const VOICE='voice-a';
+
+class GameAudio{
+  constructor(){this.ctx=null;this.musicGain=null;this.sfxGain=null;this.musicVol=0.08;this.musicDucked=0.02;this.speaking=false;this.queue=[];this._last={}}
+  _init(){if(this.ctx)return;this.ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const m=this.ctx.createGain();m.gain.value=1;m.connect(this.ctx.destination);
+    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=this.musicVol;this.musicGain.connect(m);
+    this.sfxGain=this.ctx.createGain();this.sfxGain.gain.value=0.35;this.sfxGain.connect(m)}
+  unlock(){this._init();if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{})}
+  tone(type){this._init();const c=this.ctx,n=c.currentTime;
+    const f={correct:[523.25,659.25,783.99],wrong:[392,329.63],ding:[1046.5,1318.5],pop:[880,1175,659.25]}[type]||[440];
+    f.forEach((hz,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=hz;
+      g.gain.setValueAtTime(0.0001,n+i*0.06);g.gain.exponentialRampToValueAtTime(0.15,n+i*0.06+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,n+i*0.06+0.22);
+      o.connect(g);g.connect(this.sfxGain);o.start(n+i*0.06);o.stop(n+i*0.06+0.3)})}
+  _duck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicDucked,n+0.1)}
+  _unduck(){if(!this.musicGain)return;const n=this.ctx.currentTime;this.musicGain.gain.cancelScheduledValues(n);this.musicGain.gain.linearRampToValueAtTime(this.musicVol,n+0.3)}
+  _playFile(p){
+    const fb=()=>new Promise(r=>{const a=new Audio(p);a.onended=r;a.onerror=()=>r();a.play().catch(()=>r())});
+    if(this.ctx&&this.ctx.state!=='closed'){
+      return fetch(p).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+        .then(b=>this.ctx.decodeAudioData(b))
+        .then(buf=>new Promise(r=>{const s=this.ctx.createBufferSource();s.buffer=buf;s.connect(this.ctx.destination);s.onended=r;s.start()}))
+        .catch(()=>fb())}
+    return fb()}
+  _speak(p){const j={path:p,resolve:null};const pr=new Promise(r=>j.resolve=r);this.queue.push(j);this._drain();return pr}
+  async _drain(){if(this.speaking)return;this.speaking=true;
+    while(this.queue.length){const j=this.queue.shift();this._duck();try{await this._playFile(j.path)}catch(e){}j.resolve();this._unduck()}
+    this.speaking=false}
+  clearQueue(){this.queue.forEach(j=>j.resolve());this.queue=[]}
+  speakNumber(n){return this._speak(`${AUDIO_BASE}/numbers/${n}.mp3`)}
+  speakLetter(l){return this._speak(`${AUDIO_BASE}/letters/${l.toLowerCase()}.mp3`)}
+  phrase(name){return this._speak(`${AUDIO_BASE}/phrases/${name}.mp3`)}
+  play(pool){const arr=VOICE_POOLS[pool]||[];if(!arr.length)return Promise.resolve();
+    const avail=arr.filter(x=>x!==this._last[pool]);const c=avail.length?avail:arr;
+    const id=c[Math.floor(Math.random()*c.length)];this._last[pool]=id;
+    return this._speak(`${AUDIO_BASE}/${VOICE}/${pool}/${id}.mp3`)}
+  startMusic(){this._init();
+    const scale=[293.66,349.23,440,523.25,587.33,698.46];
+    let t=this.ctx.currentTime+0.2;
+    const step=()=>{if(!this.musicGain)return;
+      const f=scale[Math.floor(Math.random()*scale.length)];
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.8,t+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+      o.connect(g);g.connect(this.musicGain);
+      o.start(t);o.stop(t+0.6);t+=0.5;
+      if(this.musicGain)setTimeout(step,470)};step()}
+}
+const audio=new GameAudio();
+
+const ROUNDS_TOTAL=8;
+let targets=[],idx=0,currentTarget=0,locked=false;
+
+// bubbles rising
+(function(){
+  for(let i=0;i<10;i++){const b=document.createElement('div');b.className='bubble';
+    const size=Math.random()*22+12;b.style.width=size+'px';b.style.height=size+'px';
+    b.style.left=(Math.random()*100)+'vw';b.style.animationDuration=(Math.random()*14+12)+'s';
+    b.style.animationDelay=(-Math.random()*20)+'s';document.body.appendChild(b)}
+})();
+
+const fxCanvas=$('fxCanvas'),fxCtx=fxCanvas.getContext('2d');
+function resizeFx(){fxCanvas.width=innerWidth;fxCanvas.height=innerHeight}
+resizeFx();addEventListener('resize',resizeFx);
+let confetti=[];const CC=['#fbcfe8','#f472b6','#7dd3fc','#fde68a','#fff','#38bdf8'];
+function burstConfetti(x,y,n=30){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=Math.random()*8+4;
+  confetti.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,size:Math.random()*7+4,
+    color:pick(CC),rot:Math.random()*Math.PI*2,vr:(Math.random()-0.5)*0.3,life:1})}}
+function fxLoop(){fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+  for(let i=confetti.length-1;i>=0;i--){const p=confetti[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.vx*=0.99;
+    p.rot+=p.vr;p.life-=0.012;if(p.life<=0){confetti.splice(i,1);continue}
+    fxCtx.save();fxCtx.translate(p.x,p.y);fxCtx.rotate(p.rot);fxCtx.globalAlpha=Math.max(0,p.life);
+    fxCtx.fillStyle=p.color;fxCtx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);fxCtx.restore()}
+  requestAnimationFrame(fxLoop)}fxLoop();
+
+function starBurst(x,y){const e=['✨','⭐','💫','🌟','💎'];
+  for(let i=0;i<8;i++){const s=document.createElement('div');s.className='star';s.textContent=pick(e);
+    s.style.left=x+'px';s.style.top=y+'px';const a=(Math.PI*2*i)/8,d=80+Math.random()*40;
+    s.style.setProperty('--dx',`calc(-50% + ${Math.cos(a)*d}px)`);
+    s.style.setProperty('--dy',`calc(-50% + ${Math.sin(a)*d}px)`);
+    document.body.appendChild(s);setTimeout(()=>s.remove(),800)}}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');$('homeBubble').style.display=id==='scrGame'?'flex':'none'}
+function showBanner(text){const b=$('banner');b.textContent=text;b.classList.remove('show');void b.offsetWidth;b.classList.add('show')}
+
+const SHELLS=['🐚','🐚','🐚'];
+
+function nextRound(){
+  currentTarget=targets[idx];
+  locked=false;
+  $('hudRound').textContent=(idx+1)+'/'+ROUNDS_TOTAL;
+  const pool=[1,2,3,4,5,6,7,8,9,10].filter(n=>n!==currentTarget);
+  const distractors=shuffle(pool).slice(0,2);
+  const choices=shuffle([currentTarget,...distractors]);
+  const row=$('shellRow');row.innerHTML='';
+  choices.forEach(n=>{
+    const tile=document.createElement('button');tile.className='shell-tile';
+    const se=document.createElement('div');se.className='shell-emoji';se.textContent=pick(SHELLS);
+    const num=document.createElement('div');num.className='shell-num';num.textContent=n;
+    tile.appendChild(se);tile.appendChild(num);
+    onTap(tile,()=>handleTap(tile,n));
+    row.appendChild(tile)});
+  $('prompt').textContent='Open shell '+currentTarget;
+  audio.clearQueue();
+  setTimeout(()=>audio.speakNumber(currentTarget),350);
+}
+
+function handleTap(tile,n){
+  if(locked)return;
+  const rect=tile.getBoundingClientRect();
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  if(n===currentTarget){
+    locked=true;
+    tile.classList.add('correct-pop');
+    audio.tone('correct');starBurst(cx,cy);burstConfetti(cx,cy,35);
+    tile.querySelector('.shell-emoji').textContent='🦪';
+    $('mermaid').classList.add('joy');
+    setTimeout(()=>$('mermaid').classList.remove('joy'),800);
+    audio.speakNumber(currentTarget);
+    setTimeout(()=>audio.play('correct'),420);
+    idx++;
+    setTimeout(()=>{if(idx>=ROUNDS_TOTAL)finishGame();else nextRound()},1900);
+  }else{
+    tile.classList.add('wobble');
+    audio.tone('wrong');
+    setTimeout(()=>tile.classList.remove('wobble'),600);
+    setTimeout(()=>audio.play('wrong'),200);
+    setTimeout(()=>audio.speakNumber(currentTarget),1400);
+  }
+}
+
+function finishGame(){
+  showScreen('scrCeleb');
+  setTimeout(()=>{for(let i=0;i<6;i++)burstConfetti(Math.random()*innerWidth,innerHeight*0.3,28)},100);
+  setTimeout(()=>{for(let i=0;i<4;i++)burstConfetti(Math.random()*innerWidth,innerHeight*0.4,22)},700);
+  audio.play('game-complete');
+  setTimeout(()=>audio.play('game-complete'),2200);
+}
+
+function startGame(){
+  targets=shuffle([1,2,3,4,5,6,7,8,9,10]).slice(0,ROUNDS_TOTAL);
+  idx=0;
+  showScreen('scrGame');
+  audio.startMusic();
+  audio.play('greetings');
+  setTimeout(()=>{showBanner('Dive in!');setTimeout(nextRound,1000)},900);
+}
+
+onTap($('btnStart'),()=>{audio.unlock();audio.tone('pop');startGame()});
+onTap($('btnAgain'),()=>{audio.unlock();audio.tone('pop');startGame()});
+onTap($('mermaid'),()=>{audio.speakNumber(currentTarget)});
+
+(function(){function getKey(){var p=location.pathname.split('/').filter(Boolean);var last=p[p.length-1]||'index.html';
+    var g=last.replace('.html','');var t=p[p.length-2]||'root';if(g==='')g='index';return t+'/'+g}
+  function load(){try{return JSON.parse(localStorage.getItem('aha_progress')||'{}')}catch(e){return{}}}
+  function save(p){try{localStorage.setItem('aha_progress',JSON.stringify(p))}catch(e){}}
+  function markAttempt(){var p=load(),k=getKey();if(!p[k])p[k]={attempted:true,attemptedAt:Date.now()};save(p)}
+  function markComplete(){var p=load(),k=getKey();if(!p[k])p[k]={};p[k].completed=true;p[k].completedAt=Date.now();p[k].plays=(p[k].plays||0)+1;save(p)}
+  var c=document.getElementById('scrCeleb');
+  if(c){var o=new MutationObserver(function(){if(c.classList.contains('active'))markComplete()});o.observe(c,{attributes:true,attributeFilter:['class']})}
+  setTimeout(markAttempt,3000)})();
+</script>
+</body>
+</html>
